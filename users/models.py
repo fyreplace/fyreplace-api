@@ -83,6 +83,10 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
         self.save()
         post_ban.send(sender=self.__class__, instance=self)
 
+    @property
+    def avatar_img(self) -> str:
+        return mark_safe(f'<img src="{self.avatar}" width="128" height="128">')
+
 
 class Token(models.Model):
     class Meta:

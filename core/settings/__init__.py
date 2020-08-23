@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django_celery_beat",
     "django_celery_results",
     "django_extensions",
+    "admin_object_actions",
     "rest_framework",
     "health_check",
     "health_check.db",
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
     "health_check.contrib.psutil",
     "health_check.contrib.rabbitmq",
     "core",
+    "core.apps.CoreConfig",
     "users.apps.UsersConfig",
 ]
 
@@ -61,6 +63,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "crum.CurrentRequestUserMiddleware",
 ]
 
 ROOT_URLCONF = "core.urls"

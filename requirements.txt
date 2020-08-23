@@ -144,6 +144,10 @@ dj-database-url==0.5.0 \
     --hash=sha256:4aeaeb1f573c74835b0686a2b46b85990571159ffc21aa57ecd4d1e1cb334163 \
     --hash=sha256:851785365761ebe4994a921b433062309eb882fedd318e1b0fcecc607ed02da9 \
     # via -r requirements.in
+django-admin-object-actions==0.1.11 \
+    --hash=sha256:426d773dbdc53b404f26ec2159c3cc5c20fafa2a87475902800dc449bd4c37f0 \
+    --hash=sha256:543ad8b48b1636ab8997a32bc24b7edd7e342b17fb39a62247ab83f8995eac6f \
+    # via -r requirements.in
 django-celery-beat==2.1.0 \
     --hash=sha256:4eb0e8412e2e05ba0029912a6f80d1054731001eecbcb4d59688c4e07cf4d9d3 \
     --hash=sha256:8a169e11d96faed8b72d505ddbc70e7fe0b16cdc854df43cb209c153ed08d651 \
@@ -152,6 +156,10 @@ django-celery-results==2.0.0 \
     --hash=sha256:754e01f22f70fddee5f2ca95c18f183fccee42ad98f9803577bffa717d45ac5d \
     --hash=sha256:f82280a9a25c44048b9e64ae4d47ade7d522c8221304b0e25388080021b95468 \
     # via -r requirements.in
+django-crum==0.7.9 \
+    --hash=sha256:037cc8b822975bb1d41cd24269b59a512cc77448fadc3f34ab9a17b229b4b471 \
+    --hash=sha256:65e9bc0f070a663fafc4d9e357f45fd4e6f01838b20a9e2fb7670f5706754288 \
+    # via django-admin-object-actions
 django-extensions==3.1.0 \
     --hash=sha256:7cd002495ff0a0e5eb6cdd6be759600905b4e4079232ea27618fc46bdd853651 \
     --hash=sha256:c7f88625a53f631745d4f2bef9ec4dcb999ed59476393bdbbe99db8596778846 \
@@ -167,7 +175,7 @@ django-timezone-field==4.1.1 \
 django[argon2]==3.1.4 \
     --hash=sha256:5c866205f15e7a7123f1eec6ab939d22d5bde1416635cab259684af66d8e48a2 \
     --hash=sha256:edb10b5c45e7e9c0fb1dc00b76ec7449aca258a39ffd613dbd078c51d19c9f03 \
-    # via -r requirements.in, django-celery-beat, django-health-check, django-timezone-field, djangorestframework
+    # via -r requirements.in, django-admin-object-actions, django-celery-beat, django-crum, django-health-check, django-timezone-field, djangorestframework
 djangorestframework==3.12.2 \
     --hash=sha256:0209bafcb7b5010fdfec784034f059d512256424de2a0f084cb82b096d6dd6a7 \
     # via -r requirements.in, drf-extensions
@@ -435,7 +443,7 @@ rsa==4.6 \
 six==1.15.0 \
     --hash=sha256:30639c035cdb23534cd4aa2dd52c3bf48f06e5f4a941509c8bafd8ce11080259 \
     --hash=sha256:8b74bedcbbbaca38ff6d7491d76f2b06b3592611af620f8426e82dddb04a5ced \
-    # via argon2-cffi, click-repl, cryptography, ecdsa, python-dateutil, python-jose
+    # via argon2-cffi, click-repl, cryptography, django-admin-object-actions, ecdsa, python-dateutil, python-jose
 sniffio==1.2.0 \
     --hash=sha256:471b71698eac1c2112a40ce2752bb2f4a4814c22a54a3eed3676bc0f5ca9f663 \
     --hash=sha256:c4666eecec1d3f50960c6bdf61ab7bc350648da6c126e3cf6898d8cd4ddcd3de \

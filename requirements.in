@@ -1,5 +1,6 @@
 django[argon2]
 djangorestframework
+django-admin-object-actions
 django-celery-beat
 django-celery-results
 django-health-check
