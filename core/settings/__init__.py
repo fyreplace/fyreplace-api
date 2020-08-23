@@ -151,10 +151,6 @@ ADMINS = [tuple(admin.split(":")) for admin in os.getenv("ADMINS", "").split(","
 # Rest framework
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [],
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticatedOrReadOnly"
-    ],
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
@@ -163,6 +159,11 @@ REST_FRAMEWORK = {
         "anon": "3/second",
         "user": "10/second",
     },
+    "DEFAULT_AUTHENTICATION_CLASSES": ["users.authentication.TokenAuthentication"],
+    "DEFAULT_PERMISSION_CLASSES": ["users.permissions.CurrentUserIsActive"],
+    "EXCEPTION_HANDLER": "core.views.exception_handler",
+    "DEFAULT_PAGINATION_CLASS": "core.pagination.CursorPagination",
+    "PAGE_SIZE": 12,
 }
 
 # Celery
