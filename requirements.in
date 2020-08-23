@@ -1,0 +1,28 @@
+django[argon2]
+djangorestframework
+django-celery-beat
+django-celery-results
+django-health-check
+drf-extensions
+celery
+pillow
+python-jose[cryptography]
+tqdm
+
+# Databases
+psycopg2
+mysqlclient
+
+# Getting settings from environment
+dj-database-url
+python-dotenv
+
+# Testing
+pytest-django
+pytest-xdist[psutil]
+
+# Development tools
+django-extensions
+ipython
+isort
+black
