@@ -7,7 +7,7 @@ drf-extensions
 celery
 pillow
 python-jose[cryptography]
-tqdm
+httpx
 
 # Databases
 psycopg2
@@ -26,3 +26,4 @@ django-extensions
 ipython
 isort
 black
+tqdm

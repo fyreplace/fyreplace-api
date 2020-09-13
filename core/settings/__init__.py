@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "health_check.contrib.psutil",
     "health_check.contrib.rabbitmq",
     "core",
+    "users.apps.UsersConfig",
 ]
 
 MIDDLEWARE = [
@@ -87,6 +88,8 @@ WSGI_APPLICATION = "core.wsgi.application"
 DATABASES = {"default": dj_database_url.config(conn_max_age=60 * 10)}
 
 # Authentication
+
+AUTH_USER_MODEL = "users.User"
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": f"django.contrib.auth.password_validation.{validator}"}
@@ -167,5 +170,16 @@ REST_FRAMEWORK = {
 BROKER_URL = os.getenv("BROKER_URL")
 
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+CELERY_BEAT_SCHEDULE = {
+    "users.cleanup_users": {
+        "task": "users.tasks.cleanup_users",
+        "schedule": crontab(minute=0),
+    },
+    "users.cleanup_tokens": {
+        "task": "users.tasks.cleanup_tokens",
+        "schedule": crontab(hour=0, minute=0),
+    },
+}
 
 CELERY_RESULT_BACKEND = "django-db"
