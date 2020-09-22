@@ -165,7 +165,7 @@ class UserInteractionTestCase(AuthenticatedTestCase):
     def test_block(self):
         url = reverse("users:user-block", args=[str(self.other_user.id)])
         response = self.client.post(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_205_RESET_CONTENT)
         self.assertEqual(self.main_user.blocked_users.count(), 1)
         self.assertEqual(self.main_user.blocked_users.first().id, self.other_user.id)
 

@@ -14,7 +14,7 @@ from rest_framework.mixins import (
 )
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK
+from rest_framework.status import HTTP_200_OK, HTTP_205_RESET_CONTENT
 
 from core.mixins import ClearModelMixin
 from core.pagination import LimitOffsetPagination
@@ -95,7 +95,8 @@ class UserInteractionViewSet(BaseUserViewSet):
     @action(methods=["POST", "PUT"], detail=True)
     def block(self, request: Request, pk: str) -> Response:
         request.user.blocked_users.add(self.get_object())
-        return Response(status=HTTP_200_OK)
+        request.user.stack.drain()
+        return Response(status=HTTP_205_RESET_CONTENT)
 
     @block.mapping.delete
     def block_destroy(self, request: Request, pk: str) -> Response:

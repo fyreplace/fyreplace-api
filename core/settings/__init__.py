@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "core",
     "core.apps.CoreConfig",
     "users.apps.UsersConfig",
+    "posts.apps.PostsConfig",
 ]
 
 MIDDLEWARE = [
@@ -183,6 +184,10 @@ CELERY_BEAT_SCHEDULE = {
     "users.cleanup_tokens": {
         "task": "users.tasks.cleanup_tokens",
         "schedule": crontab(hour=0, minute=0),
+    },
+    "posts.cleanup_stacks": {
+        "task": "posts.tasks.cleanup_stacks",
+        "schedule": crontab(minute=0),
     },
 }
 

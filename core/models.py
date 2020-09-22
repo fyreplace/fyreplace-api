@@ -18,6 +18,13 @@ class UUIDModel(models.Model):
     )
 
 
+class TimestampModel(models.Model):
+    class Meta:
+        abstract = True
+
+    date_created = models.DateTimeField(auto_now_add=True, editable=False)
+
+
 class SoftDeleteModel(models.Model):
     class Meta:
         abstract = True
