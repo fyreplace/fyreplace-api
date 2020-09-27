@@ -4,12 +4,14 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+import notifications.urls
 import posts.urls
 import users.urls
 
 urlpatterns = [
     path("api/", include(users.urls)),
     path("api/", include(posts.urls)),
+    path("api/", include(notifications.urls)),
     path("admin/", admin.site.urls),
     path("health/", include(health_check.urls)),
     *static(settings.STATIC_URL, document_root=settings.STATIC_ROOT),
