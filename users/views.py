@@ -19,6 +19,7 @@ from rest_framework.status import HTTP_200_OK, HTTP_205_RESET_CONTENT
 from core.mixins import ClearModelMixin
 from core.pagination import LimitOffsetPagination
 from core.viewsets import GenericViewSet
+from flags.views import FlagMixin
 
 from .authentication import BasicAuthentication, JWTAuthentication
 from .models import Token
@@ -79,7 +80,7 @@ class UserViewSet(
         return Response(status=HTTP_200_OK)
 
 
-class UserInteractionViewSet(BaseUserViewSet):
+class UserInteractionViewSet(FlagMixin, BaseUserViewSet):
     permission_classes = BaseUserViewSet.permission_classes + [ObjectIsNotCurrentUser]
     queryset = get_user_model().objects.all()
     serializer_class = AuthorSerializer

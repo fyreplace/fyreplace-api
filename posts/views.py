@@ -15,6 +15,7 @@ from core.permissions import CurrentUserIsOwnerOrReadOnly
 from core.signals import fetched
 from core.utils import str_to_bool
 from core.viewsets import GenericViewSet, ModelViewSet
+from flags.views import FlagMixin
 
 from .mixins import PostChildViewSetMixin
 from .models import Chunk, Comment, Post, Stack
@@ -87,7 +88,7 @@ class PostViewSet(ModelViewSet):
         return self.get_paginated_response(serializer.data)
 
 
-class PostInteractionViewSet(GenericViewSet):
+class PostInteractionViewSet(FlagMixin, GenericViewSet):
     permission_classes = GenericViewSet.permission_classes + [PostIsPublished]
     queryset = Post.objects.all()
     serializer_class = PostSerializer
@@ -156,6 +157,6 @@ class CommentViewSet(
         return response
 
 
-class CommentInteractionViewSet(GenericViewSet):
+class CommentInteractionViewSet(FlagMixin, GenericViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
