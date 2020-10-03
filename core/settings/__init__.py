@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "health_check.contrib.rabbitmq",
     "core",
     "core.apps.CoreConfig",
+    "flags.apps.FlagsConfig",
     "users.apps.UsersConfig",
     "posts.apps.PostsConfig",
     "notifications.apps.NotificationsConfig",
