@@ -1,7 +1,11 @@
 from os import path
-from typing import Iterable
+from typing import Iterable, List
 
 import pytest
+from django.core import mail
+from rest_framework.test import APITestCase
+
+from .emails import Email
 
 
 def get_asset(name: str):
@@ -32,3 +36,11 @@ class PytestTestRunner:
 
         argv.extend(test_labels)
         return pytest.main(argv)
+
+
+class BaseTestCase(APITestCase):
+    def assertEmails(self, emails: List[Email]):
+        self.assertEqual(len(mail.outbox), len(emails))
+
+        for i in range(0, len(emails)):
+            self.assertEqual(emails[i].subject, mail.outbox[i].subject)
