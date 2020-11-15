@@ -1,8 +1,26 @@
+from django.contrib.auth.models import AbstractUser
 from django.db import DatabaseError
 
 from users.tests import BaseUserTestCase
 
 from .models import Chunk, Comment, Post
+
+
+class PostCreateMixin:
+    def _create_published_post(
+        self, author: AbstractUser, anonymous: bool = False
+    ) -> Post:
+        post = self._create_draft(author)
+        post.publish(anonymous=anonymous)
+        return post
+
+    def _create_draft(self, author: AbstractUser, count: int = 3) -> Post:
+        post = Post.objects.create(author=author)
+
+        for i in range(count):
+            Chunk.objects.create(post=post, position=i, text=f"Text {i}")
+
+        return post
 
 
 class BasePostTestCase(BaseUserTestCase):
