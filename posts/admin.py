@@ -9,6 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework.reverse import reverse
 
 from core.admin import ReadOnlyModelAdmin
+from flags.admin import last_week_flags
 
 from .models import Post
 
@@ -50,6 +51,10 @@ class PostAdmin(ReadOnlyModelAdmin):
         (
             _("Content"),
             {"fields": (chunks,)},
+        ),
+        (
+            _("Moderation"),
+            {"fields": (last_week_flags,)},
         ),
     )
 

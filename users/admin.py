@@ -16,6 +16,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from core.admin import ReadOnlyModelAdmin
+from flags.admin import last_week_flags
 
 
 def avatar(obj: AbstractUser) -> Optional[str]:
@@ -71,6 +72,10 @@ class UserAdmin(ModelAdminObjectActionsMixin, UserAdmin, ReadOnlyModelAdmin):
                     "is_banned",
                 )
             },
+        ),
+        (
+            _("Moderation"),
+            {"fields": (last_week_flags, "display_object_actions_detail")},
         ),
     )
     readonly_fields = ("display_object_actions_detail",)
