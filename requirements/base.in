@@ -10,10 +10,6 @@ pillow
 python-jose[cryptography]
 httpx
 
-# Databases
-psycopg2
-mysqlclient
-
 # Getting settings from environment
 dj-database-url
 python-dotenv
