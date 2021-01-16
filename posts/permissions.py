@@ -76,9 +76,9 @@ class CurrentUserCanComment(PostChildMixin, BasePermission):
     accepted_methods = [*SAFE_METHODS, "DELETE"]
 
     def has_permission(self, request: Request, view):
+        post = Post.objects.get(id=self.get_post_id(request))
         return (
             request.method in self.accepted_methods
-            or not Post.objects.get(id=self.get_post_id(request))
-            .author.blocked_users.filter(id=request.user.id)
-            .exists()
+            or post.is_anonymous
+            or not post.author.blocked_users.filter(id=request.user.id).exists()
         )

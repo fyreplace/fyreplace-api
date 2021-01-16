@@ -641,6 +641,15 @@ class CommentTestCase(PostCreateMixin, AuthenticatedTestCase, PublishedPostTestC
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_create_blocked_in_anonymous(self):
+        self.other_user.blocked_users.add(self.main_user)
+        post = self._create_published_post(author=self.other_user, anonymous=True)
+        url = reverse("posts:post-comment-list", args=[str(post.id)])
+        data = {"text": "Text"}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["text"], data["text"])
+
     def test_destroy(self):
         comment = Comment.objects.create(
             author=self.main_user, post=self.post, text="Text"
