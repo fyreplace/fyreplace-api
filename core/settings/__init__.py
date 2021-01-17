@@ -152,7 +152,11 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 
 SERVER_EMAIL = os.getenv("SERVER_EMAIL")
 
-ADMINS = [tuple(admin.split(":")) for admin in os.getenv("ADMINS", "").split(",") if admin]
+ADMINS = [
+    tuple([part.strip() for part in admin.split(":")])
+    for admin in os.getenv("ADMINS", "").split(",")
+    if admin
+]
 
 # Rest framework
 
