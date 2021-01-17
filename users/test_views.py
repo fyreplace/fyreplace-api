@@ -206,8 +206,6 @@ class AccountTestCase(BaseUserTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("key", response.data)
         self.assertIsInstance(response.data["key"], str)
-        response = self.client.post(url, HTTP_AUTHORIZATION=f"Bearer {token}")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_activation_missing_user_id(self):
         token = self._get_jwt()
