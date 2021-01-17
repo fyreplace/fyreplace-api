@@ -15,7 +15,7 @@ class PostChildMixin:
         post_id = context_kwargs.get("parent_lookup_post_id")
 
         if get_object_or_404(Post, id=post_id).is_deleted:
-            raise Gone(f"Post deleted.")
+            raise Gone("Post deleted.")
 
         return post_id
 

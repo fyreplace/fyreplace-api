@@ -9,7 +9,6 @@ from django.contrib.auth import get_user_model
 from django.core.files.images import ImageFile
 from django.core.files.temp import NamedTemporaryFile
 from django.utils.timezone import now
-from django.utils.translation import gettext as _
 from rest_framework.status import HTTP_404_NOT_FOUND
 
 from .emails import UserActivationEmail, UserEmailConfirmationEmail, UserRecoveryEmail

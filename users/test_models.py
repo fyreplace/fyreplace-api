@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from time import sleep
 
 from django.db import IntegrityError

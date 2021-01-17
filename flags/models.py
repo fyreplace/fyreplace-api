@@ -4,7 +4,6 @@ from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.utils.translation import gettext as _
 
 from core.models import TimestampModel
 
