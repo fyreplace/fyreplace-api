@@ -11,6 +11,4 @@ class FileSizeValidator(BaseValidator):
 
     def __call__(self, value: Any):
         if value.size > self.max_bytes:
-            raise PayloadTooLarge(
-                f"File size exceeds the maximum isze of {self.max_bytes} bytes."
-            )
+            raise PayloadTooLarge

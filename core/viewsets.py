@@ -11,7 +11,7 @@ class GenericViewSet(viewsets.GenericViewSet):
         obj = super().get_object()
 
         if getattr(obj, "is_deleted", False):
-            raise Gone(f"{self.queryset.model.__name__} deleted.")
+            raise Gone
 
         return obj
 
