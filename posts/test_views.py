@@ -6,11 +6,23 @@ from django.utils.timezone import now
 from rest_framework import status
 from rest_framework.reverse import reverse
 
+from core.permissions import CurrentUserIsOwnerOrReadOnly
 from core.tests import get_asset
 from users.models import Token
 from users.tests import AuthenticatedTestCase
 
 from .models import Chunk, Comment, Post
+from .permissions import (
+    CurrentUserCanVote,
+    CurrentUserIsDraftOwner,
+    CurrentUserIsNotBlocked,
+    CurrentUserIsParentPostOwner,
+    ParentPostIsDraft,
+    ParentPostIsPublished,
+    PostIsDraft,
+    PostIsPublished,
+    PostIsValid,
+)
 from .tests import BasePostTestCase, PostCreateMixin, PublishedPostTestCase
 
 
@@ -103,6 +115,7 @@ class PostTestCase(AuthenticatedTestCase, PostCreateMixin):
         url = reverse("posts:post-detail", args=[str(post.id)])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, CurrentUserIsDraftOwner.message)
 
     def test_retrieve_other_published(self):
         post = self._create_published_post(author=self.other_user)
@@ -238,6 +251,7 @@ class PostTestCase(AuthenticatedTestCase, PostCreateMixin):
         url = reverse("posts:post-detail", args=[str(post.id)])
         response = self.client.patch(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, PostIsDraft.message)
 
     def test_destroy(self):
         post = self._create_published_post(author=self.main_user)
@@ -259,12 +273,14 @@ class PostTestCase(AuthenticatedTestCase, PostCreateMixin):
         url = reverse("posts:post-detail", args=[str(post.id)])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, CurrentUserIsOwnerOrReadOnly.message)
 
     def test_destroy_other_draft(self):
         post = Post.objects.create(author=self.other_user)
         url = reverse("posts:post-detail", args=[str(post.id)])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, CurrentUserIsDraftOwner.message)
 
     def test_subscribed(self):
         self._create_published_post(author=self.other_user)
@@ -330,6 +346,7 @@ class PostTestCase(AuthenticatedTestCase, PostCreateMixin):
         url = reverse("posts:post-publish", args=[str(post.id)])
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, PostIsValid.message)
 
 
 class PostInteractionTestCase(PostCreateMixin, AuthenticatedTestCase):
@@ -365,6 +382,7 @@ class PostInteractionTestCase(PostCreateMixin, AuthenticatedTestCase):
         data = {"spread": True}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, CurrentUserCanVote.message_post_outside_stack)
 
     def test_subscription(self):
         self.assertNotIn(self.main_user, self.post.subscribers.all())
@@ -385,6 +403,7 @@ class PostInteractionTestCase(PostCreateMixin, AuthenticatedTestCase):
         url = reverse("posts:post-subscription", args=[str(post.id)])
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, PostIsPublished.message)
         self.assertNotIn(self.main_user, self.post.subscribers.all())
 
     def test_subscription_deleted(self):
@@ -493,6 +512,7 @@ class ChunkTestCase(AuthenticatedTestCase, BasePostTestCase):
         data = {"text": "Text"}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, ParentPostIsDraft.message)
 
     def test_create_in_other_post(self):
         post = Post.objects.create(author=self.other_user)
@@ -500,6 +520,7 @@ class ChunkTestCase(AuthenticatedTestCase, BasePostTestCase):
         data = {"text": "Text"}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, CurrentUserIsParentPostOwner.message)
 
     def test_update(self):
         chunks = self._create_chunks(1)
@@ -624,6 +645,7 @@ class CommentTestCase(PostCreateMixin, AuthenticatedTestCase, PublishedPostTestC
         data = {"text": "Text"}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, ParentPostIsPublished.message)
 
     def test_create_in_deleted(self):
         self.post.delete()
@@ -639,6 +661,7 @@ class CommentTestCase(PostCreateMixin, AuthenticatedTestCase, PublishedPostTestC
         data = {"text": "Text"}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, CurrentUserIsNotBlocked.message)
 
     def test_create_blocked_in_anonymous(self):
         self.other_user.blocked_users.add(self.main_user)
@@ -668,3 +691,4 @@ class CommentTestCase(PostCreateMixin, AuthenticatedTestCase, PublishedPostTestC
         )
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, CurrentUserIsOwnerOrReadOnly.message)

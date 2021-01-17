@@ -20,15 +20,16 @@ from flags.views import FlagMixin
 from .mixins import PostChildViewSetMixin
 from .models import Chunk, Comment, Post, Stack
 from .permissions import (
-    CurrentUserCanComment,
     CurrentUserCanVote,
     CurrentUserIsDraftOwner,
+    CurrentUserIsNotBlocked,
     CurrentUserIsParentPostOwner,
     ParentPostIsDraft,
     ParentPostIsPublished,
-    PostCanBePublished,
+    PostIsDraft,
+    PostIsDraftOrReadOnly,
     PostIsPublished,
-    PostPermission,
+    PostIsValid,
 )
 from .serializers import (
     ChunkSerializer,
@@ -41,7 +42,7 @@ from .tasks import use_token
 
 class PostViewSet(ModelViewSet):
     permission_classes = ModelViewSet.permission_classes + [
-        PostPermission,
+        PostIsDraftOrReadOnly,
         CurrentUserIsDraftOwner,
     ]
     queryset = Post.objects.all()
@@ -72,7 +73,7 @@ class PostViewSet(ModelViewSet):
     @action(
         methods=["POST"],
         detail=True,
-        permission_classes=permission_classes + [PostCanBePublished],
+        permission_classes=permission_classes + [PostIsDraft, PostIsValid],
     )
     def publish(self, request: Request, pk: str) -> Response:
         self.get_object().publish(anonymous=request.data.get("anonymous", False))
@@ -144,7 +145,7 @@ class CommentViewSet(
     permission_classes = GenericViewSet.permission_classes + [
         CurrentUserIsOwnerOrReadOnly,
         ParentPostIsPublished,
-        CurrentUserCanComment,
+        CurrentUserIsNotBlocked,
     ]
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer

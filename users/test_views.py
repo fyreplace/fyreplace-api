@@ -13,6 +13,11 @@ from core.tests import get_asset
 
 from .emails import UserActivationEmail, UserEmailConfirmationEmail, UserRecoveryEmail
 from .models import Token
+from .permissions import (
+    CurrentUserIsPending,
+    ObjectIsCurrentUser,
+    ObjectIsNotCurrentUser,
+)
 from .serializers import CreateUserSerializer
 from .tests import AuthenticatedTestCase, BaseUserTestCase, make_email
 
@@ -107,6 +112,7 @@ class UserTestCase(AuthenticatedTestCase):
         data = {"bio": "Hello!"}
         response = self.client.patch(url, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, ObjectIsCurrentUser.message)
 
     def test_destroy(self):
         url = reverse("users:user-detail", args=["me"])
@@ -123,6 +129,7 @@ class UserTestCase(AuthenticatedTestCase):
         url = reverse("users:user-detail", args=[str(self.other_user.id)])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, ObjectIsCurrentUser.message)
 
     def test_password_change(self):
         url = reverse("users:user-password-change", args=["me"])
@@ -137,6 +144,7 @@ class UserTestCase(AuthenticatedTestCase):
         data = {"password": "The new password"}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, ObjectIsCurrentUser.message)
 
     def test_email_change(self):
         url = reverse("users:user-email-change", args=["me"])
@@ -151,6 +159,7 @@ class UserTestCase(AuthenticatedTestCase):
         data = {"email": make_email("new_email")}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, ObjectIsCurrentUser.message)
 
     def _get_main_user_data(self):
         return {
@@ -173,6 +182,7 @@ class UserInteractionTestCase(AuthenticatedTestCase):
         url = reverse("users:user-block", args=["me"])
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, ObjectIsNotCurrentUser.message)
 
     def test_block_non_existent(self):
         url = reverse("users:user-block", args=["non-existent"])
@@ -227,6 +237,7 @@ class AccountTestCase(BaseUserTestCase):
         url = reverse("users:user-activation", args=["me"])
         response = self.client.post(url, HTTP_AUTHORIZATION=f"Bearer {token}")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data, CurrentUserIsPending.message)
 
     def test_activation_id_mismatch(self):
         first_user = self._create_new_user("first")
