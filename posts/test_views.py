@@ -335,6 +335,14 @@ class PostTestCase(AuthenticatedTestCase, PostCreateMixin):
         token = Token.objects.get(user=self.main_user)
         self.assertGreater(token.date_last_used, before)
 
+    def test_feed_blocked_other(self):
+        self.main_user.blocked_users.add(self.other_user)
+        self._create_published_post(author=self.other_user)
+        url = reverse("posts:post-feed")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [])
+
     def test_publish(self):
         post = self._create_draft(author=self.main_user)
         url = reverse("posts:post-publish", args=[str(post.id)])
