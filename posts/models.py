@@ -7,6 +7,7 @@ from django.db import IntegrityError, models
 from django.utils.timezone import now
 from rest_framework.exceptions import ValidationError
 
+from core.exceptions import reason
 from core.models import SoftDeleteModel, TimestampModel, UUIDModel
 from core.validators import FileSizeValidator
 
@@ -52,6 +53,10 @@ class Post(UUIDModel, TimestampModel, SoftDeleteModel, ValidatableModel):
     date_published = models.DateTimeField(null=True)
     life = models.IntegerField(default=0, validators=[MinValueValidator(0)])
 
+    error_already_published = reason("object_already_published")
+    error_validation_empty = reason(["object_is_empty"])
+    error_validation_too_large = reason(["object_has_too_many_chunks"])
+
     def delete(self, *args, **kwargs) -> Tuple[int, Dict[str, int]]:
         return (
             super().delete(*args, **kwargs)
@@ -61,7 +66,7 @@ class Post(UUIDModel, TimestampModel, SoftDeleteModel, ValidatableModel):
 
     def publish(self, anonymous: bool):
         if self.date_published is not None:
-            raise IntegrityError("Post is already published.")
+            raise IntegrityError(self.error_already_published)
 
         self.validate()
         self.is_anonymous = anonymous
@@ -72,7 +77,7 @@ class Post(UUIDModel, TimestampModel, SoftDeleteModel, ValidatableModel):
 
     def validate(self):
         if self.chunks.count() == 0:
-            raise ValidationError("Post is empty.")
+            raise ValidationError(self.error_validation_empty)
 
         for chunk in self.chunks.all():
             chunk.validate()
@@ -105,14 +110,19 @@ class Chunk(ValidatableModel):
     width = models.IntegerField(null=True, validators=[MinValueValidator(0)])
     height = models.IntegerField(null=True, validators=[MinValueValidator(0)])
 
+    error_validation_empty = reason(["object_is_empty"])
+    error_validation_text_empty = reason(["object_text_is_empty"])
+    error_validation_multiple_contents = reason(["object_has_multiple_contents"])
+    error_validation_changing_content = reason(["object_changes_content"])
+
     def validate(self):
         if self.text is not None:
             if len(self.text) == 0:
-                raise ValidationError("Post text is empty.")
+                raise ValidationError(self.error_validation_text_empty)
             elif self.image:
-                raise ValidationError("Post chunk contains multiple data types.")
+                raise ValidationError(self.error_validation_multiple_contents)
         elif not self.image:
-            raise ValidationError("Post chunk is empty.")
+            raise ValidationError(self.error_validation_empty)
 
 
 class Stack(models.Model):

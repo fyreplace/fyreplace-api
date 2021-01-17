@@ -80,6 +80,7 @@ class UserTestCase(AuthenticatedTestCase):
         data = {"bio": "a" * (get_user_model().bio.field.max_length + 1)}
         response = self.client.patch(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("bio", response.data)
 
     def test_update_avatar(self):
         url = reverse("users:user-detail", args=["me"])
@@ -99,6 +100,7 @@ class UserTestCase(AuthenticatedTestCase):
         with open(get_asset("image.txt"), "r") as text:
             response = self.client.patch(url, {"avatar": text})
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn("avatar", response.data)
 
     def test_update_read_only_fields(self):
         url = reverse("users:user-detail", args=["me"])
@@ -310,6 +312,7 @@ class SetupTestCase(BaseUserTestCase):
         }
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("username", response.data)
 
     def test_create_username_too_long(self):
         url = reverse("users:user-list")
@@ -320,6 +323,18 @@ class SetupTestCase(BaseUserTestCase):
         }
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("username", response.data)
+
+    def test_create_username_taken(self):
+        url = reverse("users:user-list")
+        data = {
+            "username": self.main_user.username,
+            "email": make_email("new"),
+            "password": self.STRONG_PASSWORD,
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("username", response.data)
 
     def test_create_bad_email(self):
         url = reverse("users:user-list")
@@ -330,6 +345,7 @@ class SetupTestCase(BaseUserTestCase):
         }
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("email", response.data)
 
     def test_create_bad_password(self):
         url = reverse("users:user-list")
@@ -340,6 +356,7 @@ class SetupTestCase(BaseUserTestCase):
         }
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("password", response.data)
 
     def test_recovery(self):
         url = reverse("users:user-recovery")

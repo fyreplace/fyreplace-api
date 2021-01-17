@@ -3,7 +3,8 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 from rest_framework.request import Request
 
-from core.permissions import CurrentUserIsOwnerOrReadOnly, reason
+from core.exceptions import reason
+from core.permissions import CurrentUserIsOwnerOrReadOnly
 
 from .mixins import PostChildMixin
 from .models import Post, Vote

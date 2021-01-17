@@ -495,6 +495,7 @@ class ChunkTestCase(AuthenticatedTestCase, BasePostTestCase):
         data = {}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, Chunk.error_validation_empty)
 
     def test_create_multiple_content_types(self):
         url = reverse("posts:post-chunk-list", args=[str(self.post.id)])
@@ -504,6 +505,7 @@ class ChunkTestCase(AuthenticatedTestCase, BasePostTestCase):
             response = self.client.post(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, Chunk.error_validation_multiple_contents)
 
     def test_create_too_many(self):
         for i in range(Post.MAX_CHUNKS):
@@ -512,6 +514,7 @@ class ChunkTestCase(AuthenticatedTestCase, BasePostTestCase):
         data = {"text": "Text"}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, Post.error_validation_too_large)
 
     def test_create_in_published_post(self):
         self._create_chunks(1)
@@ -551,6 +554,7 @@ class ChunkTestCase(AuthenticatedTestCase, BasePostTestCase):
             response = self.client.patch(url, data)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, Chunk.error_validation_changing_content)
 
     def test_update_position(self):
         chunks = self._create_chunks(2)

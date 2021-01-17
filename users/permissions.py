@@ -1,7 +1,7 @@
 from rest_framework.permissions import SAFE_METHODS, BasePermission, IsAuthenticated
 from rest_framework.request import Request
 
-from core.permissions import reason
+from core.exceptions import reason
 
 
 class CurrentUserIsAlive(IsAuthenticated):

@@ -1,11 +1,7 @@
-from typing import Dict
-
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.request import Request
 
-
-def reason(name: str) -> Dict[str, str]:
-    return {"reason": name}
+from .exceptions import reason
 
 
 class CurrentUserIsOwnerOrReadOnly(IsAuthenticated):

@@ -1,6 +1,12 @@
+from typing import Dict, List, Union
+
 from django.utils.translation import gettext_lazy as _
 from rest_framework import status
 from rest_framework.exceptions import APIException
+
+
+def reason(names: Union[str, List[str]]) -> Dict[str, Union[str, List[str]]]:
+    return {"reason": names}
 
 
 class Conflict(APIException):

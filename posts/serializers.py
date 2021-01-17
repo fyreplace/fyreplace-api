@@ -36,11 +36,11 @@ class ChunkSerializer(serializers.ModelSerializer):
         has_image = "image" in attrs
 
         if has_text and has_image:
-            raise serializers.ValidationError("Chunk has multiple content types.")
+            raise serializers.ValidationError(Chunk.error_validation_multiple_contents)
         elif not (has_id or has_position or has_text or has_image):
-            raise serializers.ValidationError("Chunk has no data.")
+            raise serializers.ValidationError(Chunk.error_validation_empty)
         elif has_image != bool(getattr(self.instance, "image", has_image)):
-            raise serializers.ValidationError("Chunk is changing its content type.")
+            raise serializers.ValidationError(Chunk.error_validation_changing_content)
 
         return super().validate(attrs)
 
@@ -50,9 +50,7 @@ class ChunkSerializer(serializers.ModelSerializer):
         post_id = data.get("post_id")
 
         if Post.objects.get(id=post_id).chunks.count() == Post.MAX_CHUNKS:
-            raise serializers.ValidationError(
-                f"Post already has the maximum number of {Post.MAX_CHUNKS} chunks."
-            )
+            raise serializers.ValidationError(Post.error_validation_too_large)
 
         data.setdefault("position", Chunk.objects.filter(post_id=post_id).count())
         return super().create(data)
