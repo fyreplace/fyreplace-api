@@ -8,7 +8,15 @@ from dotenv import find_dotenv, load_dotenv
 from ..utils import str_to_bool
 from . import compat
 
+# Development
+
 load_dotenv(find_dotenv())
+
+DEBUG = str_to_bool(os.getenv("DEBUG", "false"))
+
+TEST_RUNNER = "core.tests.PytestTestRunner"
+
+# Self-awareness
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -16,17 +24,20 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 ALLOWED_HOSTS = []
 
+for host in os.getenv("ALLOWED_HOSTS", "").split(","):
+    host = host.strip()
+
+    if host:
+        ALLOWED_HOSTS.append(host)
+
+if len(ALLOWED_HOSTS) == 0:
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "10.0.2.2"]
+
 APP_NAME = "fyreplace"
 
 PRETTY_APP_NAME = APP_NAME.capitalize()
 
 GRAVATAR_BASE_URL = "https://www.gravatar.com"
-
-# Development
-
-DEBUG = str_to_bool(os.getenv("DEBUG", "false"))
-
-TEST_RUNNER = "core.tests.PytestTestRunner"
 
 # Application definition
 
