@@ -4,16 +4,13 @@ from pathlib import Path
 
 import isort
 from black import FileMode, WriteBack, format_file_in_place
-from django.core.management.base import BaseCommand, CommandParser
+from django.core.management.base import BaseCommand
 from isort.wrap_modes import WrapModes
 from tqdm import tqdm
 
 
 class Command(BaseCommand):
-    def add_arguments(self, parser: CommandParser):
-        parser.add_argument("apps", nargs="*", type=str)
-
-    def handle(self, *args, **options):
+    def handle(self, *args, **kwargs):
         management_dir = dirname(dirname(__file__))
         project_dir = dirname(dirname(management_dir))
         config = isort.Config(
