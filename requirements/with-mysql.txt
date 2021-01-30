@@ -4,9 +4,9 @@
 #
 #    pip-compile --generate-hashes requirements/with-mysql.in
 #
-amqp==5.0.2 \
-    --hash=sha256:5b9062d5c0812335c75434bf17ce33d7a20ecfedaa0733faec7379868eb4068a \
-    --hash=sha256:fcd5b3baeeb7fc19b3486ff6d10543099d40ae1f5c9196eae695d1cde1b2f784
+amqp==5.0.5 \
+    --hash=sha256:1e759a7f202d910939de6eca45c23a107f6b71111f41d1282c648e9ac3d21901 \
+    --hash=sha256:affdd263d8b8eb3c98170b78bf83867cdb6a14901d586e00ddb65bfe2f0c4e60
     # via
     #   -r requirements/base.txt
     #   kombu
@@ -190,13 +190,13 @@ django-admin-object-actions==0.1.11 \
     --hash=sha256:426d773dbdc53b404f26ec2159c3cc5c20fafa2a87475902800dc449bd4c37f0 \
     --hash=sha256:543ad8b48b1636ab8997a32bc24b7edd7e342b17fb39a62247ab83f8995eac6f
     # via -r requirements/base.txt
-django-celery-beat==2.1.0 \
-    --hash=sha256:4eb0e8412e2e05ba0029912a6f80d1054731001eecbcb4d59688c4e07cf4d9d3 \
-    --hash=sha256:8a169e11d96faed8b72d505ddbc70e7fe0b16cdc854df43cb209c153ed08d651
+django-celery-beat==2.2.0 \
+    --hash=sha256:b8a13afb15e7c53fc04f4f847ac71a6d32088959aba701eb7c4a59f0c28ba543 \
+    --hash=sha256:c4c72a9579f20eff4c4ccf1b58ebdca5ef940f4210065057db1754ea5f8dffdc
     # via -r requirements/base.txt
-django-celery-results==2.0.0 \
-    --hash=sha256:754e01f22f70fddee5f2ca95c18f183fccee42ad98f9803577bffa717d45ac5d \
-    --hash=sha256:f82280a9a25c44048b9e64ae4d47ade7d522c8221304b0e25388080021b95468
+django-celery-results==2.0.1 \
+    --hash=sha256:a2f7d172f7f57dd972538acc6e80a5bf50c673fb4d82fe027189c8659c60dfce \
+    --hash=sha256:d625e324138e5b2ef46ffa9e89fa353c16d619420066ac8b240ef9247b293a84
     # via -r requirements/base.txt
 django-crum==0.7.9 \
     --hash=sha256:037cc8b822975bb1d41cd24269b59a512cc77448fadc3f34ab9a17b229b4b471 \
@@ -245,9 +245,9 @@ ecdsa==0.14.1 \
     # via
     #   -r requirements/base.txt
     #   python-jose
-execnet==1.7.1 \
-    --hash=sha256:cacb9df31c9680ec5f95553976c4da484d407e85e41c83cb812aa014f0eddc50 \
-    --hash=sha256:d4efd397930c46415f62f8a31388d6be4f27a91d7550eb79bc64a756e0056547
+execnet==1.8.0 \
+    --hash=sha256:7a13113028b1e1cc4c6492b28098b3c6576c9dccc7973bfe47b342afadafb2ac \
+    --hash=sha256:b73c5565e517f24b62dea8a5ceac178c661c4309d3aa0c3e420856c072c411b4
     # via
     #   -r requirements/base.txt
     #   pytest-xdist
@@ -257,9 +257,9 @@ h11==0.12.0 \
     # via
     #   -r requirements/base.txt
     #   httpcore
-httpcore==0.12.2 \
-    --hash=sha256:420700af11db658c782f7e8fda34f9dcd95e3ee93944dd97d78cb70247e0cd06 \
-    --hash=sha256:dd1d762d4f7c2702149d06be2597c35fb154c5eff9789a8c5823fbcf4d2978d6
+httpcore==0.12.3 \
+    --hash=sha256:37ae835fb370049b2030c3290e12ed298bf1473c41bb72ca4aa78681eba9b7c9 \
+    --hash=sha256:93e822cd16c32016b414b789aeff4e855d0ccbfc51df563ee34d4dbadbb3bcdc
     # via
     #   -r requirements/base.txt
     #   httpx
@@ -318,9 +318,9 @@ mysqlclient==2.0.3 \
     --hash=sha256:f6ebea7c008f155baeefe16c56cd3ee6239f7a5a9ae42396c2f1860f08a7c432 \
     --hash=sha256:fc575093cf81b6605bed84653e48b277318b880dc9becf42dd47fa11ffd3e2b6
     # via -r requirements/with-mysql.in
-packaging==20.8 \
-    --hash=sha256:24e0da08660a87484d1602c30bb4902d74816b6985b93de36926f5bc95741858 \
-    --hash=sha256:78598185a7008a470d64526a8059de9aaa449238f280fc9eb6b13ba6c4109093
+packaging==20.9 \
+    --hash=sha256:5b327ac1320dc863dca72f4514ecc086f31186744b84a230374cc1fd776feae5 \
+    --hash=sha256:67714da7f7bc052e064859c05c595155bd1ee9f69f76557e21f051443c20947a
     # via
     #   -r requirements/base.txt
     #   pytest
@@ -388,9 +388,9 @@ pluggy==0.13.1 \
     # via
     #   -r requirements/base.txt
     #   pytest
-prompt-toolkit==3.0.10 \
-    --hash=sha256:ac329c69bd8564cb491940511957312c7b8959bb5b3cf3582b406068a51d5bb7 \
-    --hash=sha256:b8b3d0bde65da350290c46a8f54f336b3cbf5464a4ac11239668d986852e79d5
+prompt-toolkit==3.0.14 \
+    --hash=sha256:7e966747c18ececaec785699626b771c1ba8344c8d31759a1915d6b12fad6525 \
+    --hash=sha256:c96b30925025a7635471dc083ffb6af0cc67482a00611bd81aeaeeeb7e5a5e12
     # via
     #   -r requirements/base.txt
     #   click-repl
@@ -479,9 +479,9 @@ pytest-xdist[psutil]==2.2.0 \
     --hash=sha256:1d8edbb1a45e8e1f8e44b1260583107fc23f8bc8da6d18cb331ff61d41258ecf \
     --hash=sha256:f127e11e84ad37cc1de1088cb2990f3c354630d428af3f71282de589c5bb779b
     # via -r requirements/base.txt
-pytest==6.2.1 \
-    --hash=sha256:1969f797a1a0dbd8ccf0fecc80262312729afea9c17f1d70ebf85c5e76c6f7c8 \
-    --hash=sha256:66e419b1899bc27346cb2c993e12c5e5e8daba9073c1fbce33b9807abc95c306
+pytest==6.2.2 \
+    --hash=sha256:9d1edf9e7d0b84d72ea3dbcdfd22b35fb543a5e8f2a60092dd578936bf63d7f9 \
+    --hash=sha256:b574b57423e818210672e07ca1fa90aaf194a4f63f3ab909a2c67ebb22913839
     # via
     #   -r requirements/base.txt
     #   pytest-django
