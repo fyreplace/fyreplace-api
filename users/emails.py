@@ -1,73 +1,87 @@
 from datetime import datetime
-from typing import List
+from typing import Callable, List
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
-from jose import jwt
 
+from core import jwt
 from core.emails import Email
-from core.views import deep_link
+from protos import user_pb2_grpc
 
 
-class JWTEmail(Email):
+def deep_link(method: Callable) -> str:
+    return f"{settings.APP_NAME}:///{method.__qualname__}"
+
+
+class BaseUserEmail(Email):
+    @property
+    def recipients(self) -> List[str]:
+        return [self.user.email]
+
     @property
     def context(self) -> dict:
-        payload = {
-            "timestamp": datetime.utcnow().timestamp(),
-            **self.payload_extras,
-        }
-
-        json_web_token = jwt.encode(payload, key=settings.SECRET_KEY)
-        link_base = deep_link(
-            self.uri["url_name"],
-            *self.uri.get("args", []),
-            **self.uri.get("kwargs", {}),
-        )
-        link = f"{link_base}?jwt={json_web_token}"
+        link = f"{deep_link(self.method)}?jwt={self.token}"
         return {"app_name": settings.PRETTY_APP_NAME, "link": link}
 
     @property
-    def payload_extras(self):
+    def payload_extras(self) -> dict:
+        return {}
+
+    @property
+    def token(self) -> str:
+        payload = {
+            "timestamp": datetime.utcnow().timestamp(),
+            "user_id": str(self.user.id),
+            **self.payload_extras,
+        }
+
+        return jwt.encode(payload)
+
+    @property
+    def method(self) -> Callable:
         raise NotImplementedError
-
-    @property
-    def uri(self) -> dict:
-        raise NotImplementedError
-
-
-class BaseUserEmail(JWTEmail):
-    @property
-    def recipients(self):
-        user = get_user_model().objects.get(id=self.user_id)
-        return [user.email]
-
-    @property
-    def payload_extras(self):
-        return {"user_id": self.user_id}
 
     def __init__(self, user_id: str):
-        self.user_id = user_id
+        self.user = get_user_model().objects.get(id=user_id)
 
 
-class UserActivationEmail(BaseUserEmail):
+class AccountActivationEmail(BaseUserEmail):
     @property
     def template(self) -> str:
-        return "user_activation"
+        return "account_activation"
 
     @property
     def subject(self) -> str:
         return _(f"{settings.PRETTY_APP_NAME} account activation")
 
     @property
-    def uri(self) -> dict:
-        return {"url_name": "users:user-activation", "args": ["me"]}
+    def method(self) -> Callable:
+        return user_pb2_grpc.AccountService.ConfirmActivation
 
 
-class UserEmailConfirmationEmail(BaseUserEmail):
+class AccountRecoveryEmail(BaseUserEmail):
     @property
     def template(self) -> str:
-        return "user_email_confirmation"
+        return "account_recovery"
+
+    @property
+    def subject(self) -> str:
+        return _(f"{settings.PRETTY_APP_NAME} account recovery")
+
+    @property
+    def payload_extras(self):
+        return {"email": self.user.email}
+
+    @property
+    def method(self) -> Callable:
+        return user_pb2_grpc.AccountService.ConfirmRecovery
+
+
+class UserEmailUpdateEmail(BaseUserEmail):
+    @property
+    def template(self) -> str:
+        return "user_email_update"
 
     @property
     def subject(self) -> str:
@@ -78,38 +92,13 @@ class UserEmailConfirmationEmail(BaseUserEmail):
         return [self.email]
 
     @property
-    def payload_extras(self):
-        return {**super().payload_extras, "email": self.email}
-
-    @property
-    def uri(self) -> dict:
-        return {"url_name": "users:user-email-confirmation", "args": ["me"]}
-
-    def __init__(self, user_id: str, email: str):
-        super().__init__(user_id)
-        self.email = email
-
-
-class UserRecoveryEmail(JWTEmail):
-    @property
-    def template(self) -> str:
-        return "user_recovery"
-
-    @property
-    def subject(self) -> str:
-        return _(f"{settings.PRETTY_APP_NAME} account recovery")
-
-    @property
-    def recipients(self):
-        return [self.email]
-
-    @property
-    def payload_extras(self):
+    def payload_extras(self) -> dict:
         return {"email": self.email}
 
     @property
-    def uri(self) -> dict:
-        return {"url_name": "users:token-list"}
+    def method(self) -> Callable:
+        return user_pb2_grpc.UserService.ConfirmEmailUpdate
 
-    def __init__(self, email: str):
+    def __init__(self, user_id: str, email: str):
+        super().__init__(user_id)
         self.email = email

@@ -1,0 +1,1248 @@
+import io
+import itertools
+from datetime import timedelta
+from typing import Iterator, List
+
+from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.files.images import ImageFile
+from django.utils.timezone import now
+from grpc_interceptor.exceptions import InvalidArgument, PermissionDenied
+
+from core.tests import ImageTestCaseMixin, PaginationTestCase, get_asset
+from notifications.models import CountUnit, Notification
+from notifications.tests import BaseNotificationTestCase
+from protos import comment_pb2, id_pb2, pagination_pb2, post_pb2
+from users.tests import AuthenticatedTestCase
+
+from .models import Chapter, Comment, Post
+from .services import ChapterService, CommentService, PostService
+
+
+class PostServiceTestCase(AuthenticatedTestCase, BaseNotificationTestCase):
+    def setUp(self):
+        super().setUp()
+        self.service = PostService()
+
+    def _create_posts(
+        self,
+        author: get_user_model(),
+        count: int,
+        published: bool,
+        anonymous: bool = False,
+    ) -> List[Post]:
+        posts = []
+
+        for _ in range(count):
+            post = Post.objects.create(author=author)
+
+            for position in range(3):
+                text = f"Text {post.id}/{position}"
+                Chapter.objects.create(
+                    post=post, position=post.chapter_position(position), text=text
+                )
+
+            if published:
+                post.publish(anonymous=anonymous)
+
+            posts.append(post)
+
+        return posts
+
+
+class PostPaginationTestCase(PostServiceTestCase, PaginationTestCase):
+    def setUp(self):
+        super().setUp()
+        self.posts = self._create_test_posts()
+        self.initial_cursor = pagination_pb2.Cursor(
+            data=[
+                pagination_pb2.KeyValuePair(
+                    key=self.date_field,
+                    value=str(getattr(self.posts[0], self.date_field)),
+                ),
+                pagination_pb2.KeyValuePair(key="id", value=str(self.posts[0].id)),
+            ],
+            is_next=True,
+        )
+        self.out_of_bounds_cursor = pagination_pb2.Cursor(
+            data=[
+                pagination_pb2.KeyValuePair(key=self.date_field, value=str(now())),
+                pagination_pb2.KeyValuePair(key="id", value=str(self.posts[-1].id)),
+            ],
+            is_next=True,
+        )
+
+    def paginate(self, request_iterator: Iterator[pagination_pb2.Page]) -> Iterator:
+        raise NotImplementedError
+
+    def check(self, item: post_pb2.Post, position: int):
+        self.assertEqual(item.id, str(self.posts[position].id))
+        self.assertTrue(item.is_preview)
+        self.assertEqual(len(item.chapters), 1)
+
+    def run_test_deleted_posts(self):
+        for post in self.posts[-6:]:
+            post.delete()
+
+        self.posts = self.posts[:-6]
+        page_requests = [pagination_pb2.Page(forward=True, size=self.page_size)]
+        posts_iterator = self.paginate(page_requests)
+        posts = next(posts_iterator)
+        self.assertEqual(len(posts.posts), self.page_size)
+
+        for i, post in enumerate(posts.posts):
+            self.assertEqual(post.id, str(self.posts[i].id))
+
+        page_requests.append(pagination_pb2.Page(forward=True, cursor=posts.next))
+        posts = next(posts_iterator)
+        self.assertCursorEmpty(posts.next)
+        self.assertEqual(len(posts.posts), self.page_size - 6)
+
+        for i, post in enumerate(posts.posts):
+            self.assertEqual(post.id, str(self.posts[i + self.page_size].id))
+
+    def _create_test_posts(self) -> List[Post]:
+        raise NotImplementedError
+
+
+class ChapterServiceTestCase(AuthenticatedTestCase):
+    def setUp(self):
+        super().setUp()
+        self.service = ChapterService()
+        self.post = Post.objects.create(author=self.main_user)
+
+
+class CommentServiceTestCase(AuthenticatedTestCase, BaseNotificationTestCase):
+    def setUp(self):
+        super().setUp()
+        self.service = CommentService()
+        self.post = Post.objects.create(author=self.other_user)
+        Chapter.objects.create(
+            post=self.post, position=self.post.chapter_position(0), text="Text"
+        )
+        self.post.publish(anonymous=False)
+
+    def _create_comments(
+        self,
+        author: get_user_model(),
+        count: int,
+    ) -> List[Post]:
+        return [
+            Comment.objects.create(post=self.post, author=author, text="Text")
+            for _ in range(count)
+        ]
+
+
+class PostService_ListFeed(PostServiceTestCase):
+    def test(self):
+        posts = self._create_some_posts()
+        feed = self.service.ListFeed(
+            iter(self._create_requests(posts)), self.grpc_context
+        )
+
+        for post in posts:
+            next_post = next(feed)
+            chapters = post.chapters.all()
+            self.assertEqual(next_post.id, str(post.id))
+            self.assertFalse(next_post.is_preview)
+            self.assertEqual(len(next_post.chapters), len(chapters))
+
+            for i, chapter in enumerate(next_post.chapters):
+                self.assertEqual(chapter.text, chapters[i].text)
+
+    def test_empty(self):
+        feed = self.service.ListFeed([], self.grpc_context)
+        self.assertEqual(list(feed), [])
+
+    def test_deleted_posts(self):
+        posts = self._create_some_posts()
+        active_posts = []
+
+        for i, post in enumerate(posts):
+            if i % 2:
+                post.delete()
+            else:
+                active_posts.append(post)
+
+        requests = self._create_requests(active_posts)
+        feed = self.service.ListFeed(iter(requests), self.grpc_context)
+
+        for post in active_posts:
+            self.assertEqual(next(feed).id, str(post.id))
+
+    def test_old_posts(self):
+        posts = self._create_some_posts()
+        active_posts = []
+
+        for i, post in enumerate(posts):
+            if i % 2:
+                post.date_published -= timedelta(weeks=4)
+                post.save()
+            else:
+                active_posts.append(post)
+
+        requests = self._create_requests(active_posts)
+        feed = self.service.ListFeed(iter(requests), self.grpc_context)
+
+        for post in active_posts:
+            self.assertEqual(next(feed).id, str(post.id))
+
+    def test_dead_posts(self):
+        posts = self._create_some_posts()
+        alive_posts = []
+
+        for i, post in enumerate(posts):
+            if i % 2:
+                post.life = 0
+                post.save()
+            else:
+                alive_posts.append(post)
+
+        requests = self._create_requests(alive_posts)
+        feed = self.service.ListFeed(iter(requests), self.grpc_context)
+
+        for post in alive_posts:
+            self.assertEqual(next(feed).id, str(post.id))
+
+    def test_drafts(self):
+        posts = self._create_some_posts()
+        published_posts = []
+
+        for i, post in enumerate(posts):
+            if i % 2:
+                post.date_published = None
+                post.save()
+            else:
+                published_posts.append(post)
+
+        requests = self._create_requests(published_posts)
+        feed = self.service.ListFeed(iter(requests), self.grpc_context)
+
+        for post in published_posts:
+            self.assertEqual(next(feed).id, str(post.id))
+
+    def test_blocked_user(self):
+        self.main_user.blocked_users.add(self.other_user)
+        posts = self._create_some_posts()
+        feed = self.service.ListFeed(
+            iter(self._create_requests(posts)), self.grpc_context
+        )
+        self.assertEqual(len(list(feed)), 0)
+
+    def _create_some_posts(self) -> List[Post]:
+        posts = self._create_posts(author=self.other_user, count=15, published=True)
+        self._create_posts(author=self.main_user, count=5, published=True)
+        return posts + self._create_posts(
+            author=self.other_user, count=10, published=True
+        )
+
+    def _create_requests(self, posts: List[Post]) -> List[post_pb2.Vote]:
+        return [
+            post_pb2.Vote(post_id=str(p.id), spread=i % 2 == 0)
+            for i, p in enumerate(posts)
+        ]
+
+
+class PostService_ListArchive(PostPaginationTestCase):
+    date_field = "date_published"
+
+    def _create_test_posts(self) -> List[Post]:
+        posts = self._create_posts(author=self.other_user, count=10, published=True)
+        posts += self._create_posts(author=self.main_user, count=8, published=True)
+        posts += self._create_posts(author=self.other_user, count=10, published=True)
+        the_posts = []
+
+        for i, post in enumerate(posts):
+            if i % 8:
+                post.subscribers.add(self.main_user)
+                the_posts.append(post)
+            else:
+                post.subscribers.remove(self.main_user)
+
+        return the_posts
+
+    def paginate(self, request_iterator: Iterator[pagination_pb2.Page]) -> Iterator:
+        return self.service.ListArchive(request_iterator, self.grpc_context)
+
+    def test(self):
+        self.run_test(self.check)
+
+    def test_previous(self):
+        self.run_test_previous(self.check)
+
+    def test_reverse(self):
+        self.run_test_reverse(self.check)
+
+    def test_reverse_previous(self):
+        self.run_test_reverse_previous(self.check)
+
+    def test_empty(self):
+        self.run_test_empty(Post.published_objects.all())
+
+    def test_invalid_size(self):
+        self.run_test_invalid_size()
+
+    def test_no_initial_size(self):
+        self.run_test_no_initial_size(self.initial_cursor)
+
+    def test_out_of_bounds(self):
+        self.run_test_out_of_bounds(self.out_of_bounds_cursor)
+
+    def test_deleted_posts(self):
+        self.run_test_deleted_posts()
+
+
+class PostService_ListOwnPosts(PostPaginationTestCase):
+    date_field = "date_published"
+
+    def _create_test_posts(self) -> List[Post]:
+        the_posts = self._create_posts(author=self.main_user, count=14, published=True)
+        self._create_posts(author=self.other_user, count=8, published=True)
+        the_posts += self._create_posts(author=self.main_user, count=10, published=True)
+        the_posts = sorted(the_posts, key=lambda p: p.date_published)
+        return the_posts
+
+    def paginate(self, request_iterator: Iterator[pagination_pb2.Page]) -> Iterator:
+        return self.service.ListOwnPosts(request_iterator, self.grpc_context)
+
+    def test(self):
+        self.run_test(self.check)
+
+    def test_previous(self):
+        self.run_test_previous(self.check)
+
+    def test_reverse(self):
+        self.run_test_reverse(self.check)
+
+    def test_reverse_previous(self):
+        self.run_test_reverse_previous(self.check)
+
+    def test_empty(self):
+        self.run_test_empty(Post.published_objects.filter(author=self.main_user))
+
+    def test_invalid_size(self):
+        self.run_test_invalid_size()
+
+    def test_no_initial_size(self):
+        self.run_test_no_initial_size(self.initial_cursor)
+
+    def test_out_of_bounds(self):
+        self.run_test_out_of_bounds(self.out_of_bounds_cursor)
+
+    def test_deleted_posts(self):
+        self.run_test_deleted_posts()
+
+
+class PostService_ListDrafts(PostPaginationTestCase):
+    def _create_test_posts(self) -> List[Post]:
+        the_posts = self._create_posts(author=self.main_user, count=14, published=False)
+        self._create_posts(author=self.other_user, count=8, published=False)
+        the_posts += self._create_posts(
+            author=self.main_user, count=10, published=False
+        )
+        the_posts = sorted(the_posts, key=lambda p: p.date_created)
+        return the_posts
+
+    def paginate(self, request_iterator: Iterator[pagination_pb2.Page]) -> Iterator:
+        return self.service.ListDrafts(request_iterator, self.grpc_context)
+
+    def test(self):
+        self.run_test(self.check)
+
+    def test_previous(self):
+        self.run_test_previous(self.check)
+
+    def test_reverse(self):
+        self.run_test_reverse(self.check)
+
+    def test_reverse_previous(self):
+        self.run_test_reverse_previous(self.check)
+
+    def test_empty(self):
+        self.run_test_empty(Post.draft_objects.filter(author=self.main_user))
+
+    def test_invalid_size(self):
+        self.run_test_invalid_size()
+
+    def test_no_initial_size(self):
+        self.run_test_no_initial_size(self.initial_cursor)
+
+    def test_out_of_bounds(self):
+        self.run_test_out_of_bounds(self.out_of_bounds_cursor)
+
+    def test_deleted_posts(self):
+        self.run_test_deleted_posts()
+
+
+class PostService_Retrieve(PostServiceTestCase):
+    def test(self):
+        request = self._get_request(author=self.main_user, published=True)
+        post = self.service.Retrieve(request, self.grpc_context)
+        self.assertEqual(post.id, request.id)
+        self.assertFalse(post.is_preview)
+        self.assertEqual(post.author.id, str(self.main_user.id))
+        chapters = Post.objects.get(id=request.id).chapters.all()
+
+        for i, chapter in enumerate(post.chapters):
+            self.assertEqual(chapter.text, chapters[i].text)
+
+    def test_anonymous(self):
+        request = self._get_request(
+            author=self.main_user, published=True, anonymous=True
+        )
+        post = self.service.Retrieve(request, self.grpc_context)
+        self.assertEqual(post.id, request.id)
+        self.assertEqual(post.author.id, str(self.main_user.id))
+
+    def test_draft(self):
+        request = self._get_request(author=self.main_user, published=False)
+        post = self.service.Retrieve(request, self.grpc_context)
+        self.assertEqual(post.id, request.id)
+
+    def test_deleted(self):
+        request = self._get_request(author=self.main_user, published=True)
+        post = Post.objects.get(id=request.id)
+        post.delete()
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.Retrieve(request, self.grpc_context)
+
+    def test_other(self):
+        request = self._get_request(author=self.other_user, published=True)
+        post = self.service.Retrieve(request, self.grpc_context)
+        self.assertEqual(post.id, request.id)
+        self.assertFalse(post.is_preview)
+        self.assertEqual(post.author.id, str(self.other_user.id))
+        chapters = Post.objects.get(id=request.id).chapters.all()
+
+        for i, chapter in enumerate(post.chapters):
+            self.assertEqual(chapter.text, chapters[i].text)
+
+    def test_other_anonymous(self):
+        request = self._get_request(
+            author=self.other_user, published=True, anonymous=True
+        )
+        post = self.service.Retrieve(request, self.grpc_context)
+        self.assertEqual(post.id, request.id)
+        self.assertEqual(post.author.id, "")
+
+    def test_other_draft(self):
+        request = self._get_request(author=self.other_user, published=False)
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.Retrieve(request, self.grpc_context)
+
+    def _get_request(
+        self, author: get_user_model(), published: bool, anonymous: bool = False
+    ) -> id_pb2.StringId:
+        posts = self._create_posts(
+            author=author, count=1, published=published, anonymous=anonymous
+        )
+        return id_pb2.StringId(id=str(posts[0].id))
+
+
+class PostService_Create(PostServiceTestCase):
+    def test(self):
+        post_id = self.service.Create(self.request, self.grpc_context)
+        post = Post.objects.latest("date_created")
+        self.assertEqual(post_id.id, str(post.id))
+
+
+class PostService_Publish(PostServiceTestCase):
+    def setUp(self):
+        super().setUp()
+        posts = self._create_posts(author=self.main_user, count=1, published=False)
+        self.post = posts[0]
+        self.request = post_pb2.Publication(id=str(self.post.id), anonymous=False)
+
+    def test(self):
+        date = now()
+        self.service.Publish(self.request, self.grpc_context)
+        self.post.refresh_from_db()
+        self.assertFalse(self.post.is_anonymous)
+        self.assertEqual(self.post.life, 10)
+        self.assertAlmostEqual(
+            self.post.date_published, date, delta=timedelta(seconds=1)
+        )
+        self.assertEqual([self.main_user], list(self.post.subscribers.all()))
+
+    def test_anonymous(self):
+        date = now()
+        self.request.anonymous = True
+        self.service.Publish(self.request, self.grpc_context)
+        self.post.refresh_from_db()
+        self.assertTrue(self.post.is_anonymous)
+        self.assertAlmostEqual(
+            self.post.date_published, date, delta=timedelta(seconds=1)
+        )
+        self.assertEqual([self.main_user], list(self.post.subscribers.all()))
+
+    def test_empty(self):
+        self.post.chapters.all().delete()
+
+        with self.assertRaises(InvalidArgument):
+            self.service.Publish(self.request, self.grpc_context)
+
+    def test_chapter_empty(self):
+        chapter = self.post.chapters.first()
+        chapter.text = ""
+        chapter.save()
+
+        with self.assertRaises(InvalidArgument):
+            self.service.Publish(self.request, self.grpc_context)
+
+    def test_already_published(self):
+        self.post.publish(anonymous=False)
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Publish(self.request, self.grpc_context)
+
+    def test_deleted(self):
+        self.post.delete()
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.Publish(self.request, self.grpc_context)
+
+    def test_user_banned(self):
+        self.main_user.ban(timedelta(days=3))
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Publish(self.request, self.grpc_context)
+
+    def test_other(self):
+        self.post.author = self.other_user
+        self.post.save()
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.Publish(self.request, self.grpc_context)
+
+    def test_other_already_published(self):
+        self.post.author = self.other_user
+        self.post.publish(anonymous=False)
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Publish(self.request, self.grpc_context)
+
+
+class PostService_Delete(PostServiceTestCase):
+    def test(self):
+        post = self._create_posts(author=self.main_user, count=1, published=True)[0]
+        request = id_pb2.StringId(id=str(post.id))
+        self.service.Delete(request, self.grpc_context)
+        post.refresh_from_db()
+        self.assertTrue(post.is_deleted)
+        self.assertEqual(post.chapters.count(), 0)
+
+    def test_anonymous(self):
+        post = self._create_posts(
+            author=self.main_user, count=1, published=True, anonymous=True
+        )[0]
+        request = id_pb2.StringId(id=str(post.id))
+        self.service.Delete(request, self.grpc_context)
+        post.refresh_from_db()
+        self.assertTrue(post.is_deleted)
+
+    def test_is_staff(self):
+        post = self._create_posts(author=self.other_user, count=1, published=True)[0]
+        self.main_user.is_staff = True
+        self.main_user.save()
+        request = id_pb2.StringId(id=str(post.id))
+        self.service.Delete(request, self.grpc_context)
+        post.refresh_from_db()
+        self.assertTrue(post.is_deleted)
+
+    def test_draft(self):
+        post = self._create_posts(author=self.main_user, count=1, published=False)[0]
+        request = id_pb2.StringId(id=str(post.id))
+        self.service.Delete(request, self.grpc_context)
+
+        with self.assertRaises(ObjectDoesNotExist):
+            Post.existing_objects.get(id=post.id)
+
+    def test_deleted(self):
+        post = self._create_posts(author=self.main_user, count=1, published=True)[0]
+        post.delete()
+        request = id_pb2.StringId(id=str(post.id))
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.Delete(request, self.grpc_context)
+
+    def test_other(self):
+        post = self._create_posts(author=self.other_user, count=1, published=True)[0]
+        request = id_pb2.StringId(id=str(post.id))
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Delete(request, self.grpc_context)
+
+    def test_other_anonymous(self):
+        post = self._create_posts(author=self.other_user, count=1, published=True)[0]
+        request = id_pb2.StringId(id=str(post.id))
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Delete(request, self.grpc_context)
+
+    def test_other_draft(self):
+        post = self._create_posts(author=self.other_user, count=1, published=False)[0]
+        request = id_pb2.StringId(id=str(post.id))
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.Delete(request, self.grpc_context)
+
+
+class PostService_UpdateSubscription(PostServiceTestCase):
+    def setUp(self):
+        super().setUp()
+        posts = self._create_posts(author=self.other_user, count=1, published=True)
+        self.post = posts[0]
+        self.request = post_pb2.Subscription(id=str(self.post.id))
+
+    def test(self):
+        self.request.subscribed = True
+        self.service.UpdateSubscription(self.request, self.grpc_context)
+        self.assertIn(self.main_user, self.post.subscribers.all())
+
+    def test_unsubscribe(self):
+        self.request.subscribed = False
+        self.service.UpdateSubscription(self.request, self.grpc_context)
+        self.assertNotIn(self.main_user, self.post.subscribers.all())
+
+    def test_draft(self):
+        post = self._create_posts(author=self.other_user, count=1, published=False)[0]
+        self.request.id = str(post.id)
+        self.request.subscribed = True
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.UpdateSubscription(self.request, self.grpc_context)
+
+    def test_self_draft(self):
+        post = self._create_posts(author=self.main_user, count=1, published=False)[0]
+        self.request.id = str(post.id)
+        self.request.subscribed = True
+
+        with self.assertRaises(PermissionDenied):
+            self.service.UpdateSubscription(self.request, self.grpc_context)
+
+    def test_deleted(self):
+        self.post.delete()
+        self.request.subscribed = True
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.UpdateSubscription(self.request, self.grpc_context)
+
+
+class PostService_Report(PostServiceTestCase):
+    def setUp(self):
+        super().setUp()
+        posts = self._create_posts(author=self.other_user, count=1, published=True)
+        self.post = posts[0]
+        self.request = id_pb2.StringId(id=str(self.post.id))
+
+    def test(self):
+        self.service.Report(self.request, self.grpc_context)
+        self.assertEqual(Notification.flag_objects.count(), 1)
+        flag = Notification.flag_objects.first()
+        self.assertEqual(flag.target_type, ContentType.objects.get_for_model(Post))
+        self.assertEqual(flag.target_id, str(self.post.id))
+
+    def test_draft(self):
+        self.post.date_published = None
+        self.post.save()
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.Report(self.request, self.grpc_context)
+
+    def test_deleted(self):
+        self.post.delete()
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.Report(self.request, self.grpc_context)
+
+
+class PostService_Absolve(PostServiceTestCase):
+    def setUp(self):
+        super().setUp()
+        posts = self._create_posts(author=self.other_user, count=1, published=True)
+        self.post = posts[0]
+        flag = Notification.flag_objects.create(target=self.post)
+        CountUnit.objects.create(notification=flag, count_item=self.main_user)
+        self.main_user.is_staff = True
+        self.main_user.save()
+        self.request = id_pb2.StringId(id=str(self.post.id))
+
+    def test(self):
+        self.service.Absolve(self.request, self.grpc_context)
+        self.assertNoFlags(Post, self.post.id)
+
+    def test_empty(self):
+        Notification.flag_objects.all().delete()
+        self.service.Absolve(self.request, self.grpc_context)
+        self.assertNoFlags(Post, self.post.id)
+
+    def test_not_staff(self):
+        self.main_user.is_staff = False
+        self.main_user.save()
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Absolve(self.request, self.grpc_context)
+
+    def test_on_own(self):
+        self.post.author = self.main_user
+        self.post.save()
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Absolve(self.request, self.grpc_context)
+
+    def test_on_draft(self):
+        self.post.date_published = None
+        self.post.save()
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.Absolve(self.request, self.grpc_context)
+
+
+class ChapterService_Create(ChapterServiceTestCase):
+    def setUp(self):
+        super().setUp()
+        self.request = post_pb2.ChapterLocation(post_id=str(self.post.id), position=0)
+
+    def test(self):
+        self.service.Create(self.request, self.grpc_context)
+        self.assertEqual(self.post.chapters.count(), 1)
+        self.assertEqual(self.post.chapters.first().position, "z")
+
+    def test_after_chapter(self):
+        first = Chapter.objects.create(
+            post=self.post, position=self.post.chapter_position(0)
+        )
+        self.request.position = 1
+        self.service.Create(self.request, self.grpc_context)
+        first.refresh_from_db()
+        self.assertEqual(first.position, "z")
+        self.assertEqual(self.post.chapters.count(), 2)
+        self.assertEqual(self.post.chapters.last().position, "zz")
+
+    def test_between_chapters(self):
+        first = Chapter.objects.create(
+            post=self.post, position=self.post.chapter_position(0)
+        )
+        last = Chapter.objects.create(
+            post=self.post, position=self.post.chapter_position(1)
+        )
+        self.request.position = 1
+        self.service.Create(self.request, self.grpc_context)
+        first.refresh_from_db()
+        last.refresh_from_db()
+        self.assertEqual(first.position, "z")
+        self.assertEqual(last.position, "zz")
+        self.assertEqual(self.post.chapters.count(), 3)
+        self.assertEqual(self.post.chapters.all()[1].position, "zaz")
+
+    def test_invalid_position(self):
+        self.request.position = 4
+
+        with self.assertRaises(InvalidArgument):
+            self.service.Create(self.request, self.grpc_context)
+
+    def test_too_many(self):
+        for i in range(Post.MAX_CHAPTERS):
+            self.request.position = i
+            self.service.Create(self.request, self.grpc_context)
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Create(self.request, self.grpc_context)
+
+    def test_published(self):
+        Chapter.objects.create(
+            post=self.post, position=self.post.chapter_position(0), text="Text"
+        )
+        self.post.publish(anonymous=False)
+        self.request.position = 1
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Create(self.request, self.grpc_context)
+
+    def test_other(self):
+        post = Post.objects.create(author=self.other_user)
+        self.request.post_id = str(post.id)
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.Create(self.request, self.grpc_context)
+
+
+class ChapterService_Move(ChapterServiceTestCase):
+    def setUp(self):
+        super().setUp()
+        self.chapters = [
+            Chapter.objects.create(
+                post=self.post, position=self.post.chapter_position(i), text="Text"
+            )
+            for i in range(4)
+        ]
+        self.request = post_pb2.ChapterRelocation(
+            post_id=str(self.post.id), from_position=2, to_position=1
+        )
+
+    def test(self):
+        self.service.Move(self.request, self.grpc_context)
+        self.assertChapters([0, 2, 1, 3])
+
+    def test_same_position(self):
+        self.request.to_position = self.request.from_position
+        self.service.Move(self.request, self.grpc_context)
+        self.assertChapters([0, 1, 2, 3])
+
+    def test_to_start(self):
+        self.request.to_position = 0
+        self.service.Move(self.request, self.grpc_context)
+        self.assertChapters([2, 0, 1, 3])
+
+    def test_to_end(self):
+        self.request.to_position = 4
+        self.service.Move(self.request, self.grpc_context)
+        self.assertChapters([0, 1, 3, 2])
+
+    def test_from_invalid_position(self):
+        with self.assertRaises(ValueError):
+            self.request.from_position = -1
+
+        with self.assertRaises(InvalidArgument):
+            self.request.from_position = 42
+            self.service.Move(self.request, self.grpc_context)
+
+    def test_to_invalid_position(self):
+        with self.assertRaises(ValueError):
+            self.request.to_position = -1
+
+        with self.assertRaises(InvalidArgument):
+            self.request.to_position = 42
+            self.service.Move(self.request, self.grpc_context)
+
+    def test_published(self):
+        self.post.publish(anonymous=False)
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Move(self.request, self.grpc_context)
+
+    def test_other(self):
+        self.post.author = self.other_user
+        self.post.save()
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.Move(self.request, self.grpc_context)
+
+    def assertChapters(self, order: List[int]):
+        for i, position in enumerate(order):
+            self.assertEqual(self.post.chapters.all()[i].id, self.chapters[position].id)
+
+
+class ChapterService_UpdateText(ChapterServiceTestCase):
+    def setUp(self):
+        super().setUp()
+        self.chapter = Chapter.objects.create(
+            post=self.post, position=self.post.chapter_position(0)
+        )
+        location = post_pb2.ChapterLocation(post_id=str(self.post.id), position=0)
+        self.request = post_pb2.ChapterTextUpdate(location=location, text="Text")
+
+    def test(self):
+        self.service.UpdateText(self.request, self.grpc_context)
+        self.chapter.refresh_from_db()
+        self.assertEqual(self.chapter.text, self.request.text)
+        self.assertFalse(self.chapter.is_title)
+
+    def test_title(self):
+        self.request.is_title = True
+        self.service.UpdateText(self.request, self.grpc_context)
+        self.chapter.refresh_from_db()
+        self.assertEqual(self.chapter.text, self.request.text)
+        self.assertTrue(self.chapter.is_title)
+
+    def test_empty(self):
+        self.request.text = ""
+        self.service.UpdateText(self.request, self.grpc_context)
+        self.chapter.refresh_from_db()
+        self.assertEqual(self.chapter.text, self.request.text)
+
+    def test_has_content(self):
+        data = open(get_asset("image.jpeg"), "rb").read()
+        self.chapter.image = ImageFile(io.BytesIO(data), name=f"image.jpeg")
+        self.chapter.save()
+        self.service.UpdateText(self.request, self.grpc_context)
+        self.chapter.refresh_from_db()
+        self.assertEqual(self.chapter.text, self.request.text)
+        self.assertEqual(str(self.chapter.image), "")
+
+    def test_invalid_position(self):
+        self.request.location.position = 42
+
+        with self.assertRaises(InvalidArgument):
+            self.service.UpdateText(self.request, self.grpc_context)
+
+    def test_too_long(self):
+        self.request.text = "a" * (Chapter.text.field.max_length + 1)
+
+        with self.assertRaises(ValidationError):
+            self.service.UpdateText(self.request, self.grpc_context)
+
+    def test_published(self):
+        self.chapter.text = "Text"
+        self.chapter.save()
+        self.post.publish(anonymous=False)
+
+        with self.assertRaises(PermissionDenied):
+            self.service.UpdateText(self.request, self.grpc_context)
+
+    def test_other(self):
+        self.post.author = self.other_user
+        self.post.save()
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.UpdateText(self.request, self.grpc_context)
+
+
+class ChapterService_UpdateImage(ImageTestCaseMixin, ChapterServiceTestCase):
+    def setUp(self):
+        super().setUp()
+        self.chapter = Chapter.objects.create(
+            post=self.post, position=self.post.chapter_position(0)
+        )
+
+    def test(self):
+        self.service.UpdateImage(self.make_update_request("jpeg"), self.grpc_context)
+        self.chapter.refresh_from_db()
+        self.assertRegex(str(self.chapter.image), r".*\." + "jpeg")
+
+    def test_empty(self):
+        location = post_pb2.ChapterLocation(post_id=str(self.post.id), position=0)
+        request = [post_pb2.ChapterImageUpdate(location=location)]
+        self.service.UpdateImage(iter(request), self.grpc_context)
+        self.chapter.refresh_from_db()
+        self.assertEqual(str(self.chapter.image), "")
+
+    def test_has_content(self):
+        self.chapter.text = "Text"
+        self.chapter.save()
+        self.service.UpdateImage(self.make_update_request("jpeg"), self.grpc_context)
+        self.chapter.refresh_from_db()
+        self.assertEqual(self.chapter.text, "")
+        self.assertRegex(str(self.chapter.image), r".*\." + "jpeg")
+
+    def test_invalid_position(self):
+        with self.assertRaises(InvalidArgument):
+            self.service.UpdateImage(
+                self.make_update_request("jpeg", position=42), self.grpc_context
+            )
+
+    def test_missing_location(self):
+        with self.assertRaises(InvalidArgument):
+            self.service.UpdateImage(iter([]), self.grpc_context)
+
+    def test_published(self):
+        data = open(get_asset("image.jpeg"), "rb").read()
+        self.chapter.image = ImageFile(io.BytesIO(data), name=f"image.jpeg")
+        self.chapter.save()
+        self.post.publish(anonymous=False)
+
+        with self.assertRaises(PermissionDenied):
+            self.service.UpdateImage(
+                self.make_update_request("jpeg"), self.grpc_context
+            )
+
+    def test_other(self):
+        self.post.author = self.other_user
+        self.post.save()
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.UpdateImage(
+                self.make_update_request("jpeg"), self.grpc_context
+            )
+
+    def make_update_request(
+        self, extension: str, position: int = 0
+    ) -> Iterator[post_pb2.ChapterImageUpdate]:
+        location = post_pb2.ChapterLocation(
+            post_id=str(self.post.id), position=position
+        )
+        yield post_pb2.ChapterImageUpdate(location=location)
+
+        for chunk in self.make_request(extension):
+            yield post_pb2.ChapterImageUpdate(chunk=chunk)
+
+
+class ChapterService_Delete(ChapterServiceTestCase):
+    def setUp(self):
+        super().setUp()
+        self.chapters = [
+            Chapter.objects.create(
+                post=self.post, position=self.post.chapter_position(i), text="Text"
+            )
+            for i in range(3)
+        ]
+        self.request = post_pb2.ChapterLocation(post_id=str(self.post.id), position=1)
+
+    def test(self):
+        self.service.Delete(self.request, self.grpc_context)
+        self.chapters.pop(self.request.position)
+        self.assertEqual(
+            list(self.post.chapters.values_list("id", flat=True)),
+            [c.id for c in self.chapters],
+        )
+
+    def test_invalid_position(self):
+        self.request.position = 42
+
+        with self.assertRaises(InvalidArgument):
+            self.service.Delete(self.request, self.grpc_context)
+
+    def test_published(self):
+        self.post.publish(anonymous=False)
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Delete(self.request, self.grpc_context)
+
+    def test_other(self):
+        self.post.author = self.other_user
+        self.post.save()
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.Delete(self.request, self.grpc_context)
+
+
+class CommentService_List(CommentServiceTestCase, PaginationTestCase):
+    def setUp(self):
+        super().setUp()
+        self.comments = self._create_test_comments()
+        self.initial_cursor = pagination_pb2.Cursor(
+            data=[
+                pagination_pb2.KeyValuePair(
+                    key=self.date_field,
+                    value=str(getattr(self.comments[0], self.date_field)),
+                ),
+                pagination_pb2.KeyValuePair(key="id", value=str(self.comments[0].id)),
+            ],
+            is_next=True,
+        )
+        self.out_of_bounds_cursor = pagination_pb2.Cursor(
+            data=[
+                pagination_pb2.KeyValuePair(key=self.date_field, value=str(now())),
+                pagination_pb2.KeyValuePair(key="id", value=str(self.comments[-1].id)),
+            ],
+            is_next=True,
+        )
+
+    def paginate(self, request_iterator: Iterator[pagination_pb2.Page]) -> Iterator:
+        initial_request = pagination_pb2.Page(context_id=str(self.post.id))
+        request_iterator = itertools.chain([initial_request], request_iterator)
+        return self.service.List(request_iterator, self.grpc_context)
+
+    def check(self, item: comment_pb2.Comment, position: int):
+        self.assertEqual(item.id, str(self.comments[position].id))
+        self.assertEqual(item.text, self.comments[position].text)
+        self.assertEqual(item.author.id, str(self.comments[position].author.id))
+
+    def test(self):
+        self.run_test(self.check)
+        subscription = self.post.subscriptions.get(user=self.main_user)
+        self.assertEqual(
+            subscription.last_comment_seen, self.post.comments.latest("date_created")
+        )
+
+    def test_previous(self):
+        self.run_test_previous(self.check)
+
+    def test_reverse(self):
+        self.run_test_reverse(self.check)
+
+    def test_reverse_previous(self):
+        self.run_test_reverse_previous(self.check)
+
+    def test_empty(self):
+        self.run_test_empty(self.post.comments.all())
+
+    def test_invalid_size(self):
+        self.run_test_invalid_size()
+
+    def test_no_initial_size(self):
+        self.run_test_no_initial_size(self.initial_cursor)
+
+    def test_out_of_bounds(self):
+        self.run_test_out_of_bounds(self.out_of_bounds_cursor)
+
+    def test_deleted_comments(self):
+        for comment in self.comments[-6:]:
+            comment.delete()
+
+        page_requests = [pagination_pb2.Page(forward=True, size=self.page_size)]
+        items_iterator = self.paginate(page_requests)
+        comments = next(items_iterator)
+        self.assertEqual(len(comments.comments), self.page_size)
+
+        for i, comment in enumerate(comments.comments):
+            self_comment = self.comments[i]
+            self.assertEqual(comment.id, str(self_comment.id))
+            self.assertEqual(comment.text, self_comment.text)
+
+        page_requests.append(pagination_pb2.Page(forward=True, cursor=comments.next))
+        comments = next(items_iterator)
+        self.assertCursorEmpty(comments.next)
+        self.assertEqual(len(comments.comments), self.page_size)
+
+        for i, comment in enumerate(comments.comments):
+            self_comment = self.comments[i + self.page_size]
+            self.assertEqual(comment.id, str(self_comment.id))
+            self.assertEqual(
+                comment.text, "" if self_comment.is_deleted else self_comment.text
+            )
+
+    def test_other_banned_forever(self):
+        self.other_user.ban()
+
+        page_requests = [pagination_pb2.Page(forward=True, size=self.page_size)]
+        items_iterator = self.paginate(page_requests)
+        comments = next(items_iterator)
+        comment = comments.comments[-1]
+        self.assertEqual(comment.author.id, str(self.other_user.id))
+        self.assertEqual(comment.author.username, "")
+        self.assertTrue(comment.author.is_banned)
+
+    def test_other_deleted(self):
+        self.other_user.delete()
+
+    def _create_test_comments(self) -> List[Comment]:
+        comments = self._create_comments(author=self.main_user, count=10)
+        comments += self._create_comments(author=self.other_user, count=4)
+        comments += self._create_comments(author=self.main_user, count=10)
+        return comments
+
+
+class CommentService_Create(CommentServiceTestCase):
+    def setUp(self):
+        super().setUp()
+        self.request = comment_pb2.CommentCreation(
+            post_id=str(self.post.id), text="Text"
+        )
+
+    def test(self):
+        comment_count = self.post.comments.count()
+        comment_id = self.service.Create(self.request, self.grpc_context)
+        self.assertEqual(self.post.comments.count(), comment_count + 1)
+        comment = self.post.comments.latest("date_created")
+        self.assertEqual(comment_id.id, str(comment.id))
+        self.assertEqual(comment.text, self.request.text)
+        self.assertIn(self.main_user, self.post.subscribers.all())
+
+    def test_draft(self):
+        self.post.author = self.main_user
+        self.post.date_published = None
+        self.post.save()
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Create(self.request, self.grpc_context)
+
+    def test_other_draft(self):
+        self.post.date_published = None
+        self.post.save()
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.Create(self.request, self.grpc_context)
+
+    def test_blocked(self):
+        self.other_user.blocked_users.add(self.main_user)
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Create(self.request, self.grpc_context)
+
+    def test_banned(self):
+        self.main_user.ban(timedelta(days=3))
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Create(self.request, self.grpc_context)
+
+
+class CommentService_Delete(CommentServiceTestCase):
+    def setUp(self):
+        super().setUp()
+        self.comment = Comment.objects.create(
+            post=self.post, author=self.main_user, text="Text"
+        )
+        self.request = id_pb2.StringId(id=str(self.comment.id))
+
+    def test(self):
+        self.service.Delete(self.request, self.grpc_context)
+        self.comment.refresh_from_db()
+        self.assertTrue(self.comment.is_deleted)
+        self.assertEqual(self.comment.text, "")
+
+    def test_is_staff(self):
+        self.main_user.is_staff = True
+        self.main_user.save()
+        self.comment.author = self.other_user
+        self.comment.save()
+        self.service.Delete(self.request, self.grpc_context)
+        self.comment.refresh_from_db()
+        self.assertTrue(self.comment.is_deleted)
+        self.assertEqual(self.comment.text, "")
+
+    def test_other(self):
+        self.comment.author = self.other_user
+        self.comment.save()
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Delete(self.request, self.grpc_context)
+
+
+class CommentService_Report(CommentServiceTestCase):
+    def setUp(self):
+        super().setUp()
+        comments = self._create_comments(author=self.other_user, count=1)
+        self.comment = comments[0]
+        self.request = id_pb2.StringId(id=str(self.comment.id))
+
+    def test(self):
+        self.service.Report(self.request, self.grpc_context)
+        self.assertEqual(Notification.flag_objects.count(), 1)
+        flag = Notification.flag_objects.first()
+        self.assertEqual(flag.target_type, ContentType.objects.get_for_model(Comment))
+        self.assertEqual(flag.target_id, str(self.comment.id))
+
+    def test_deleted(self):
+        self.comment.delete()
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Report(self.request, self.grpc_context)
+
+
+class CommentService_Absolve(CommentServiceTestCase):
+    def setUp(self):
+        super().setUp()
+        comments = self._create_comments(author=self.other_user, count=1)
+        self.comment = comments[0]
+        flag = Notification.flag_objects.create(target=self.comment)
+        CountUnit.objects.create(notification=flag, count_item=self.main_user)
+        self.main_user.is_staff = True
+        self.main_user.save()
+        self.request = id_pb2.StringId(id=str(self.comment.id))
+
+    def test(self):
+        self.service.Absolve(self.request, self.grpc_context)
+        self.assertNoFlags(Comment, self.comment.id)
+
+    def test_empty(self):
+        Notification.flag_objects.all().delete()
+        self.service.Absolve(self.request, self.grpc_context)
+        self.assertNoFlags(Comment, self.comment.id)
+
+    def test_not_staff(self):
+        self.main_user.is_staff = False
+        self.main_user.save()
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Absolve(self.request, self.grpc_context)
+
+    def test_on_own(self):
+        self.comment.author = self.main_user
+        self.comment.save()
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Absolve(self.request, self.grpc_context)

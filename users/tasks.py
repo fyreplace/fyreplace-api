@@ -1,18 +1,18 @@
 import hashlib
+import io
 from datetime import timedelta
 from urllib.parse import urljoin
 
 import httpx
+import magic
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.files.images import ImageFile
-from django.core.files.temp import NamedTemporaryFile
 from django.utils.timezone import now
-from rest_framework.status import HTTP_404_NOT_FOUND
 
-from .emails import UserActivationEmail, UserEmailConfirmationEmail, UserRecoveryEmail
-from .models import Token
+from .emails import AccountActivationEmail, AccountRecoveryEmail, UserEmailUpdateEmail
+from .models import Connection
 
 
 @shared_task
@@ -24,19 +24,21 @@ def cleanup_users():
 
 
 @shared_task
-def cleanup_tokens():
+def cleanup_connections():
     deadline = now() - timedelta(weeks=12)
-    Token.objects.filter(date_last_used__lte=deadline).delete()
+    Connection.objects.filter(date_last_used__lte=deadline).delete()
 
 
 @shared_task
 def remove_user_data(user_id: str):
-    get_user_model().objects.get(id=user_id).blocked_users.clear()
-    Token.objects.filter(user_id=user_id).delete()
+    Connection.objects.filter(user_id=user_id).delete()
 
 
 @shared_task
 def fetch_default_user_avatar(user_id: str):
+    if not settings.GRAVATAR_BASE_URL:
+        return
+
     user = get_user_model().objects.get(id=user_id)
 
     if user.avatar:
@@ -44,31 +46,37 @@ def fetch_default_user_avatar(user_id: str):
 
     email_hash = hashlib.md5(user.email.encode()).hexdigest()
     avatar_url = urljoin(settings.GRAVATAR_BASE_URL, f"avatar/{email_hash}")
-    response = httpx.get(f"{avatar_url}?d={HTTP_404_NOT_FOUND}&s=256")
+    response = httpx.get(f"{avatar_url}?d=404&s=256")
 
     if response.is_error:
         return
 
     data = response.read()
-    temp_file = NamedTemporaryFile("wb+", delete=True)
-    temp_file.write(data)
-    temp_file.flush()
+    mime = magic.from_buffer(data, mime=True)
+
+    if mime not in settings.VALID_IMAGE_MIMES:
+        return
+
     user.avatar.delete(save=False)
-    user.avatar = ImageFile(file=temp_file, name=user_id)
+    user.avatar = ImageFile(io.BytesIO(data), name=f"{user_id}.{mime.split('/')[-1]}")
     user.save()
 
 
 @shared_task
-def send_user_activation_email(user_id: str):
-    UserActivationEmail(user_id).send()
+def send_account_activation_email(user_id: str):
+    AccountActivationEmail(user_id).send()
 
 
 @shared_task
-def send_user_email_confirmation_email(user_id: str, email: str):
-    UserEmailConfirmationEmail(user_id, email).send()
+def send_account_recovery_email(user_id: str):
+    AccountRecoveryEmail(user_id).send()
 
 
 @shared_task
-def send_user_recovery_email(email: str):
-    if get_user_model().objects.filter(email=email).exists():
-        UserRecoveryEmail(email).send()
+def send_user_email_update_email(user_id: str, email: str):
+    UserEmailUpdateEmail(user_id, email).send()
+
+
+@shared_task
+def use_connection(connection_id: int):
+    Connection.objects.get(id=connection_id).save()

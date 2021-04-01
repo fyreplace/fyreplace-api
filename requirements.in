@@ -1,0 +1,29 @@
+django[argon2]
+django-celery-beat
+grpcio
+grpc-interceptor
+celery[redis]
+pillow
+pyjwt
+python-magic
+httpx
+
+# Database engines
+mysqlclient
+psycopg2
+
+# Getting settings from environment
+python-dotenv
+
+# Testing
+pytest-django
+pytest-xdist[psutil]
+
+# Development tools
+grpcio-tools
+django-extensions
+mypy-protobuf
+ipython
+isort
+black
+tqdm

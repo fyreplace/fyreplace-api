@@ -3,13 +3,13 @@ from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.utils.timezone import now
 
-from .models import Token
-from .tasks import cleanup_tokens, cleanup_users
+from .models import Connection
+from .tasks import cleanup_connections, cleanup_users
 from .tests import BaseUserTestCase
 
 
-class TaskTestCase(BaseUserTestCase):
-    def test_cleanup_users(self):
+class Task_cleanup_users(BaseUserTestCase):
+    def test(self):
         get_user_model().objects.create_user(
             username="new",
             is_active=False,
@@ -19,7 +19,7 @@ class TaskTestCase(BaseUserTestCase):
         cleanup_users.delay()
         self.assertEqual(get_user_model().objects.count(), user_count - 1)
 
-    def test_cleanup_users_too_soon(self):
+    def test_too_soon(self):
         get_user_model().objects.create_user(
             username="new",
             is_active=False,
@@ -29,18 +29,20 @@ class TaskTestCase(BaseUserTestCase):
         cleanup_users.delay()
         self.assertEqual(get_user_model().objects.count(), user_count)
 
-    def test_cleanup_tokens(self):
-        token = Token.objects.create(user=self.main_user)
-        token_count = Token.objects.count()
-        last_used = now() - timedelta(weeks=12)
-        Token.objects.filter(key=token.key).update(date_last_used=last_used)
-        cleanup_tokens.delay()
-        self.assertEqual(Token.objects.count(), token_count - 1)
 
-    def test_cleanup_tokens_too_soon(self):
-        token = Token.objects.create(user=self.main_user)
-        token_count = Token.objects.count()
+class Task_cleanup_connections(BaseUserTestCase):
+    def test(self):
+        connection = Connection.objects.create(user=self.main_user)
+        connection_count = Connection.objects.count()
+        last_used = now() - timedelta(weeks=12)
+        Connection.objects.filter(id=connection.id).update(date_last_used=last_used)
+        cleanup_connections.delay()
+        self.assertEqual(Connection.objects.count(), connection_count - 1)
+
+    def test_too_soon(self):
+        connection = Connection.objects.create(user=self.main_user)
+        connection_count = Connection.objects.count()
         last_used = now() - timedelta(weeks=11)
-        Token.objects.filter(key=token.key).update(date_last_used=last_used)
-        cleanup_tokens.delay()
-        self.assertEqual(Token.objects.count(), token_count)
+        Connection.objects.filter(id=connection.id).update(date_last_used=last_used)
+        cleanup_connections.delay()
+        self.assertEqual(Connection.objects.count(), connection_count)

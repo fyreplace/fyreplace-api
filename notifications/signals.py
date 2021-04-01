@@ -1,18 +1,26 @@
-from typing import Union
-
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
-from django.db.models.signals import m2m_changed, post_save
+from django.db.models import Model
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
-from core.signals import fetched
+from core.signals import post_soft_delete
 from posts.models import Comment
+from posts.signals import fetched
+from users.signals import post_ban
 
-from .models import Notification
-from .tasks import (
-    mark_notification_as_received,
-    notify_post_subscribers,
-    remove_comments_from_notifications,
-)
+from .models import CountUnit, Notification, delete_notifications_for
+from .tasks import notify_post_subscribers, remove_comments_from_notifications
+
+
+@receiver(post_soft_delete)
+def on_post_soft_delete(instance: Model, **kwargs):
+    delete_notifications_for(instance)
+
+
+@receiver(post_ban, sender=get_user_model())
+def on_user_post_ban(instance: AbstractUser, **kwargs):
+    delete_notifications_for(instance)
 
 
 @receiver(post_save, sender=Comment)
@@ -23,22 +31,20 @@ def on_comment_post_save(instance: Comment, created: bool, **kwargs):
 
 @receiver(fetched, sender=Comment)
 def on_comment_fetched(user: AbstractUser, pk_set: list, **kwargs):
-    remove_comments_from_notifications.delay(user_id=str(user.id), comment_ids=pk_set)
+    remove_comments_from_notifications.delay(
+        user_id=str(user.id), comment_ids=list(pk_set)
+    )
 
 
-@receiver(fetched, sender=Notification)
-def on_notifications_fetched(user: AbstractUser, pk_set: list, **kwargs):
-    mark_notification_as_received.delay(notification_ids=pk_set)
+@receiver(post_save, sender=CountUnit)
+def on_count_unit_post_save(instance: CountUnit, **kwargs):
+    instance.notification.save()
 
 
-@receiver(m2m_changed, sender=Notification.comments.through)
-def on_notification_m2m_changed(
-    instance: Union[Notification, Comment], action: str, **kwargs
-):
-    if not isinstance(instance, Notification):
-        return
-
-    if action == "post_add":
-        instance.save()
-    elif action in ["post_delete", "post_clear"] and instance.comments.count() == 0:
-        instance.delete()
+@receiver(post_delete, sender=CountUnit)
+def on_count_unit_post_delete(instance: CountUnit, **kwargs):
+    if CountUnit.objects.filter(notification_id=instance.notification_id).count() == 0:
+        try:
+            instance.notification.delete()
+        except Notification.DoesNotExist:
+            pass

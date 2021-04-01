@@ -1,12 +1,12 @@
 import os
+import re
 from pathlib import Path
+from urllib.parse import urlparse
 
-import dj_database_url
 from celery.schedules import crontab
 from dotenv import find_dotenv, load_dotenv
 
 from ..utils import str_to_bool
-from . import compat
 
 # Development
 
@@ -21,6 +21,8 @@ TEST_RUNNER = "core.tests.PytestTestRunner"
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = os.getenv("SECRET_KEY")
+
+BASE_URL = os.getenv("BASE_URL")
 
 ALLOWED_HOSTS = []
 
@@ -37,8 +39,6 @@ APP_NAME = "fyreplace"
 
 PRETTY_APP_NAME = APP_NAME.capitalize()
 
-GRAVATAR_BASE_URL = "https://www.gravatar.com"
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -48,24 +48,12 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_celery_beat",
-    "django_celery_results",
     "django_extensions",
-    "admin_object_actions",
-    "rest_framework",
-    "health_check",
-    "health_check.db",
-    "health_check.storage",
-    "health_check.contrib.migrations",
-    "health_check.contrib.celery",
-    "health_check.contrib.celery_ping",
-    "health_check.contrib.psutil",
-    "health_check.contrib.rabbitmq",
+    "tooling",
     "core",
-    "core.apps.CoreConfig",
-    "flags.apps.FlagsConfig",
-    "users.apps.UsersConfig",
-    "posts.apps.PostsConfig",
-    "notifications.apps.NotificationsConfig",
+    "users",
+    "posts",
+    "notifications",
 ]
 
 MIDDLEWARE = [
@@ -102,7 +90,44 @@ WSGI_APPLICATION = "core.wsgi.application"
 
 # Database
 
-DATABASES = {"default": dj_database_url.config(conn_max_age=60 * 10)}
+
+def db_engine(name: str):
+    overrides = {
+        "sqlite": "sqlite3",
+        "mariadb": "mysql",
+        "postgres": "postgresql",
+    }
+
+    return "django.db.backends." + overrides.get(name, name)
+
+
+if database_url := os.getenv("DATABASE_URL"):
+    parsed_url = urlparse(database_url)
+    DB_ENGINE = db_engine(parsed_url.scheme or "sqlite")
+    DB_NAME = parsed_url.path.removeprefix("/") or "db.sqlite3"
+    DB_USER, DB_PASSWORD, DB_HOST, DB_PORT = (
+        re.split(r"[:@]", parsed_url.netloc) + [None] * 4
+    )[:4]
+else:
+    DB_ENGINE = db_engine(os.getenv("DATABASE_ENGINE", "sqlite"))
+    DB_NAME = os.getenv("DATABASE_NAME", "db.sqlite3")
+    DB_USER = os.getenv("DATABASE_USER")
+    DB_PASSWORD = os.getenv("DATABASE_PASSWORD")
+    DB_HOST = os.getenv("DATABASE_HOST")
+    DB_PORT = os.getenv("DATABASE_PORT")
+
+DATABASES = {
+    "default": {
+        "ENGINE": DB_ENGINE,
+        "NAME": DB_NAME,
+        "USER": DB_USER,
+        "PASSWORD": DB_PASSWORD,
+        "HOST": DB_HOST,
+        "PORT": DB_PORT,
+    }
+}
+
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 # Authentication
 
@@ -127,6 +152,10 @@ PASSWORD_HASHERS = [
         "BCryptSHA256PasswordHasher",
     ]
 ]
+
+# JSON Web Tokens
+
+JWT_ALGORITHM = "HS256"
 
 # Internationalization
 
@@ -154,6 +183,8 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 1 * 1024 * 1024
 
 DEFAULT_FILE_STORAGE = "core.storages.FileSystemStorage"
 
+VALID_IMAGE_MIMES = [f"image/{i}" for i in ("png", "jpeg")]
+
 # Emails
 
 if DEBUG:
@@ -169,27 +200,23 @@ ADMINS = [
     if admin
 ]
 
-# Rest framework
+# gRPC
 
-REST_FRAMEWORK = {
-    "DEFAULT_THROTTLE_CLASSES": [
-        "rest_framework.throttling.AnonRateThrottle",
-        "rest_framework.throttling.UserRateThrottle",
-    ],
-    "DEFAULT_THROTTLE_RATES": {
-        "anon": "3/second",
-        "user": "10/second",
-    },
-    "DEFAULT_AUTHENTICATION_CLASSES": ["users.authentication.TokenAuthentication"],
-    "DEFAULT_PERMISSION_CLASSES": ["users.permissions.CurrentUserIsActive"],
-    "EXCEPTION_HANDLER": "core.views.exception_handler",
-    "DEFAULT_PAGINATION_CLASS": "core.pagination.CursorPagination",
-    "PAGE_SIZE": 12,
-}
+GRPC_HOST = os.getenv("GRPC_HOST", "[::]")
+
+GRPC_PORT = os.getenv("GRPC_PORT", "50051")
+
+GRPC_URL = f"{GRPC_HOST}:{GRPC_PORT}"
+
+SSL_PRIVATE_KEY = os.getenv("SSL_PRIVATE_KEY")
+
+SSL_CERTIFICATE_CHAIN = os.getenv("SSL_CERTIFICATE_CHAIN")
 
 # Celery
 
-BROKER_URL = os.getenv("BROKER_URL")
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
+
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
 
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
@@ -198,8 +225,8 @@ CELERY_BEAT_SCHEDULE = {
         "task": "users.tasks.cleanup_users",
         "schedule": crontab(minute=0),
     },
-    "users.cleanup_tokens": {
-        "task": "users.tasks.cleanup_tokens",
+    "users.cleanup_connections": {
+        "task": "users.tasks.cleanup_connections",
         "schedule": crontab(hour=0, minute=0),
     },
     "posts.cleanup_stacks": {
@@ -208,4 +235,8 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
-CELERY_RESULT_BACKEND = "django-db"
+# Other
+
+PAGINATION_MAX_SIZE = 50
+
+GRAVATAR_BASE_URL = "https://www.gravatar.com"

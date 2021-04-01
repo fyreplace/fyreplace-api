@@ -1,34 +1,50 @@
 from typing import List
 
 from celery import shared_task
+from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Model
+from django.db.transaction import atomic
 
-from posts.models import Comment
+from posts.models import Comment, Post
 
-from .models import Notification
+from .models import CountUnit, Notification
 
 
 @shared_task
 def notify_post_subscribers(comment_id: str):
-    comment = Comment.objects.get(id=comment_id)
+    comment = Comment.objects.select_related().get(id=comment_id)
 
-    for user in comment.post.subscribers.exclude(id=comment.author_id):
-        notification, _ = Notification.objects.get_or_create(
-            user=user, post=comment.post
-        )
-        notification.comments.add(comment)
+    for user_id in comment.post.subscribers.exclude(id=comment.author_id).values_list(
+        "id", flat=True
+    ):
+        with atomic():
+            notification, _ = Notification.objects.get_or_create(
+                recipient_id=user_id,
+                target_type=ContentType.objects.get_for_model(Post),
+                target_id=comment.post_id,
+            )
+
+            CountUnit.objects.create(notification=notification, count_item=comment)
 
 
 @shared_task
 def remove_comments_from_notifications(user_id: str, comment_ids: List[str]):
-    comments = Comment.objects.filter(id__in=comment_ids)
-    post_ids = comments.values("post_id")
-
-    for notification in Notification.objects.filter(
-        user_id=user_id, post_id__in=post_ids
-    ):
-        notification.comments.remove(*comment_ids)
+    CountUnit.objects.filter(
+        notification__user_id=user_id,
+        count_item_type=ContentType.objects.get_for_model(Comment),
+        count_item_id__in=comment_ids,
+    ).delete()
 
 
 @shared_task
-def mark_notification_as_received(notification_ids: List[str]):
-    Notification.objects.filter(id__in=notification_ids).update(received=True)
+@atomic
+def report_content(content_type_id: int, target_id: str, reporter_id: str):
+    flag, _ = Notification.objects.get_or_create(
+        recipient=None,
+        target_type=ContentType.objects.get_for_id(content_type_id),
+        target_id=target_id,
+    )
+    CountUnit.objects.create(
+        notification=flag, count_item=get_user_model().objects.get(id=reporter_id)
+    )

@@ -15,14 +15,14 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.9
+        python-version: 3.x
     - name: Install python dependencies
       run: |
         python -m pip install --upgrade pip setuptools wheel
-        pip install -r requirements/with-sqlite.txt
+        pip install -r requirements/base.txt
     - name: Run tests
       run: |
-        ./manage.py test
+        python manage.py test
       env:
         DEBUG: True
         SECRET_KEY: secret

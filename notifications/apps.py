@@ -2,8 +2,9 @@ from django.apps import AppConfig
 
 
 class NotificationsConfig(AppConfig):
-    name = "notifications"
+    name = __package__
     verbose_name = "Notifications"
+    default_auto_field = "django.db.models.BigAutoField"
 
     def ready(self):
         super().ready()

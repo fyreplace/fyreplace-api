@@ -4,6 +4,7 @@ __pycache__
 
 *.sln
 *.pyproj
+.idea
 .vscode
 
 venv
