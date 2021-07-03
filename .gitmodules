@@ -1,3 +1,4 @@
 [submodule "protos"]
 	path = protos
 	url = https://github.com/fyreplace/fyreplace-protos.git
+	branch = main
