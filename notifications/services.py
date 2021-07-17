@@ -1,13 +1,13 @@
 from typing import Iterator
 
 import grpc
-from django.db.models import Case, Count, OuterRef, Subquery, Sum, When
+from django.db.models import Sum
 from google.protobuf import empty_pb2
 
 from core.pagination import PaginatorMixin
 from protos import notification_pb2, notification_pb2_grpc, pagination_pb2
 
-from .models import CountUnit, Notification
+from .models import Notification
 from .pagination import NotificationPaginationAdapter
 
 

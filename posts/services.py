@@ -7,7 +7,7 @@ from grpc_interceptor.exceptions import InvalidArgument, PermissionDenied
 
 from core.pagination import PaginatorMixin
 from core.services import ImageUploadMixin
-from notifications.models import Notification, delete_notifications_for
+from notifications.models import delete_notifications_for
 from notifications.tasks import report_content
 from protos import (
     comment_pb2,

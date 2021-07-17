@@ -11,7 +11,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.validators import validate_email
 from django.db.models import Q
 from django.db.transaction import atomic
-from django.utils.translation import gettext as _
 from google.protobuf import empty_pb2
 from grpc_interceptor.exceptions import AlreadyExists, InvalidArgument, PermissionDenied
 
