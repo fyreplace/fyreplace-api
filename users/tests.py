@@ -34,7 +34,7 @@ class UserContext(FakeContext):
 
 class BaseUserTestCase(BaseTestCase):
     MAIN_USER_PASSWORD = "Main user's password"
-    OTHER_MAIN_PASSWORD = "Other user's password"
+    OTHER_USER_PASSWORD = "Other user's password"
     STRONG_PASSWORD = "Some strong password!"
 
     def setUp(self):
@@ -47,7 +47,7 @@ class BaseUserTestCase(BaseTestCase):
         self.other_user = get_user_model().objects.create_user(
             username="other",
             email=make_email("other"),
-            password=self.OTHER_MAIN_PASSWORD,
+            password=self.OTHER_USER_PASSWORD,
         )
 
     def tearDown(self):
