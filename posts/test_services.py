@@ -151,6 +151,26 @@ class PostService_ListFeed(PostServiceTestCase):
             for i, chapter in enumerate(next_post.chapters):
                 self.assertEqual(chapter.text, chapters[i].text)
 
+    def test_anonymous(self):
+        self.grpc_context.set_user(None)
+        posts = self._create_some_posts(include_main_user=True)
+        feed = self.service.ListFeed(
+            iter(self._create_requests(posts)), self.grpc_context
+        )
+
+        for post in posts:
+            next_post = next(feed)
+            chapters = post.chapters.all()
+            self.assertEqual(next_post.id, str(post.id))
+            self.assertFalse(next_post.is_preview)
+            self.assertEqual(len(next_post.chapters), len(chapters))
+
+            for i, chapter in enumerate(next_post.chapters):
+                self.assertEqual(chapter.text, chapters[i].text)
+
+        for post in Post.active_objects.all():
+            self.assertEqual(post.life, 10)
+
     def test_empty(self):
         feed = self.service.ListFeed([], self.grpc_context)
         self.assertEqual(list(feed), [])
@@ -230,9 +250,13 @@ class PostService_ListFeed(PostServiceTestCase):
         )
         self.assertEqual(len(list(feed)), 0)
 
-    def _create_some_posts(self) -> List[Post]:
+    def _create_some_posts(self, include_main_user: bool = False) -> List[Post]:
         posts = self._create_posts(author=self.other_user, count=15, published=True)
-        self._create_posts(author=self.main_user, count=5, published=True)
+        main_posts = self._create_posts(author=self.main_user, count=5, published=True)
+
+        if include_main_user:
+            posts += main_posts
+
         return posts + self._create_posts(
             author=self.other_user, count=10, published=True
         )

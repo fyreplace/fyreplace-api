@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from google.protobuf import empty_pb2, timestamp_pb2
 from grpc_interceptor.exceptions import InvalidArgument, PermissionDenied
 
+from core.authentication import no_auth
 from core.pagination import PaginatorMixin
 from core.services import ImageUploadMixin
 from notifications.models import delete_notifications_for
@@ -24,33 +25,52 @@ from .signals import fetched
 
 
 class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
+    @no_auth
     def ListFeed(
         self, request_iterator: Iterator[post_pb2.Vote], context: grpc.ServicerContext
     ) -> Iterator[post_pb2.Post]:
-        stack = Stack.objects.get(user=context.caller)
+        caller = getattr(context, "caller", None)
         posts = []
+        fetch_after = None
         end_reached = False
 
         def refill_stack():
             nonlocal posts
-            stack.fill()
-            new_posts = list(stack.posts.order_by("date_published").select_related())
-            current_ids = [str(p.id) for p in posts]
+            nonlocal fetch_after
 
-            for post in new_posts:
-                if str(post.id) not in current_ids:
-                    posts.append(post)
+            if caller:
+                caller.stack.fill()
+                current_ids = [str(p.id) for p in posts]
+                new_posts = caller.stack.posts.exclude(id__in=current_ids)
+            elif fetch_after:
+                new_posts = Post.active_objects.filter(date_published__gt=fetch_after)
+            else:
+                new_posts = Post.active_objects.all()
+
+            new_posts = new_posts.order_by("date_published")
+
+            if not caller:
+                new_posts = new_posts[: Stack.MAX_SIZE]
+
+            new_posts = list(new_posts.select_related())
+
+            if len(new_posts) > 0:
+                fetch_after = new_posts[-1].date_published
+
+            posts += new_posts
 
         refill_stack()
-        yield from [p.to_message() for p in posts[:3]]
+        yield from (p.to_message() for p in posts[:3])
 
         while len(posts) > 0:
             request = next(request_iterator)
-            Vote.objects.create(
-                user=context.caller,
-                post_id=request.post_id,
-                spread=request.spread,
-            )
+
+            if caller:
+                Vote.objects.create(
+                    user=caller,
+                    post_id=request.post_id,
+                    spread=request.spread,
+                )
 
             posts = [p for p in posts if str(p.id) != request.post_id]
             post_count = len(posts)
