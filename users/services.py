@@ -48,16 +48,17 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
     ) -> empty_pb2.Empty:
         validate_password(request.password)
         data = serialize_message(request)
+        User = get_user_model()
 
-        if get_user_model().objects.filter(username=request.username):
-            raise AlreadyExists("username_taken")
-        elif get_user_model().objects.filter(email=request.email):
+        if User.objects.filter(email=request.email):
             raise AlreadyExists("email_taken")
+        elif User.objects.filter(username=request.username):
+            raise AlreadyExists("username_taken")
         elif normalize(request.username) in self.reverved_usernames:
             raise PermissionDenied("username_reserved")
 
         with atomic():
-            user = get_user_model().objects.create_user(**data, is_active=False)
+            user = User.objects.create_user(**data, is_active=False)
             user.clean_fields()
 
         user_id = str(user.id)
