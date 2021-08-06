@@ -61,5 +61,5 @@ class ImageUploadMixin:
     ):
         getattr(model, field).delete()
         setattr(model, field, image)
-        model.clean_fields()
+        model.full_clean()
         model.save()

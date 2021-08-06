@@ -59,7 +59,7 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
 
         with atomic():
             user = User.objects.create_user(**data, is_active=False)
-            user.clean_fields()
+            user.full_clean()
 
         user_id = str(user.id)
         send_account_activation_email.delay(user_id=user_id)

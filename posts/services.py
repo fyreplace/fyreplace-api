@@ -251,7 +251,7 @@ class ChapterService(ImageUploadMixin, post_pb2_grpc.ChapterServiceServicer):
         chapter.clear(save=False)
         chapter.text = request.text
         chapter.is_title = request.is_title
-        chapter.clean_fields()
+        chapter.full_clean()
         chapter.save()
         return empty_pb2.Empty()
 
