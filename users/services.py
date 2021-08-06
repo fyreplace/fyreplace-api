@@ -8,6 +8,7 @@ import grpc
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db.models import Q
 from django.db.transaction import atomic
@@ -29,6 +30,7 @@ from .tasks import (
     send_account_recovery_email,
     send_user_email_update_email,
 )
+from .validators import validate_unicode_username
 
 
 def normalize(value: str) -> str:
@@ -46,7 +48,6 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
     def Create(
         self, request: user_pb2.UserCreation, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        validate_password(request.password)
         data = serialize_message(request)
         User = get_user_model()
 
@@ -56,6 +57,16 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
             raise AlreadyExists("username_taken")
         elif normalize(request.username) in self.reverved_usernames:
             raise PermissionDenied("username_reserved")
+
+        try:
+            error_message = "invalid_email"
+            validate_email(request.email)
+            error_message = "invalid_username"
+            validate_unicode_username(request.username)
+            error_message = "invalid_password"
+            validate_password(request.password)
+        except ValidationError:
+            raise InvalidArgument(error_message)
 
         with atomic():
             user = User.objects.create_user(**data, is_active=False)

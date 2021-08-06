@@ -93,10 +93,18 @@ class AccountService_Create(AccountServiceTestCase):
 
         self.assertEqual(get_user_model().objects.count(), self.user_count)
 
+    def test_bad_username(self):
+        self.request.username = "bad username"
+
+        with self.assertRaises(InvalidArgument):
+            self.service.Create(self.request, self.grpc_context)
+
+        self.assertEqual(get_user_model().objects.count(), self.user_count)
+
     def test_bad_email(self):
         self.request.email = "bad"
 
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(InvalidArgument):
             self.service.Create(self.request, self.grpc_context)
 
         self.assertEqual(get_user_model().objects.count(), self.user_count)
@@ -112,7 +120,7 @@ class AccountService_Create(AccountServiceTestCase):
     def test_bad_password(self):
         self.request.password = "password"
 
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(InvalidArgument):
             self.service.Create(self.request, self.grpc_context)
 
         self.assertEqual(get_user_model().objects.count(), self.user_count)
