@@ -73,17 +73,6 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
     is_banned = models.BooleanField(default=False)
     date_ban_end = models.DateTimeField(null=True, blank=True)
 
-    def get_message_fields(self, **overrides) -> List[str]:
-        if overrides.get("is_banned", self.is_banned) and not self.date_ban_end:
-            fields = ["id", "is_banned"]
-
-            if self._message_class == user_pb2.User:
-                fields.append("date_joined")
-
-            return fields
-
-        return super().get_message_fields(**overrides)
-
     @property
     def is_alive(self) -> bool:
         return not (self.is_deleted or self.is_banned)
@@ -112,6 +101,17 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
             return f"{_('Banned user')} {self.id}"
         else:
             return super().__str__()
+
+    def get_message_fields(self, **overrides) -> List[str]:
+        if overrides.get("is_banned", self.is_banned) and not self.date_ban_end:
+            fields = ["id", "is_banned"]
+
+            if self._message_class == user_pb2.User:
+                fields.append("date_joined")
+
+            return fields
+
+        return super().get_message_fields(**overrides)
 
     def delete(self, *args, **kwargs) -> Tuple[int, Dict[str, int]]:
         return self.soft_delete()
