@@ -21,7 +21,7 @@ class BaseUserEmail(Email):
 
     @property
     def context(self) -> dict:
-        link = f"{deep_link(self.method)}?jwt={self.token}"
+        link = f"{deep_link(self.method)}#{self.token}"
         return {"app_name": settings.PRETTY_APP_NAME, "link": link}
 
     @property
