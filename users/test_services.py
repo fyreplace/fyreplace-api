@@ -274,7 +274,7 @@ class AccountService_SendRecoveryEmail(AccountServiceTestCase):
     def test_bad_email(self):
         self.request.email = "not an email"
 
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(InvalidArgument):
             self.service.SendRecoveryEmail(self.request, self.grpc_context)
 
 

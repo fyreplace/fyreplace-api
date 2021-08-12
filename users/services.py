@@ -101,7 +101,7 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
         user, _ = get_info_from_token(request.token)
 
         if not user.is_pending:
-            raise PermissionDenied
+            raise PermissionDenied("user_not_pending")
 
         user.is_active = True
         user.save()
@@ -116,7 +116,10 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
     def SendRecoveryEmail(
         self, request: user_pb2.Email, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        validate_email(request.email)
+        try:
+            validate_email(request.email)
+        except ValidationError:
+            raise InvalidArgument("invalid_email")
 
         if user := get_user_model().objects.filter(email=request.email).first():
             if user.is_alive_and_kicking:
@@ -131,7 +134,7 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
         user, _ = get_info_from_token(request.token)
 
         if not user.is_alive_and_kicking:
-            raise PermissionDenied
+            raise PermissionDenied("user_not_recoverable")
 
         connection = Connection.objects.create(
             user=user,
