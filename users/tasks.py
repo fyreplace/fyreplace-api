@@ -79,4 +79,5 @@ def send_user_email_update_email(user_id: str, email: str):
 
 @shared_task
 def use_connection(connection_id: int):
-    Connection.objects.get(id=connection_id).save()
+    for connection in Connection.objects.filter(id=connection_id):
+        connection.save()
