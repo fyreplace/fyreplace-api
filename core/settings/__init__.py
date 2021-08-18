@@ -227,10 +227,10 @@ CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
 
 CELERY_IGNORE_RESULT = True
 
-CELERY_QUEUES = {
-    "*.send_*": {"queue": "messaging"},
-    "*.remove_*": {"queue": "trash"},
-    "*.cleanup_*": {"queue": "trash"},
+CELERY_TASK_ROUTES = {
+    "*.send_*": "messaging",
+    "*.remove_*": "trash",
+    "*.cleanup_*":"trash",
 }
 
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
