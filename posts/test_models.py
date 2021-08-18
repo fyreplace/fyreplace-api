@@ -138,7 +138,7 @@ class Chapter_validate(BasePostTestCase):
 
     def _get_image_file(self):
         asset = open(get_asset("image.png"), "rb")
-        return ImageFile(file=asset, name="image")
+        return ImageFile(file=asset, name="image.png")
 
 
 class Stack_fill(PublishedPostTestCase):

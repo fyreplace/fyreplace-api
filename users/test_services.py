@@ -447,7 +447,7 @@ class UserService_Retrieve(UserServiceTestCase):
         super().setUp()
         asset = open(get_asset("image.png"), "rb")
         self.other_user.bio = "Bio"
-        self.other_user.avatar = ImageFile(file=asset, name="image")
+        self.other_user.avatar = ImageFile(file=asset, name="image.png")
         self.other_user.save()
         self.request = id_pb2.StringId(id=str(self.other_user.id))
 

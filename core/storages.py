@@ -1,5 +1,6 @@
 import os
 from typing import Optional
+from urllib.parse import urljoin
 from uuid import uuid4
 
 from django.conf import settings
@@ -9,7 +10,7 @@ from django.db.models.fields.files import ImageFieldFile
 
 def get_image_url(file: ImageFieldFile) -> str:
     url = file.url
-    return os.path.join(settings.BASE_URL, url) if url.startswith("/") else url
+    return urljoin(settings.BASE_URL, url) if url.startswith("/") else url
 
 
 class FileSystemStorage(BaseStorage):
