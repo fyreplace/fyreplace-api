@@ -180,7 +180,23 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 FILE_UPLOAD_MAX_MEMORY_SIZE = 1 * 1024 * 1024
 
-DEFAULT_FILE_STORAGE = "core.storages.FileSystemStorage"
+AWS_ACCESS_KEY_ID = os.getenv("S3_ACCESS_KEY_ID")
+
+AWS_SECRET_ACCESS_KEY = os.getenv("S3_SECRET_ACCESS_KEY")
+
+AWS_DEFAULT_ACL = "public-read"
+
+AWS_QUERYSTRING_AUTH = False
+
+AWS_STORAGE_BUCKET_NAME = os.getenv("S3_STORAGE_BUCKET_NAME")
+
+AWS_S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")
+
+DEFAULT_FILE_STORAGE = (
+    "storages.backends.s3boto3.S3Boto3Storage"
+    if AWS_ACCESS_KEY_ID
+    else "core.storages.FileSystemStorage"
+)
 
 VALID_IMAGE_MIMES = [f"image/{i}" for i in ("png", "jpeg")]
 
@@ -230,7 +246,7 @@ CELERY_IGNORE_RESULT = True
 CELERY_TASK_ROUTES = {
     "*.send_*": "messaging",
     "*.remove_*": "trash",
-    "*.cleanup_*":"trash",
+    "*.cleanup_*": "trash",
 }
 
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"

@@ -1,5 +1,6 @@
 django[argon2]
 django-celery-beat
+django-storages[boto3]
 grpcio
 grpc-interceptor
 celery[redis]

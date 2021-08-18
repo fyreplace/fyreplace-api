@@ -16,6 +16,7 @@ from grpc_interceptor.exceptions import (
 )
 
 from core import jwt
+from core.storages import get_image_url
 from core.tests import ImageTestCaseMixin, get_asset
 from notifications.models import CountUnit, Notification
 from notifications.tests import BaseNotificationTestCase
@@ -460,7 +461,7 @@ class UserService_Retrieve(UserServiceTestCase):
         )
         self.assertEqual(user.rank, user_pb2.RANK_CITIZEN)
         self.assertEqual(user.username, str(self.other_user.username))
-        self.assertEqual(user.avatar.url, str(self.other_user.avatar))
+        self.assertEqual(user.avatar.url, get_image_url(self.other_user.avatar))
         self.assertEqual(user.bio, self.other_user.bio)
         self.assertEqual(user.email, "")
 

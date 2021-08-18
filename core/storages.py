@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Union
+from typing import Optional
 from uuid import uuid4
 
 from django.conf import settings
@@ -7,8 +7,8 @@ from django.core.files.storage import FileSystemStorage as BaseStorage
 from django.db.models.fields.files import ImageFieldFile
 
 
-def get_image_url(url: Union[str, ImageFieldFile]) -> str:
-    url = str(url)
+def get_image_url(file: ImageFieldFile) -> str:
+    url = file.url
     return os.path.join(settings.BASE_URL, url) if url.startswith("/") else url
 
 
