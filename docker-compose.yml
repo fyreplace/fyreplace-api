@@ -41,6 +41,8 @@ services:
         depends_on:
           - celery_beat
           - celery_worker
+          - celery_worker_messaging
+          - celery_worker_trash
 
 networks:
     node_net:
