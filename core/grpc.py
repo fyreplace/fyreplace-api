@@ -34,13 +34,12 @@ def create_server(debug: bool = settings.DEBUG) -> grpc.Server:
         ),
     )
 
-    if debug:
-        server_creds = grpc.local_server_credentials()
-    else:
+    if settings.SSL_PRIVATE_KEY:
         ssl = (settings.SSL_PRIVATE_KEY, settings.SSL_CERTIFICATE_CHAIN)
-        server_creds = grpc.ssl_server_credentials([ssl])
+        server.add_secure_port(settings.GRPC_URL, grpc.ssl_server_credentials([ssl]))
+    else:
+        server.add_insecure_port(settings.GRPC_URL)
 
-    server.add_secure_port(settings.GRPC_URL, server_creds)
     _add_services_to_server(services, server)
     return server
 
