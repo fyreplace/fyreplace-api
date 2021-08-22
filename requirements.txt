@@ -83,7 +83,9 @@ celery[redis]==5.1.2 \
 certifi==2021.5.30 \
     --hash=sha256:2bbf76fd432960138b3ef6dda3dde0544f27cbf8546c458e60baf371917ba9ee \
     --hash=sha256:50b1e4f8446b06f41be7dd6338db18e0990601dce795c2b1686458aa7e8fa7d8
-    # via httpx
+    # via
+    #   httpx
+    #   requests
 cffi==1.14.6 \
     --hash=sha256:06c54a68935738d206570b20da5ef2b6b6d92b38ef3ec45c5422c0ebaf338d4d \
     --hash=sha256:0c0591bee64e438883b0c92a7bed78f6290d40bf02e54c5bf0978eaf36061771 \
@@ -131,6 +133,10 @@ cffi==1.14.6 \
     --hash=sha256:f627688813d0a4140153ff532537fbe4afea5a3dffce1f9deb7f91f848a832b5 \
     --hash=sha256:fd4305f86f53dfd8cd3522269ed7fc34856a8ee3709a5e28b2836b2db9d4cd69
     # via argon2-cffi
+charset-normalizer==2.0.4 \
+    --hash=sha256:0c8911edd15d19223366a194a513099a302055a962bca2cec0f54b8b63175d8b \
+    --hash=sha256:f23667ebe1084be45f6ae0538e4a5a865206544097e4e8bbcacf42cd02a348f3
+    # via requests
 click==7.1.2 \
     --hash=sha256:d2b5255c7c6349bc1bd1e59e08cd12acbbd63ce649f2588755783aa94dfb6b1a \
     --hash=sha256:dacca89f4bfadd5de3d7489b7c8a566eee0d3676333fbb50030263894c38c0dc
@@ -160,10 +166,15 @@ django[argon2]==3.2.6 \
     --hash=sha256:f27f8544c9d4c383bbe007c57e3235918e258364577373d4920e9162837be022
     # via
     #   -r requirements.in
+    #   django-anymail
     #   django-celery-beat
     #   django-extensions
     #   django-storages
     #   django-timezone-field
+django-anymail[mailgun,mailjet]==8.4 \
+    --hash=sha256:2e8307e84f0a12f9283469017094a8246db9a0fc608ac17dd1027ee011ece986 \
+    --hash=sha256:671a338de43b8e414d48c6d16aac1df54d2f24f916e1073f9f60aef5acffaf89
+    # via -r requirements.in
 django-celery-beat==2.2.1 \
     --hash=sha256:97ae5eb309541551bdb07bf60cc57cadacf42a74287560ced2d2c06298620234 \
     --hash=sha256:ab43049634fd18dc037927d7c2c7d5f67f95283a20ebbda55f42f8606412e66c
@@ -316,6 +327,7 @@ idna==3.2 \
     --hash=sha256:467fbad99067910785144ce333826c71fb0e63a425657295239737f7ecd125f3
     # via
     #   anyio
+    #   requests
     #   rfc3986
 iniconfig==1.1.1 \
     --hash=sha256:011e24c64b7f47f6ebd835bb12a743f2fbe9a26d4cecaa7f53bc4f35ee9da8b3 \
@@ -617,6 +629,10 @@ regex==2021.8.3 \
     --hash=sha256:fbc20975eee093efa2071de80df7f972b7b35e560b213aafabcec7c0bd00bd8c \
     --hash=sha256:ff4a8ad9638b7ca52313d8732f37ecd5fd3c8e3aff10a8ccb93176fd5b3812f6
     # via black
+requests==2.26.0 \
+    --hash=sha256:6c1246513ecd5ecd4528a0906f910e8f0f9c6b8ec72030dc9fd154dc1a6efd24 \
+    --hash=sha256:b8aa58f8cf793ffd8782d3d8cb19e66ef36f7aba4353eec859e74678b01b07a7
+    # via django-anymail
 rfc3986[idna2008]==1.5.0 \
     --hash=sha256:270aaf10d87d0d4e095063c65bf3ddbc6ee3d0b226328ce21e036f946e421835 \
     --hash=sha256:a86d6e1f5b1dc238b218b012df0aa79409667bb209e58da56d0b94704e712a97
@@ -674,7 +690,9 @@ types-protobuf==3.17.4 \
 urllib3==1.26.6 \
     --hash=sha256:39fb8672126159acb139a7718dd10806104dec1e2f0f6c88aab05d17df10c8d4 \
     --hash=sha256:f57b4c16c62fa2760b7e3d97c35b255512fb6b59a259730f36ba32ce9f8e342f
-    # via botocore
+    # via
+    #   botocore
+    #   requests
 vine==5.0.0 \
     --hash=sha256:4c9dceab6f76ed92105027c49c823800dd33cacce13bdedc5b914e3514b7fb30 \
     --hash=sha256:7d3b1624a953da82ef63462013bbd271d3eb75751489f9807598e8f340bd637e
