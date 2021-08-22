@@ -171,16 +171,6 @@ USE_TZ = True
 
 # Static and media files
 
-STATIC_URL = "/static/"
-
-STATIC_ROOT = BASE_DIR / "static"
-
-MEDIA_URL = "/media/"
-
-MEDIA_ROOT = BASE_DIR / "media"
-
-FILE_UPLOAD_MAX_MEMORY_SIZE = 1 * 1024 * 1024
-
 AWS_ACCESS_KEY_ID = os.getenv("S3_ACCESS_KEY_ID")
 
 AWS_SECRET_ACCESS_KEY = os.getenv("S3_SECRET_ACCESS_KEY")
@@ -192,6 +182,22 @@ AWS_QUERYSTRING_AUTH = False
 AWS_STORAGE_BUCKET_NAME = os.getenv("S3_STORAGE_BUCKET_NAME")
 
 AWS_S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")
+
+STATIC_URL = "/static/"
+
+STATIC_ROOT = BASE_DIR / "static"
+
+MEDIA_URL = "/media/"
+
+MEDIA_ROOT = BASE_DIR / "media"
+
+FILE_UPLOAD_MAX_MEMORY_SIZE = 1 * 1024 * 1024
+
+STATICFILES_STORAGE = (
+    "storages.backends.s3boto3.S3StaticStorage"
+    if AWS_ACCESS_KEY_ID
+    else "django.contrib.staticfiles.storage.StaticFilesStorage"
+)
 
 DEFAULT_FILE_STORAGE = (
     "storages.backends.s3boto3.S3Boto3Storage"

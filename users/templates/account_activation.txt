@@ -1,3 +1,5 @@
-Open this link with the {{ app_name }} app to validate your email address and activate your account:
+Welcome to {{ app_name }}!
+
+You can confirm your email address and validate your account by clicking on this link:
 
 {{ link }}

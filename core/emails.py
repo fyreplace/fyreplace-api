@@ -23,10 +23,12 @@ class Email:
         raise NotImplementedError
 
     def send(self):
-        email_message = render_to_string(f"{self.template}.txt", context=self.context)
+        text_message = render_to_string(f"{self.template}.txt", context=self.context)
+        html_message = render_to_string(f"{self.template}.html", context=self.context)
         send_mail(
             subject=self.subject,
-            message=email_message,
+            message=text_message,
+            html_message=html_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=self.recipients,
         )
