@@ -11,7 +11,7 @@ from protos import user_pb2_grpc
 
 
 def deep_link(method: Callable) -> str:
-    return f"{settings.APP_NAME}:///{method.__qualname__}"
+    return f"https://{settings.EMAIL_LINKS_DOMAIN}/{method.__qualname__}"
 
 
 class BaseUserEmail(Email):

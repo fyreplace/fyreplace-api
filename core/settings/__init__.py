@@ -234,6 +234,8 @@ ADMINS = [
     if admin
 ]
 
+EMAIL_LINKS_DOMAIN = os.getenv("EMAIL_LINKS_DOMAIN")
+
 # gRPC
 
 GRPC_HOST = os.getenv("GRPC_HOST", "[::]")
