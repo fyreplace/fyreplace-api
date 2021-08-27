@@ -1,12 +1,6 @@
-.PHONY: all protos emails static migrations
+.PHONY: all protos static migrations emails
 
-all: static migrations protos protos/__init__.py
-
-static:
-	python manage.py collectstatic --no-input
-
-migrations:
-	python manage.py migrate
+all: protos protos/__init__.py static migrations
 
 protos:
 	python -m grpc_tools.protoc \
@@ -18,6 +12,12 @@ protos:
 
 protos/__init__.py:
 	touch $@
+
+static:
+	python manage.py collectstatic --no-input
+
+migrations:
+	python manage.py migrate
 
 emails:
 	npx mjml users/templates/*.mjml -c.minify=true -o users/templates
