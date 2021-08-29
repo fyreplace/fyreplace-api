@@ -248,8 +248,8 @@ class UserService(ImageUploadMixin, user_pb2_grpc.UserServiceServicer):
     def ConfirmEmailUpdate(
         self, request: user_pb2.Token, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        user = get_info_from_token(get_token(context))[0]
-        request_user = get_info_from_token(request.token)[0]
+        user, _ = get_info_from_token(get_token(context))
+        request_user, _ = get_info_from_token(request.token)
 
         if request_user != user:
             raise PermissionDenied("invalid_user")
