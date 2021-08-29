@@ -44,7 +44,7 @@ def create_server(debug: bool = settings.DEBUG) -> grpc.Server:
     return server
 
 
-def get_user(context: grpc.ServicerContext) -> Optional[User]:
+def store_user(context: grpc.ServicerContext) -> Optional[User]:
     if token := get_token(context):
         context.caller, context.caller_connection = get_info_from_token(token)
         return context.caller

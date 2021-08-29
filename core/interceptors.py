@@ -71,9 +71,9 @@ class AuthorizationInterceptor(ServerInterceptor):
         context: grpc.ServicerContext,
         method_name: str,
     ) -> Any:
-        from .grpc import get_user
+        from .grpc import store_user
 
-        user = get_user(context)
+        user = store_user(context)
 
         if not user and method_name not in self.no_auth_method_names:
             raise Unauthenticated("missing_credentials")
