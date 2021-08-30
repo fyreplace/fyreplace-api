@@ -23,7 +23,7 @@ from notifications.tests import BaseNotificationTestCase
 from protos import id_pb2, user_pb2
 
 from .emails import AccountActivationEmail, AccountRecoveryEmail, UserEmailUpdateEmail
-from .models import Connection
+from .models import Connection, Hardware, Software
 from .services import AccountService, UserService
 from .tests import AuthenticatedTestCase, BaseUserTestCase, make_email
 
@@ -178,8 +178,8 @@ class AccountService_ConfirmActivation(AccountServiceTestCase):
         self.user: AbstractUser = get_user_model().objects.latest("date_joined")
         self.connection_count = Connection.objects.count()
         self.connection_client = user_pb2.Client(
-            hardware=Connection.Hardware.UNKNOWN,
-            software=Connection.Software.UNKNOWN,
+            hardware=Hardware.UNKNOWN,
+            software=Software.UNKNOWN,
         )
         self.request = user_pb2.ConnectionToken(
             token=AccountActivationEmail(self.user.id).token,
@@ -198,8 +198,8 @@ class AccountService_ConfirmActivation(AccountServiceTestCase):
         self.user.refresh_from_db()
         self.assertTrue(self.user.is_active)
         self.assertEqual(connection.user, self.user)
-        self.assertEqual(connection.hardware, Connection.Hardware.UNKNOWN)
-        self.assertEqual(connection.software, Connection.Software.UNKNOWN)
+        self.assertEqual(connection.hardware, Hardware.UNKNOWN)
+        self.assertEqual(connection.software, Software.UNKNOWN)
 
     def test_missing_user_id(self):
         token = jwt.encode({"timestamp": now().timestamp()})
@@ -300,8 +300,8 @@ class AccountService_ConfirmRecovery(AccountServiceTestCase, AuthenticatedTestCa
         self.main_user.refresh_from_db()
         self.assertTrue(self.main_user.is_active)
         self.assertEqual(connection.user, self.main_user)
-        self.assertEqual(connection.hardware, Connection.Hardware.UNKNOWN)
-        self.assertEqual(connection.software, Connection.Software.UNKNOWN)
+        self.assertEqual(connection.hardware, Hardware.UNKNOWN)
+        self.assertEqual(connection.software, Software.UNKNOWN)
 
     def test_pending_user(self):
         self.main_user.is_active = False
@@ -355,8 +355,8 @@ class AccountService_Connect(AccountServiceTestCase):
             identifier=self.main_user.username,
             password=self.MAIN_USER_PASSWORD,
             client=user_pb2.Client(
-                hardware=Connection.Hardware.UNKNOWN,
-                software=Connection.Software.UNKNOWN,
+                hardware=Hardware.UNKNOWN,
+                software=Software.UNKNOWN,
             ),
         )
 

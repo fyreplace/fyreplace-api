@@ -256,6 +256,27 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.AddConstraint(
+            model_name="connection",
+            constraint=models.CheckConstraint(
+                check=models.Q(
+                    ("hardware__in", ["desktop", "mobile", "watch", "unknown"])
+                ),
+                name="hardware",
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="connection",
+            constraint=models.CheckConstraint(
+                check=models.Q(
+                    (
+                        "software__in",
+                        ["android", "bsd", "darwin", "linux", "windows", "unknown"],
+                    )
+                ),
+                name="software",
+            ),
+        ),
+        migrations.AddConstraint(
             model_name="block",
             constraint=models.CheckConstraint(
                 check=models.Q(

@@ -137,8 +137,34 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
         post_ban.send(sender=self.__class__, instance=self)
 
 
+class Hardware(models.TextChoices):
+    DESKTOP = "desktop", _("Desktop")
+    MOBILE = "mobile", _("Mobile")
+    WATCH = "watch", _("Watch")
+    UNKNOWN = "unknown", _("Unknown")
+
+
+class Software(models.TextChoices):
+    ANDROID = "android", _("Android")
+    BSD = "bsd", _("BSD")
+    DARWIN = "darwin", _("Darwin")
+    LINUX = "linux", _("Linux")
+    WINDOWS = "windows", _("Windows")
+    UNKNOWN = "unknown", _("Unknown")
+
+
 class Connection(TimestampModel):
     class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(hardware__in=Hardware.values),
+                name="hardware",
+            ),
+            models.CheckConstraint(
+                check=models.Q(software__in=Software.values),
+                name="software",
+            ),
+        ]
         ordering = [
             "date_last_used",
             "date_created",
@@ -148,20 +174,6 @@ class Connection(TimestampModel):
         ]
 
     default_message_class = user_pb2.Connection
-
-    class Hardware(models.TextChoices):
-        DESKTOP = "desktop", _("Desktop")
-        MOBILE = "mobile", _("Mobile")
-        WATCH = "watch", _("Watch")
-        UNKNOWN = "unknown", _("Unknown")
-
-    class Software(models.TextChoices):
-        ANDROID = "android", _("Android")
-        BSD = "bsd", _("BSD")
-        DARWIN = "darwin", _("Darwin")
-        LINUX = "linux", _("Linux")
-        WINDOWS = "windows", _("Windows")
-        UNKNOWN = "unknown", _("Unknown")
 
     user = models.ForeignKey(
         to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="%(class)ss"
