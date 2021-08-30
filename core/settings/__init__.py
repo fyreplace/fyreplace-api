@@ -12,7 +12,10 @@ from ..utils import str_to_bool
 
 load_dotenv(find_dotenv())
 
-DEBUG = str_to_bool(os.getenv("DEBUG", "false"))
+if debug_str := os.getenv("DEBUG", "False"):
+    DEBUG = str_to_bool(debug_str)
+else:
+    DEBUG = False
 
 TEST_RUNNER = "core.tests.PytestTestRunner"
 
