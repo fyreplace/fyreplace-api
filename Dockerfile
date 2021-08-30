@@ -6,8 +6,8 @@ RUN apt-get install -y make gcc default-libmysqlclient-dev libpq-dev libmagic1
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel
+RUN python -m pip install --no-cache-dir --requirement requirements.txt
 
 COPY . .
-RUN make all
-CMD ["python", "manage.py", "grpc"]
+RUN make
