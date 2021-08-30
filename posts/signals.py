@@ -1,7 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
 from django.db import IntegrityError
+from django.db.models import F
 from django.db.models.signals import ModelSignal, post_delete, post_save, pre_save
+from django.db.transaction import atomic
 from django.dispatch import receiver
 
 from core.signals import post_soft_delete
@@ -52,12 +54,12 @@ def on_vote_pre_save(instance: Vote, **kwargs):
 
 
 @receiver(post_save, sender=Vote)
+@atomic
 def on_vote_post_save(instance: Vote, created: bool, **kwargs):
     if not created:
         return
 
     if instance.spread:
-        instance.post.life += 4
-        instance.post.save()
+        Post.objects.filter(id=instance.post_id).update(life=F("life") + 4)
 
     instance.user.stack.posts.remove(instance.post)

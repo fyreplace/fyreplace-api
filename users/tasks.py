@@ -9,6 +9,7 @@ from celery import shared_task
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.files.images import ImageFile
+from django.db.transaction import atomic
 from django.utils.timezone import now
 
 from .emails import AccountActivationEmail, AccountRecoveryEmail, UserEmailUpdateEmail
@@ -35,13 +36,14 @@ def remove_user_data(user_id: str):
 
 
 @shared_task
+@atomic
 def fetch_default_user_avatar(user_id: str):
     if not settings.GRAVATAR_BASE_URL:
         return
 
-    user = get_user_model().objects.get(id=user_id)
+    user = get_user_model().objects.select_for_update().get(id=user_id)
 
-    if user.avatar:
+    if not user or user.avatar:
         return
 
     email_hash = hashlib.md5(user.email.encode()).hexdigest()
@@ -79,5 +81,4 @@ def send_user_email_update_email(user_id: str, email: str):
 
 @shared_task
 def use_connection(connection_id: int):
-    for connection in Connection.objects.filter(id=connection_id):
-        connection.save()
+    Connection.objects.filter(id=connection_id).update(date_last_used=now())

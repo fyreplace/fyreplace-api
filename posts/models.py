@@ -167,6 +167,7 @@ class Post(UUIDModel, TimestampModel, SoftDeleteModel, ValidatableModel):
         self.life = 0
         super().perform_soft_delete()
 
+    @atomic
     def publish(self, anonymous: bool):
         if self.date_published is not None:
             raise IntegrityError(self.error_already_published)
@@ -200,15 +201,18 @@ class Post(UUIDModel, TimestampModel, SoftDeleteModel, ValidatableModel):
         )
         return position_between(before, after)
 
-    def get_chapter_at(self, position: int) -> "Chapter":
+    def get_chapter_at(self, position: int, for_update: bool = False) -> "Chapter":
         try:
-            return self.chapters.all()[position]
+            chapters = (
+                self.chapters.select_for_update() if for_update else self.chapters.all()
+            )
+            return chapters[position]
         except IndexError:
             raise InvalidArgument("invalid_position")
 
     @atomic
     def normalize_chapters(self):
-        self.chapters.update(
+        self.chapters.select_for_update().update(
             position=Replace(
                 Replace(models.F("position"), models.Value("z"), models.Value("y")),
                 models.Value("a"),
@@ -300,7 +304,8 @@ class Stack(models.Model):
             return
 
         post_ids = (
-            Post.active_objects.exclude(
+            Post.active_objects.select_for_update()
+            .exclude(
                 models.Q(author=self.user)
                 | models.Q(author__in=self.user.blocked_users.values("id"))
                 | models.Q(voters=self.user)

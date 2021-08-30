@@ -66,10 +66,13 @@ def get_token(context: grpc.ServicerContext) -> Optional[str]:
     return token_parts[1]
 
 
-def get_info_from_token(token: str) -> Tuple[User, Optional[Connection]]:
+def get_info_from_token(
+    token: str, for_update: bool = False
+) -> Tuple[User, Optional[Connection]]:
     try:
         claims = jwt.decode(token)
-        user = User.objects.get(id=claims["user_id"])
+        user_objects = User.objects.select_for_update() if for_update else User.objects
+        user = user_objects.get(id=claims["user_id"])
         connection = None
 
         if connection_id := claims.get("connection_id"):

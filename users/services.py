@@ -51,12 +51,12 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
         data = serialize_message(request)
         User = get_user_model()
 
-        if User.objects.filter(email=request.email):
-            raise AlreadyExists("email_taken")
-        elif User.objects.filter(username=request.username):
-            raise AlreadyExists("username_taken")
-        elif normalize(request.username) in self.reverved_usernames:
+        if normalize(request.username) in self.reverved_usernames:
             raise PermissionDenied("username_reserved")
+        elif User.objects.filter(email=request.email).exists():
+            raise AlreadyExists("email_taken")
+        elif User.objects.filter(username=request.username).exists():
+            raise AlreadyExists("username_taken")
 
         try:
             error_message = "invalid_email"
@@ -98,7 +98,7 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
     def ConfirmActivation(
         self, request: user_pb2.ConnectionToken, context: grpc.ServicerContext
     ) -> user_pb2.Token:
-        user, _ = get_info_from_token(request.token)
+        user, _ = get_info_from_token(request.token, for_update=True)
 
         if not user.is_pending:
             raise PermissionDenied("user_not_pending")
@@ -110,6 +110,7 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
             hardware=request.client.hardware,
             software=request.client.software,
         )
+        connection.full_clean()
         return user_pb2.Token(token=connection.get_token())
 
     @no_auth
@@ -136,11 +137,14 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
         if not user.is_alive_and_kicking:
             raise PermissionDenied("user_not_recoverable")
 
-        connection = Connection.objects.create(
-            user=user,
-            hardware=request.client.hardware,
-            software=request.client.software,
-        )
+        with atomic():
+            connection = Connection.objects.create(
+                user=user,
+                hardware=request.client.hardware,
+                software=request.client.software,
+            )
+            connection.full_clean()
+
         return user_pb2.Token(token=connection.get_token())
 
     def ListConnections(
@@ -186,11 +190,7 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
     ) -> empty_pb2.Empty:
         token = get_token(context)
         user, connection = get_info_from_token(token)
-
-        if connection_id := request.id:
-            connection = Connection.objects.get(id=connection_id, user=user)
-
-        connection.delete()
+        Connection.objects.get(id=request.id or connection.id, user=user).delete()
         return empty_pb2.Empty()
 
     def DisconnectAll(
@@ -211,29 +211,35 @@ class UserService(ImageUploadMixin, user_pb2_grpc.UserServiceServicer):
     ) -> user_pb2.User:
         return context.caller.to_message()
 
+    @atomic
     def UpdateBio(
         self, request: user_pb2.Bio, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        context.caller.bio = request.bio
-        context.caller.full_clean()
-        context.caller.save()
+        user = get_user_model().objects.select_for_update().get(id=context.caller.id)
+        user.bio = request.bio
+        user.full_clean()
+        user.save()
         return empty_pb2.Empty()
 
+    @atomic
     def UpdateAvatar(
         self,
         request_iterator: Iterator[image_pb2.ImageChunk],
         context: grpc.ServicerContext,
     ) -> empty_pb2.Empty:
         image = self.get_image(str(context.caller.id), request_iterator)
-        self.set_image(context.caller, "avatar", image)
+        user = get_user_model().objects.select_for_update().get(id=context.caller.id)
+        self.set_image(user, "avatar", image)
         return empty_pb2.Empty()
 
+    @atomic
     def UpdatePassword(
         self, request: user_pb2.Password, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         validate_password(request.password)
-        context.caller.set_password(request.password)
-        context.caller.save()
+        user = get_user_model().objects.select_for_update().get(id=context.caller.id)
+        user.set_password(request.password)
+        user.save()
         return empty_pb2.Empty()
 
     def SendEmailUpdateEmail(
@@ -245,10 +251,11 @@ class UserService(ImageUploadMixin, user_pb2_grpc.UserServiceServicer):
         )
         return empty_pb2.Empty()
 
+    @atomic
     def ConfirmEmailUpdate(
         self, request: user_pb2.Token, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        user, _ = get_info_from_token(get_token(context))
+        user = get_user_model().objects.select_for_update().get(id=context.caller.id)
         request_user, _ = get_info_from_token(request.token)
 
         if request_user != user:
@@ -273,9 +280,9 @@ class UserService(ImageUploadMixin, user_pb2_grpc.UserServiceServicer):
         user = get_user_model().existing_objects.get(id=request.id)
 
         if request.blocked:
-            context.caller.blocked_users.add(user)
+            context.caller.blocked_users.add(request.id)
         else:
-            context.caller.blocked_users.remove(user)
+            context.caller.blocked_users.remove(request.id)
 
         return empty_pb2.Empty()
 
@@ -308,13 +315,14 @@ class UserService(ImageUploadMixin, user_pb2_grpc.UserServiceServicer):
         delete_notifications_for(user)
         return empty_pb2.Empty()
 
+    @atomic
     def Ban(
         self, request: user_pb2.BanSentence, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         if not context.caller.is_staff:
             raise PermissionDenied("caller_not_staff")
 
-        user = get_user_model().existing_objects.get(id=request.id)
+        user = get_user_model().existing_objects.select_for_update().get(id=request.id)
 
         if user == context.caller:
             raise PermissionDenied("invalid_user")
@@ -324,13 +332,14 @@ class UserService(ImageUploadMixin, user_pb2_grpc.UserServiceServicer):
         user.ban(timedelta(days=request.days) if request.days else None)
         return empty_pb2.Empty()
 
+    @atomic
     def Promote(
         self, request: user_pb2.Promotion, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         if not context.caller.is_superuser:
             raise PermissionDenied("caller_not_superuser")
 
-        user = get_user_model().existing_objects.get(id=request.id)
+        user = get_user_model().existing_objects.select_for_update().get(id=request.id)
 
         if request.rank == user_pb2.RANK_UNSPECIFIED:
             raise InvalidArgument("RANK_unspecified")

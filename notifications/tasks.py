@@ -3,6 +3,7 @@ from typing import List
 from celery import shared_task
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
+from django.db import IntegrityError
 from django.db.transaction import atomic
 
 from posts.models import Comment, Post
@@ -10,7 +11,7 @@ from posts.models import Comment, Post
 from .models import CountUnit, Notification
 
 
-@shared_task
+@shared_task(autoretry_for=[IntegrityError], retry_backoff=True)
 def send_notifications(comment_id: str):
     comment = Comment.objects.select_related().get(id=comment_id)
 
@@ -36,7 +37,7 @@ def remove_comments_from_notifications(user_id: str, comment_ids: List[str]):
     ).delete()
 
 
-@shared_task
+@shared_task(autoretry_for=[IntegrityError], retry_backoff=True)
 @atomic
 def report_content(content_type_id: int, target_id: str, reporter_id: str):
     flag, _ = Notification.objects.get_or_create(

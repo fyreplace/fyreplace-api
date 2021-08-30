@@ -186,18 +186,22 @@ class Stack_drain(PublishedPostTestCase):
 
 class Vote_create(PublishedPostTestCase):
     def test_spread(self):
-        post_life = self.post.life
         self.other_user.stack.fill()
+        self.post.refresh_from_db()
+        post_life = self.post.life
         stack_count = self.other_user.stack.posts.count()
         Vote.objects.create(user=self.other_user, post=self.post, spread=True)
+        self.post.refresh_from_db()
         self.assertEqual(self.post.life, post_life + 4)
         self.assertEqual(self.other_user.stack.posts.count(), stack_count - 1)
 
     def test_no_spread(self):
-        post_life = self.post.life
         self.other_user.stack.fill()
+        self.post.refresh_from_db()
+        post_life = self.post.life
         stack_count = self.other_user.stack.posts.count()
         Vote.objects.create(user=self.other_user, post=self.post, spread=False)
+        self.post.refresh_from_db()
         self.assertEqual(self.post.life, post_life)
         self.assertEqual(self.other_user.stack.posts.count(), stack_count - 1)
 

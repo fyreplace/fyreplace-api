@@ -13,9 +13,9 @@ post_ban = ModelSignal(use_caching=True)
 
 @receiver(post_save, sender=get_user_model())
 def on_user_post_save(instance: AbstractUser, created: bool, **kwargs):
-    if instance.is_deleted and instance.is_active:
-        instance.is_active = False
-        instance.save()
+    get_user_model().objects.filter(
+        id=instance.id, is_deleted=True, is_active=True
+    ).update(is_active=False)
 
 
 @receiver(post_ban, sender=get_user_model())

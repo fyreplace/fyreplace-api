@@ -2,6 +2,7 @@ from typing import Iterator, List
 
 import grpc
 from django.contrib.contenttypes.models import ContentType
+from django.db.transaction import atomic
 from google.protobuf import empty_pb2, timestamp_pb2
 from grpc_interceptor.exceptions import InvalidArgument, PermissionDenied
 
@@ -39,7 +40,10 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
             nonlocal fetch_after
 
             if caller:
-                caller.stack.fill()
+                with atomic():
+                    stack = Stack.objects.select_for_update().get(id=caller.stack.id)
+                    stack.fill()
+
                 current_ids = [str(p.id) for p in posts]
                 new_posts = caller.stack.posts.exclude(id__in=current_ids)
             elif fetch_after:
@@ -149,10 +153,13 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         post = Post.objects.create(author=context.caller)
         return id_pb2.StringId(id=str(post.id))
 
+    @atomic
     def Publish(
         self, request: post_pb2.Publication, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        post = Post.existing_objects.get_writable_by(context.caller, id=request.id)
+        post = Post.existing_objects.select_for_update().get_writable_by(
+            context.caller, id=request.id
+        )
 
         if context.caller.is_banned:
             raise PermissionDenied("caller_banned")
@@ -160,10 +167,13 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         post.publish(anonymous=request.anonymous)
         return empty_pb2.Empty()
 
+    @atomic
     def Delete(
         self, request: id_pb2.StringId, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        post = Post.existing_objects.get_readable_by(context.caller, id=request.id)
+        post = Post.existing_objects.select_for_update().get_readable_by(
+            context.caller, id=request.id
+        )
 
         if context.caller.id != post.author_id and not context.caller.is_staff:
             raise PermissionDenied("invalid_post_author")
@@ -195,7 +205,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
 
         report_content.delay(
             content_type_id=ContentType.objects.get_for_model(Post).id,
-            target_id=request.id,
+            target_id=post.id,
             reporter_id=str(context.caller.id),
         )
         return empty_pb2.Empty()
@@ -232,22 +242,24 @@ class ChapterService(ImageUploadMixin, post_pb2_grpc.ChapterServiceServicer):
         )
         return empty_pb2.Empty()
 
+    @atomic
     def Move(
         self, request: post_pb2.ChapterRelocation, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         post = Post.existing_objects.get_writable_by(context.caller, id=request.post_id)
-        chapter = post.get_chapter_at(request.from_position)
+        chapter = post.get_chapter_at(request.from_position, for_update=True)
         chapter.position = post.chapter_position(request.to_position)
         chapter.save()
         return empty_pb2.Empty()
 
+    @atomic
     def UpdateText(
         self, request: post_pb2.ChapterTextUpdate, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         post = Post.existing_objects.get_writable_by(
             context.caller, id=request.location.post_id
         )
-        chapter = post.get_chapter_at(request.location.position)
+        chapter = post.get_chapter_at(request.location.position, for_update=True)
         chapter.clear(save=False)
         chapter.text = request.text
         chapter.is_title = request.is_title
@@ -255,6 +267,7 @@ class ChapterService(ImageUploadMixin, post_pb2_grpc.ChapterServiceServicer):
         chapter.save()
         return empty_pb2.Empty()
 
+    @atomic
     def UpdateImage(
         self,
         request_iterator: Iterator[post_pb2.ChapterImageUpdate],
@@ -271,16 +284,17 @@ class ChapterService(ImageUploadMixin, post_pb2_grpc.ChapterServiceServicer):
         post = Post.existing_objects.get_writable_by(
             context.caller, id=location.post_id
         )
-        chapter = post.get_chapter_at(location.position)
+        chapter = post.get_chapter_at(location.position, for_update=True)
         chapter.clear(save=False)
         self.set_image(chapter, "image", image)
         return empty_pb2.Empty()
 
+    @atomic
     def Delete(
         self, request: post_pb2.ChapterLocation, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         post = Post.existing_objects.get_writable_by(context.caller, id=request.post_id)
-        post.get_chapter_at(request.position).delete()
+        post.get_chapter_at(request.position, for_update=True).delete()
         return empty_pb2.Empty()
 
 
@@ -336,10 +350,11 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
         )
         return id_pb2.StringId(id=str(comment.id))
 
+    @atomic
     def Delete(
         self, request: id_pb2.StringId, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        comment = Comment.objects.get(id=request.id)
+        comment = Comment.objects.select_for_update().get(id=request.id)
 
         if context.caller != comment.author and not context.caller.is_staff:
             raise PermissionDenied("invalid_comment_author")
