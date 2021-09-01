@@ -31,7 +31,7 @@ spec:
         - name: celery-beat
           image: ghcr.io/fyreplace/fyreplace-server:main
           imagePullPolicy: Always
-          command: ['celery', '--app=core', 'beat']
+          command: ['celery', '--app=core', 'beat', '--loglevel=info']
           envFrom:
             - configMapRef:
                 name: environment
