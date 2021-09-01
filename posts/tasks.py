@@ -11,9 +11,11 @@ from .models import Chapter, Comment, Post, Stack, Visibility
 def cleanup_stacks():
     deadline = now() - timedelta(days=1)
 
-    while stacks := Stack.objects.select_for_update().filter(
+    while stack_ids := Stack.objects.filter(
         date_last_filled__lte=deadline, posts__isnull=False
-    ):
+    ).values("id"):
+        stacks = Stack.objects.select_for_update().filter(id__in=stack_ids)
+
         with atomic():
             for stack in stacks[:100]:
                 stack.drain()
@@ -21,16 +23,20 @@ def cleanup_stacks():
 
 @shared_task
 def remove_user_data(user_id: str):
-    while posts := Post.objects.select_for_update().filter(
-        author_id=user_id, is_deleted=False
+    while post_ids := Post.objects.filter(author_id=user_id, is_deleted=False).values(
+        "id"
     ):
+        posts = Post.objects.select_for_update().filter(id__in=post_ids)
+
         with atomic():
             for post in posts[:100]:
                 post.soft_delete()
 
-    while comments := Comment.objects.select_for_update().filter(
+    while comment_ids := Comment.objects.filter(
         author_id=user_id, is_deleted=False
-    ):
+    ).values("id"):
+        comments = Comment.objects.select_for_update().filter(id__in=comment_ids)
+
         with atomic():
             for comment in comments[:100]:
                 comment.soft_delete()
