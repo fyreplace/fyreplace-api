@@ -11,12 +11,19 @@ venv
 env
 .venv
 .env
+.env-example
 .python-version
 
 db.sqlite3
 .coverage
 
 /media
+/kubernetes
 
 .git
 .gitignore
+.github
+
+COPYING.txt
+README.md
+pytest.ini
