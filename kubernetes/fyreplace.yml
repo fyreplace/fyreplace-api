@@ -51,7 +51,7 @@ spec:
         - name: celery-worker-messaging
           image: ghcr.io/fyreplace/fyreplace-server:main
           imagePullPolicy: Always
-          command: ['celery', '--app=core', 'worker', '--loglevel=info', '--queue=messaging']
+          command: ['celery', '--app=core', 'worker', '--loglevel=info', '--queues=messaging']
           envFrom:
             - configMapRef:
                 name: environment
@@ -61,7 +61,7 @@ spec:
         - name: celery-worker-trash
           image: ghcr.io/fyreplace/fyreplace-server:main
           imagePullPolicy: Always
-          command: ['celery', '--app=core', 'worker', '--loglevel=info', '--queue=trash']
+          command: ['celery', '--app=core', 'worker', '--loglevel=info', '--queues=trash']
           envFrom:
             - configMapRef:
                 name: environment
