@@ -1,6 +1,6 @@
 .PHONY: all protos static migrations emails
 
-all: protos protos/__init__.py static migrations
+protobufs: protos protos/__init__.py
 
 protos:
 	python -m grpc_tools.protoc \

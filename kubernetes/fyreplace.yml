@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fyreplace-deployment
+spec:
+  selector:
+    matchLabels:
+      app: fyreplace
+  minReadySeconds: 5
+  template:
+    metadata:
+      labels:
+        app: fyreplace
+    spec:
+      containers:
+        - name: server
+          image: ghcr.io/fyreplace/fyreplace-server:main
+          imagePullPolicy: Always
+          command: ['python', 'manage.py', 'grpc']
+          envFrom:
+            - configMapRef:
+                name: environment
+            - secretRef:
+                name: vault
+          env:
+            - name: GRPC_PORT
+              value: '8080'
+          ports:
+            - containerPort: 8080
+
+        - name: celery-beat
+          image: ghcr.io/fyreplace/fyreplace-server:main
+          imagePullPolicy: Always
+          command: ['celery', '--app=core', 'beat']
+          envFrom:
+            - configMapRef:
+                name: environment
+            - secretRef:
+                name: vault
+
+        - name: celery-worker
+          image: ghcr.io/fyreplace/fyreplace-server:main
+          imagePullPolicy: Always
+          command: ['celery', '--app=core', 'worker', '--loglevel=info']
+          envFrom:
+            - configMapRef:
+                name: environment
+            - secretRef:
+                name: vault
+
+        - name: celery-worker-messaging
+          image: ghcr.io/fyreplace/fyreplace-server:main
+          imagePullPolicy: Always
+          command: ['celery', '--app=core', 'worker', '--loglevel=info', '--queue=messaging']
+          envFrom:
+            - configMapRef:
+                name: environment
+            - secretRef:
+                name: vault
+
+        - name: celery-worker-trash
+          image: ghcr.io/fyreplace/fyreplace-server:main
+          imagePullPolicy: Always
+          command: ['celery', '--app=core', 'worker', '--loglevel=info', '--queue=trash']
+          envFrom:
+            - configMapRef:
+                name: environment
+            - secretRef:
+                name: vault
+
+      initContainers:
+        - name: migrations
+          image: ghcr.io/fyreplace/fyreplace-server:main
+          imagePullPolicy: Always
+          command: ['python', 'manage.py', 'migrate']
+          envFrom:
+            - configMapRef:
+                name: environment
+            - secretRef:
+                name: vault
+
+        - name: static-files
+          image: ghcr.io/fyreplace/fyreplace-server:main
+          imagePullPolicy: Always
+          command: ['python', 'manage.py', 'collectstatic', '--no-input']
+          envFrom:
+            - configMapRef:
+                name: environment
+            - secretRef:
+                name: vault
