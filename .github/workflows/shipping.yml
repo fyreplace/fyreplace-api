@@ -77,9 +77,9 @@ jobs:
 
       - name: Set Kubernetes config
         working-directory: kubernetes
-        run: 'echo $KUBE_CONFIG > kube.yml'
+        run: 'echo $KUBE_CONFIG_B64 | base64 -d > kube.yml'
         env:
-          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+          KUBE_CONFIG_B64: ${{ secrets.KUBE_CONFIG_B64 }}
 
       - name: Create environment
         working-directory: kubernetes
