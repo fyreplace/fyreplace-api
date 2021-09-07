@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fyreplace-deployment
+  name: fyreplace
 spec:
   selector:
     matchLabels:
@@ -24,9 +24,9 @@ spec:
                 name: vault
           env:
             - name: GRPC_PORT
-              value: '8080'
+              value: '80'
           ports:
-            - containerPort: 8080
+            - containerPort: 80
 
         - name: celery-beat
           image: ghcr.io/fyreplace/fyreplace-server:main
@@ -88,3 +88,19 @@ spec:
                 name: environment
             - secretRef:
                 name: vault
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: fyreplace
+  labels:
+    app: fyreplace
+spec:
+  ports:
+    - port: 80
+      protocol: TCP
+  selector:
+    app: fyreplace
+  type: LoadBalancer
