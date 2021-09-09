@@ -156,6 +156,7 @@ django[argon2]==3.2.7 \
     #   django-anymail
     #   django-celery-beat
     #   django-extensions
+    #   django-health-check
     #   django-storages
     #   django-timezone-field
 django-anymail[mailgun,mailjet]==8.4 \
@@ -169,6 +170,10 @@ django-celery-beat==2.2.1 \
 django-extensions==3.1.3 \
     --hash=sha256:50de8977794a66a91575dd40f87d5053608f679561731845edbd325ceeb387e3 \
     --hash=sha256:5f0fea7bf131ca303090352577a9e7f8bfbf5489bd9d9c8aea9401db28db34a0
+    # via -r requirements.in
+django-health-check==3.16.4 \
+    --hash=sha256:334bcbbb9273a6dbd9c928e78474306e623dfb38cc442281cb9fd230a20a7fdb \
+    --hash=sha256:86a8869d67e72394a1dd73e37819a7d2cfd915588b96927fda611d7451fd4735
     # via -r requirements.in
 django-storages[boto3]==1.11.1 \
     --hash=sha256:c823dbf56c9e35b0999a13d7e05062b837bae36c518a40255d522fbe3750fbb4 \

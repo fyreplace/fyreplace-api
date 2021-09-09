@@ -2,6 +2,7 @@ django[argon2]
 django-celery-beat
 django-storages[boto3]
 django-anymail[mailgun,mailjet]
+django-health-check
 grpcio
 grpc-interceptor
 celery[redis]

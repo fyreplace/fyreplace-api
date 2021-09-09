@@ -13,7 +13,7 @@ spec:
         app: fyreplace
     spec:
       containers:
-        - name: server
+        - name: server-grpc
           image: ghcr.io/fyreplace/fyreplace-server:main
           imagePullPolicy: Always
           command: ['python', 'manage.py', 'grpc']
@@ -24,9 +24,21 @@ spec:
                 name: vault
           env:
             - name: GRPC_PORT
-              value: '80'
+              value: '50051'
           ports:
-            - containerPort: 80
+            - containerPort: 50051
+
+        - name: server-rest
+          image: ghcr.io/fyreplace/fyreplace-server:main
+          imagePullPolicy: Always
+          command: ['python', 'manage.py', 'runserver', '0.0.0.0:8080']
+          envFrom:
+            - configMapRef:
+                name: environment
+            - secretRef:
+                name: vault
+          ports:
+            - containerPort: 8080
 
         - name: celery-beat
           image: ghcr.io/fyreplace/fyreplace-server:main
@@ -98,9 +110,13 @@ metadata:
   labels:
     app: fyreplace
 spec:
-  ports:
-    - port: 80
-      protocol: TCP
+  type: LoadBalancer
   selector:
     app: fyreplace
-  type: LoadBalancer
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+    - name: http2
+      port: 443
+      targetPort: 50051
