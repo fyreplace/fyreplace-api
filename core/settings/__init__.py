@@ -36,7 +36,7 @@ for host in os.getenv("ALLOWED_HOSTS", "").split(","):
         ALLOWED_HOSTS.append(host)
 
 if len(ALLOWED_HOSTS) == 0:
-    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "10.0.2.2"]
+    ALLOWED_HOSTS = ["*"]
 
 APP_NAME = "fyreplace"
 
