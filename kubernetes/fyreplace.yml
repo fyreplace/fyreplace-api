@@ -109,6 +109,16 @@ metadata:
   name: fyreplace
   labels:
     app: fyreplace
+  annotations:
+    service.beta.kubernetes.io/do-loadbalancer-name: "api.fyreplace.app"
+    service.beta.kubernetes.io/do-loadbalancer-protocol: "http2"
+    service.beta.kubernetes.io/do-loadbalancer-certificate-id: "fyreplace-api-do"
+    service.beta.kubernetes.io/do-loadbalancer-http2-ports: "443"
+    service.beta.kubernetes.io/do-loadbalancer-algorithm: "least_connections"
+    service.beta.kubernetes.io/do-loadbalancer-enable-backend-keepalive: "true"
+    service.beta.kubernetes.io/do-loadbalancer-healthcheck-port: "80"
+    service.beta.kubernetes.io/do-loadbalancer-healthcheck-protocol: "http"
+    service.beta.kubernetes.io/do-loadbalancer-healthcheck-path: "/health/"
 spec:
   type: LoadBalancer
   selector:
