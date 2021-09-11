@@ -1,7 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  namespace: fyreplace
   name: fyreplace
+  labels:
+    app: fyreplace
+  annotations:
+    wave.pusher.com/update-on-config-change: "true"
 spec:
   selector:
     matchLabels:
@@ -9,6 +14,7 @@ spec:
   minReadySeconds: 5
   template:
     metadata:
+      namespace: fyreplace
       labels:
         app: fyreplace
     spec:
@@ -17,28 +23,34 @@ spec:
           image: ghcr.io/fyreplace/fyreplace-server:main
           imagePullPolicy: Always
           command: ['python', 'manage.py', 'grpc']
+          volumeMounts:
+            - name: certificate
+              mountPath: "/etc/fyreplace/certificate"
+              readOnly: true
           envFrom:
             - configMapRef:
-                name: environment
+                name: configuration
             - secretRef:
-                name: vault
+                name: secrets
           env:
-            - name: GRPC_PORT
-              value: '50051'
+            - name: SSL_CERTIFICATE_PATH
+              value: "/etc/fyreplace/certificate/tls.crt"
+            - name: SSL_PRIVATE_KEY_PATH
+              value: "/etc/fyreplace/certificate/tls.key"
           ports:
             - containerPort: 50051
 
         - name: server-rest
           image: ghcr.io/fyreplace/fyreplace-server:main
           imagePullPolicy: Always
-          command: ['python', 'manage.py', 'runserver', '0.0.0.0:8080']
+          command: ['python', 'manage.py', 'runserver', '0.0.0.0:80']
           envFrom:
             - configMapRef:
-                name: environment
+                name: configuration
             - secretRef:
-                name: vault
+                name: secrets
           ports:
-            - containerPort: 8080
+            - containerPort: 80
 
         - name: celery-beat
           image: ghcr.io/fyreplace/fyreplace-server:main
@@ -46,9 +58,9 @@ spec:
           command: ['celery', '--app=core', 'beat', '--loglevel=info']
           envFrom:
             - configMapRef:
-                name: environment
+                name: configuration
             - secretRef:
-                name: vault
+                name: secrets
 
         - name: celery-worker
           image: ghcr.io/fyreplace/fyreplace-server:main
@@ -56,9 +68,9 @@ spec:
           command: ['celery', '--app=core', 'worker', '--loglevel=info']
           envFrom:
             - configMapRef:
-                name: environment
+                name: configuration
             - secretRef:
-                name: vault
+                name: secrets
 
         - name: celery-worker-messaging
           image: ghcr.io/fyreplace/fyreplace-server:main
@@ -66,9 +78,9 @@ spec:
           command: ['celery', '--app=core', 'worker', '--loglevel=info', '--queues=messaging']
           envFrom:
             - configMapRef:
-                name: environment
+                name: configuration
             - secretRef:
-                name: vault
+                name: secrets
 
         - name: celery-worker-trash
           image: ghcr.io/fyreplace/fyreplace-server:main
@@ -76,9 +88,9 @@ spec:
           command: ['celery', '--app=core', 'worker', '--loglevel=info', '--queues=trash']
           envFrom:
             - configMapRef:
-                name: environment
+                name: configuration
             - secretRef:
-                name: vault
+                name: secrets
 
       initContainers:
         - name: migrations
@@ -87,9 +99,9 @@ spec:
           command: ['python', 'manage.py', 'migrate']
           envFrom:
             - configMapRef:
-                name: environment
+                name: configuration
             - secretRef:
-                name: vault
+                name: secrets
 
         - name: static-files
           image: ghcr.io/fyreplace/fyreplace-server:main
@@ -97,23 +109,30 @@ spec:
           command: ['python', 'manage.py', 'collectstatic', '--no-input']
           envFrom:
             - configMapRef:
-                name: environment
+                name: configuration
             - secretRef:
-                name: vault
+                name: secrets
+
+      volumes:
+        - name: certificate
+          secret:
+            secretName: api-fyreplace-app-tls
 
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
+  namespace: fyreplace
   name: fyreplace
   labels:
     app: fyreplace
   annotations:
     service.beta.kubernetes.io/do-loadbalancer-name: "api.fyreplace.app"
-    service.beta.kubernetes.io/do-loadbalancer-protocol: "http2"
-    service.beta.kubernetes.io/do-loadbalancer-certificate-id: "fyreplace-api-do"
-    service.beta.kubernetes.io/do-loadbalancer-http2-ports: "443"
+    service.beta.kubernetes.io/do-loadbalancer-hostname: "api.fyreplace.app"
+    service.beta.kubernetes.io/do-loadbalancer-tls-passthrough: "true"
+    service.beta.kubernetes.io/do-loadbalancer-http2-ports: "50051"
+    service.beta.kubernetes.io/do-loadbalancer-http-ports: "80"
     service.beta.kubernetes.io/do-loadbalancer-algorithm: "least_connections"
     service.beta.kubernetes.io/do-loadbalancer-enable-backend-keepalive: "true"
     service.beta.kubernetes.io/do-loadbalancer-healthcheck-port: "80"
@@ -124,9 +143,42 @@ spec:
   selector:
     app: fyreplace
   ports:
-    - name: http
+    - name: rest
       port: 80
-      targetPort: 8080
-    - name: http2
-      port: 443
-      targetPort: 50051
+    - name: grpc
+      port: 50051
+
+---
+
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  namespace: fyreplace
+  name: letsencrypt
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: contact@fyreplace.app
+    privateKeySecretRef:
+      name: letsencrypt-key
+    solvers:
+      - selector: {}
+        dns01:
+          digitalocean:
+            tokenSecretRef:
+              name: digitalocean
+              key: token
+
+---
+
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  namespace: fyreplace
+  name: api-fyreplace-app
+spec:
+  dnsNames:
+    - api.fyreplace.app
+  secretName: api-fyreplace-app-tls
+  issuerRef:
+    name: letsencrypt

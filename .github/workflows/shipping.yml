@@ -81,33 +81,39 @@ jobs:
         env:
           KUBE_CONFIG_B64: ${{ secrets.KUBE_CONFIG_B64 }}
 
-      - name: Create environment
+      - name: Create configuration
         working-directory: kubernetes
         run: |
-          echo "S3_ACCESS_KEY_ID=${{ secrets.S3_ACCESS_KEY_ID }}" >> environment.properties
-          echo "S3_STORAGE_BUCKET_NAME=${{ secrets.S3_STORAGE_BUCKET_NAME }}" >> environment.properties
-          echo "S3_ENDPOINT_URL=${{ secrets.S3_ENDPOINT_URL }}" >> environment.properties
-          echo "S3_CUSTOM_DOMAIN=${{ secrets.S3_CUSTOM_DOMAIN }}" >> environment.properties
-          echo "MAILGUN_API_URL=${{ secrets.MAILGUN_API_URL }}" >> environment.properties
-          echo "DEFAULT_FROM_EMAIL=${{ secrets.DEFAULT_FROM_EMAIL }}" >> environment.properties
-          echo "SERVER_EMAIL=${{ secrets.SERVER_EMAIL }}" >> environment.properties
-          echo "ADMINS=${{ secrets.ADMINS }}" >> environment.properties
-          echo "EMAIL_LINKS_DOMAIN=${{ secrets.EMAIL_LINKS_DOMAIN }}" >> environment.properties
-          kubectl create configmap environment --from-env-file=environment.properties -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml apply -f -
+          echo "S3_ACCESS_KEY_ID=${{ secrets.S3_ACCESS_KEY_ID }}" >> configuration.properties
+          echo "S3_STORAGE_BUCKET_NAME=${{ secrets.S3_STORAGE_BUCKET_NAME }}" >> configuration.properties
+          echo "S3_ENDPOINT_URL=${{ secrets.S3_ENDPOINT_URL }}" >> configuration.properties
+          echo "S3_CUSTOM_DOMAIN=${{ secrets.S3_CUSTOM_DOMAIN }}" >> configuration.properties
+          echo "MAILGUN_API_URL=${{ secrets.MAILGUN_API_URL }}" >> configuration.properties
+          echo "DEFAULT_FROM_EMAIL=${{ secrets.DEFAULT_FROM_EMAIL }}" >> configuration.properties
+          echo "SERVER_EMAIL=${{ secrets.SERVER_EMAIL }}" >> configuration.properties
+          echo "ADMINS=${{ secrets.ADMINS }}" >> configuration.properties
+          echo "EMAIL_LINKS_DOMAIN=${{ secrets.EMAIL_LINKS_DOMAIN }}" >> configuration.properties
+          kubectl create configmap configuration --from-env-file=configuration.properties -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml --namespace=fyreplace apply -f -
 
-      - name: Create vault
+      - name: Create secrets
         working-directory: kubernetes
         run: |
-          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> vault.properties
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> vault.properties
-          echo "CELERY_BROKER_URL=${{ secrets.CELERY_BROKER_URL }}" >> vault.properties
-          echo "S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY }}" >> vault.properties
-          echo "MAILGUN_API_KEY=${{ secrets.MAILGUN_API_KEY }}" >> vault.properties
-          echo "MAILGUN_WEBHOOK_SIGNING_KEY=${{ secrets.MAILGUN_WEBHOOK_SIGNING_KEY }}" >> vault.properties
-          echo "MAILJET_API_KEY=${{ secrets.MAILJET_API_KEY }}" >> vault.properties
-          echo "MAILJET_SECRET_KEY=${{ secrets.MAILJET_SECRET_KEY }}" >> vault.properties
-          kubectl create secret generic vault --from-env-file=vault.properties -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml apply -f -
+          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> secrets.properties
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> secrets.properties
+          echo "CELERY_BROKER_URL=${{ secrets.CELERY_BROKER_URL }}" >> secrets.properties
+          echo "S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY }}" >> secrets.properties
+          echo "MAILGUN_API_KEY=${{ secrets.MAILGUN_API_KEY }}" >> secrets.properties
+          echo "MAILGUN_WEBHOOK_SIGNING_KEY=${{ secrets.MAILGUN_WEBHOOK_SIGNING_KEY }}" >> secrets.properties
+          echo "MAILJET_API_KEY=${{ secrets.MAILJET_API_KEY }}" >> secrets.properties
+          echo "MAILJET_SECRET_KEY=${{ secrets.MAILJET_SECRET_KEY }}" >> secrets.properties
+          kubectl create secret generic secrets --from-env-file=secrets.properties -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml --namespace=fyreplace apply -f -
+
+      - name: Create DigitalOcean token
+        working-directory: kubernetes
+        run: |
+          echo "token=${{ secrets.DO_API_TOKEN }}" >> digitalocean.properties
+          kubectl create secret generic digitalocean --from-env-file=digitalocean.properties -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml --namespace=fyreplace apply -f -
 
       - name: Deploy
         working-directory: kubernetes
-        run: kubectl --kubeconfig=kube.yml apply -f fyreplace.yml
+        run: kubectl --kubeconfig=kube.yml --namespace=fyreplace apply -f fyreplace.yml
