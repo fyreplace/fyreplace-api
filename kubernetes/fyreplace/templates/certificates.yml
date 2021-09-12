@@ -1,0 +1,11 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  namespace: {{ include "fyreplace.name" . }}
+  name: api-fyreplace-app
+spec:
+  dnsNames:
+    - api.fyreplace.app
+  secretName: api-fyreplace-app-tls
+  issuerRef:
+    name: letsencrypt

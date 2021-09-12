@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ include "fyreplace.name" . }}
+  name: {{ include "fyreplace.fullname" . }}
+  labels:
+    {{- include "fyreplace.labels" . | nindent 4 }}
+    app: {{ include "fyreplace.fullname" . }}
+  annotations:
+    wave.pusher.com/update-on-config-change: "true"
+spec:
+  selector:
+    matchLabels:
+      {{- include "fyreplace.selectorLabels" . | nindent 6 }}
+      app: {{ include "fyreplace.fullname" . }}
+  minReadySeconds: 5
+  template:
+    metadata:
+      namespace: {{ include "fyreplace.name" . }}
+      labels:
+        {{- include "fyreplace.selectorLabels" . | nindent 8 }}
+        app: {{ include "fyreplace.fullname" . }}
+    spec:
+      containers:
+        - name: server-grpc
+          image: ghcr.io/fyreplace/fyreplace-server:{{ .Chart.AppVersion }}
+          imagePullPolicy: Always
+          command: ['python', 'manage.py', 'grpc']
+          volumeMounts:
+            - name: certificate
+              mountPath: "/etc/fyreplace/certificate"
+              readOnly: true
+          envFrom:
+            - configMapRef:
+                name: configuration
+            - secretRef:
+                name: secrets
+          env:
+            - name: SSL_CERTIFICATE_PATH
+              value: "/etc/fyreplace/certificate/tls.crt"
+            - name: SSL_PRIVATE_KEY_PATH
+              value: "/etc/fyreplace/certificate/tls.key"
+          ports:
+            - containerPort: 50051
+
+        - name: server-rest
+          image: ghcr.io/fyreplace/fyreplace-server:{{ .Chart.AppVersion }}
+          imagePullPolicy: Always
+          command: ['python', 'manage.py', 'runserver', '0.0.0.0:80']
+          envFrom:
+            - configMapRef:
+                name: configuration
+            - secretRef:
+                name: secrets
+          ports:
+            - containerPort: 80
+
+        - name: celery-beat
+          image: ghcr.io/fyreplace/fyreplace-server:{{ .Chart.AppVersion }}
+          imagePullPolicy: Always
+          command: ['celery', '--app=core', 'beat', '--loglevel=info']
+          envFrom:
+            - configMapRef:
+                name: configuration
+            - secretRef:
+                name: secrets
+
+        - name: celery-worker
+          image: ghcr.io/fyreplace/fyreplace-server:{{ .Chart.AppVersion }}
+          imagePullPolicy: Always
+          command: ['celery', '--app=core', 'worker', '--loglevel=info']
+          envFrom:
+            - configMapRef:
+                name: configuration
+            - secretRef:
+                name: secrets
+
+        - name: celery-worker-messaging
+          image: ghcr.io/fyreplace/fyreplace-server:{{ .Chart.AppVersion }}
+          imagePullPolicy: Always
+          command: ['celery', '--app=core', 'worker', '--loglevel=info', '--queues=messaging']
+          envFrom:
+            - configMapRef:
+                name: configuration
+            - secretRef:
+                name: secrets
+
+        - name: celery-worker-trash
+          image: ghcr.io/fyreplace/fyreplace-server:{{ .Chart.AppVersion }}
+          imagePullPolicy: Always
+          command: ['celery', '--app=core', 'worker', '--loglevel=info', '--queues=trash']
+          envFrom:
+            - configMapRef:
+                name: configuration
+            - secretRef:
+                name: secrets
+
+      initContainers:
+        - name: migrations
+          image: ghcr.io/fyreplace/fyreplace-server:{{ .Chart.AppVersion }}
+          imagePullPolicy: Always
+          command: ['python', 'manage.py', 'migrate']
+          envFrom:
+            - configMapRef:
+                name: configuration
+            - secretRef:
+                name: secrets
+
+        - name: static-files
+          image: ghcr.io/fyreplace/fyreplace-server:{{ .Chart.AppVersion }}
+          imagePullPolicy: Always
+          command: ['python', 'manage.py', 'collectstatic', '--no-input']
+          envFrom:
+            - configMapRef:
+                name: configuration
+            - secretRef:
+                name: secrets
+
+      volumes:
+        - name: certificate
+          secret:
+            secretName: api-fyreplace-app-tls
