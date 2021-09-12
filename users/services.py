@@ -42,7 +42,7 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
     def __init__(self):
         super().__init__()
         reserved = open(path.join(__package__, "reserved-usernames.txt"), "r")
-        self.reverved_usernames = [normalize(name) for name in reserved]
+        self.reserved_usernames = [normalize(name) for name in reserved]
 
     @no_auth
     def Create(
@@ -51,7 +51,7 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
         data = serialize_message(request)
         User = get_user_model()
 
-        if normalize(request.username) in self.reverved_usernames:
+        if normalize(request.username) in self.reserved_usernames:
             raise PermissionDenied("username_reserved")
         elif User.objects.filter(email=request.email).exists():
             raise AlreadyExists("email_taken")
