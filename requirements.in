@@ -1,26 +1,36 @@
+# Django
 django[argon2]
 django-celery-beat
 django-storages[boto3]
 django-anymail[mailgun,mailjet]
 django-health-check
+pillow
+
+# gRPC
 grpcio
 grpc-interceptor
+
+# Celery
 celery[redis]
-pillow
-pyjwt
-python-magic
-httpx
 
 # Database engines
 mysqlclient
 psycopg2
 
-# Getting settings from environment
+# Other utilities
+pyjwt
+python-magic
+httpx
+
+# Configuration injection
 python-dotenv
 
 # Testing
 pytest-django
 pytest-xdist[psutil]
+
+# Error reporting
+rollbar
 
 # Development tools
 grpcio-tools

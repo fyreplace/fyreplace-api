@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 from urllib.parse import urlparse
 
+import rollbar
 from celery.schedules import crontab
 from dotenv import find_dotenv, load_dotenv
 
@@ -17,7 +18,12 @@ if debug_str := os.getenv("DEBUG", "False"):
 else:
     DEBUG = False
 
+ENVIRONMENT = "development" if DEBUG else "production"
+
 TEST_RUNNER = "core.tests.PytestTestRunner"
+
+if ROLLBAR_TOKEN := os.getenv("ROLLBAR_TOKEN"):
+    rollbar.init(ROLLBAR_TOKEN, ENVIRONMENT)
 
 # Self-awareness
 

@@ -3,6 +3,7 @@ from inspect import getmembers
 from typing import Any, Callable, List, Type
 
 import grpc
+import rollbar
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
 from django.db.utils import DataError, IntegrityError
 from google.protobuf.message import Message
@@ -42,6 +43,38 @@ class ExceptionInterceptor(ServerInterceptor):
         except GrpcException as e:
             context.set_code(e.status_code)
             context.set_details(e.details)
+
+            if e.status_code in [
+                grpc.StatusCode.UNIMPLEMENTED,
+                grpc.StatusCode.INTERNAL,
+                grpc.StatusCode.UNAVAILABLE,
+                grpc.StatusCode.UNKNOWN,
+                grpc.StatusCode.RESOURCE_EXHAUSTED,
+                grpc.StatusCode.FAILED_PRECONDITION,
+                grpc.StatusCode.ABORTED,
+                grpc.StatusCode.OUT_OF_RANGE,
+                grpc.StatusCode.DATA_LOSS,
+            ]:
+                self._report_error(request, context, method_name)
+        except Exception as e:
+            context.set_code(grpc.StatusCode.UNKNOWN)
+            context.set_details(str(e))
+            self._report_error(request, context, method_name, level="critical")
+
+    def _report_error(
+        self,
+        request: Message,
+        context: grpc.ServicerContext,
+        method_name: str,
+        level: str = "error",
+    ):
+        extras = {
+            "method": method_name,
+            "request": request,
+            "context_metadata": context.invocation_metadata(),
+            "user_id": str(context.caller.id) if hasattr(context, "caller") else None,
+        }
+        rollbar.report_exc_info(extra_data=extras, level=level)
 
 
 class AuthorizationInterceptor(ServerInterceptor):
