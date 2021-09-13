@@ -121,4 +121,4 @@ jobs:
 
       - name: Deploy
         working-directory: kubernetes
-        run: helm --kubeconfig=kube.yml install --namespace=fyreplace fyreplace fyreplace
+        run: helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace
