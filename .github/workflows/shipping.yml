@@ -40,6 +40,7 @@ jobs:
   containers:
     needs: test
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags')
 
     steps:
       - name: Checkout code
@@ -103,6 +104,7 @@ jobs:
       - name: Create secrets
         working-directory: kubernetes
         run: |
+          echo "ROLLBAR_TOKEN=${{ secrets.ROLLBAR_TOKEN }}" >> secrets.properties
           echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> secrets.properties
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> secrets.properties
           echo "CELERY_BROKER_URL=${{ secrets.CELERY_BROKER_URL }}" >> secrets.properties
