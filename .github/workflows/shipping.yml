@@ -100,7 +100,7 @@ jobs:
     name: Deploy to Kubernetes
     needs:
       - tests
-      - containers
+      - container
     runs-on: ubuntu-latest
     environment: main
     if: startsWith(github.ref, 'refs/tags')
