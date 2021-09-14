@@ -117,17 +117,20 @@ def db_engine(name: str):
 if database_url := os.getenv("DATABASE_URL"):
     parsed_url = urlparse(database_url)
     DB_ENGINE = db_engine(parsed_url.scheme or "sqlite")
-    DB_NAME = parsed_url.path.removeprefix("/") or "db.sqlite3"
+    DB_NAME = parsed_url.path.removeprefix("/")
     DB_USER, DB_PASSWORD, DB_HOST, DB_PORT = (
         re.split(r"[:@]", parsed_url.netloc) + [None] * 4
     )[:4]
 else:
     DB_ENGINE = db_engine(os.getenv("DATABASE_ENGINE", "sqlite"))
-    DB_NAME = os.getenv("DATABASE_NAME", "db.sqlite3")
+    DB_NAME = os.getenv("DATABASE_NAME")
     DB_USER = os.getenv("DATABASE_USER")
     DB_PASSWORD = os.getenv("DATABASE_PASSWORD")
     DB_HOST = os.getenv("DATABASE_HOST")
     DB_PORT = os.getenv("DATABASE_PORT")
+
+if DB_ENGINE == db_engine("sqlite") and not DB_NAME:
+    DB_NAME = "db.sqlite3"
 
 DATABASES = {
     "default": {
