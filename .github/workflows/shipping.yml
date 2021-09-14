@@ -9,7 +9,8 @@ on:
       - v*.*.*
 
 jobs:
-  test:
+  tests:
+    name: Run tests
     runs-on: ubuntu-latest
 
     steps:
@@ -37,8 +38,8 @@ jobs:
         env:
           SECRET_KEY: secret
 
-  containers:
-    needs: test
+  container:
+    name: Build container
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags')
 
@@ -70,7 +71,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   deployment:
-    needs: containers
+    name: Deploy to Kubernetes
+    needs:
+      - tests
+      - containers
     runs-on: ubuntu-latest
     environment: main
     if: startsWith(github.ref, 'refs/tags')
