@@ -9,10 +9,36 @@ on:
       - v*.*.*
 
 jobs:
-  test:
+  tests:
+    name: Run tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
 
     steps:
+      - name: Cache pip packages
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-pip-packages
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
       - name: Checkout code
         uses: actions/checkout@v2
         with:
@@ -36,9 +62,10 @@ jobs:
         run: python manage.py test
         env:
           SECRET_KEY: secret
+          DATABASE_URL: postgres://postgres:postgres@localhost/postgres
 
-  containers:
-    needs: test
+  container:
+    name: Build container
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags')
 
@@ -70,7 +97,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   deployment:
-    needs: containers
+    name: Deploy to Kubernetes
+    needs:
+      - tests
+      - container
     runs-on: ubuntu-latest
     environment: main
     if: startsWith(github.ref, 'refs/tags')
