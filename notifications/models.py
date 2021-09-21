@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Case, Count, OuterRef, Subquery, When
 
-from core.models import MessageConvertible
+from core.models import MessageConvertible, UUIDModel
 from protos import notification_pb2
 
 
@@ -47,7 +47,7 @@ class FlagsManager(NotificationsManager):
         return super().get_queryset().filter(recipient__isnull=True)
 
 
-class Notification(models.Model, MessageConvertible):
+class Notification(UUIDModel, MessageConvertible):
     class Meta:
         unique_together = ["recipient", "target_type", "target_id"]
         ordering = ["date_updated", "id"]
@@ -83,7 +83,7 @@ class Notification(models.Model, MessageConvertible):
         return values
 
 
-class CountUnit(models.Model):
+class CountUnit(UUIDModel):
     class Meta:
         unique_together = ["notification", "count_item_type", "count_item_id"]
 

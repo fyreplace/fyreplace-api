@@ -194,7 +194,7 @@ class AccountService_ConfirmActivation(AccountServiceTestCase):
         self.assertIn("user_id", claims)
         self.assertIn("connection_id", claims)
         self.assertEqual(claims["user_id"], str(self.user.id))
-        self.assertEqual(claims["connection_id"], connection.id)
+        self.assertEqual(claims["connection_id"], str(connection.id))
         self.user.refresh_from_db()
         self.assertTrue(self.user.is_active)
         self.assertEqual(connection.user, self.user)
@@ -296,7 +296,7 @@ class AccountService_ConfirmRecovery(AccountServiceTestCase, AuthenticatedTestCa
         self.assertIn("user_id", claims)
         self.assertIn("connection_id", claims)
         self.assertEqual(claims["user_id"], str(self.main_user.id))
-        self.assertEqual(claims["connection_id"], connection.id)
+        self.assertEqual(claims["connection_id"], str(connection.id))
         self.main_user.refresh_from_db()
         self.assertTrue(self.main_user.is_active)
         self.assertEqual(connection.user, self.main_user)
@@ -342,10 +342,10 @@ class AccountService_ListConnections(AccountServiceTestCase, AuthenticatedTestCa
         self.assertEqual(len(ids), len(main_user_connections))
 
         for connection in Connection.objects.filter(user=self.main_user):
-            self.assertIn(connection.id, ids)
+            self.assertIn(str(connection.id), ids)
 
         for connection in Connection.objects.filter(user=self.other_user):
-            self.assertNotIn(connection.id, ids)
+            self.assertNotIn(str(connection.id), ids)
 
 
 class AccountService_Connect(AccountServiceTestCase):
@@ -369,7 +369,7 @@ class AccountService_Connect(AccountServiceTestCase):
         self.assertIn("user_id", claims)
         self.assertIn("connection_id", claims)
         self.assertEqual(claims["user_id"], str(self.main_user.id))
-        self.assertEqual(claims["connection_id"], connection.id)
+        self.assertEqual(claims["connection_id"], str(connection.id))
 
     def test_bad_username(self):
         self.request.identifier = "bad"
@@ -406,7 +406,7 @@ class AccountService_Connect(AccountServiceTestCase):
 class AccountService_Disconnect(AccountServiceTestCase, AuthenticatedTestCase):
     def setUp(self):
         super().setUp()
-        self.request = id_pb2.IntId()
+        self.request = id_pb2.StringId()
 
     def test(self):
         connection_count = Connection.objects.count()
@@ -417,14 +417,14 @@ class AccountService_Disconnect(AccountServiceTestCase, AuthenticatedTestCase):
     def test_specific(self):
         connection = Connection.objects.create(user=self.main_user)
         connection_count = Connection.objects.count()
-        self.request.id = connection.id
+        self.request.id = str(connection.id)
         self.service.Disconnect(self.request, self.grpc_context)
         self.assertEqual(Connection.objects.count(), connection_count - 1)
 
     def test_other(self):
         connection = Connection.objects.create(user=self.other_user)
         connection_count = Connection.objects.count()
-        self.request.id = connection.id
+        self.request.id = str(connection.id)
 
         with self.assertRaises(ObjectDoesNotExist):
             self.service.Disconnect(self.request, self.grpc_context)

@@ -186,7 +186,7 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
         return user_pb2.Token(token=connection.get_token())
 
     def Disconnect(
-        self, request: id_pb2.IntId, context: grpc.ServicerContext
+        self, request: id_pb2.StringId, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         token = get_token(context)
         user, connection = get_info_from_token(token)
