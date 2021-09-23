@@ -66,8 +66,9 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         refill_stack()
         yield from (p.to_message() for p in posts[:3])
 
-        while len(posts) > 0:
-            request = next(request_iterator)
+        for request in request_iterator:
+            if len(posts) == 0:
+                return
 
             if caller:
                 Vote.objects.create(
