@@ -20,7 +20,7 @@ class UserContext(FakeContext):
             payload = {"user_id": str(user.id)}
 
             if connection := Connection.objects.filter(user=user).first():
-                payload["connection_id"] = connection.id
+                payload["connection_id"] = str(connection.id)
 
             token = jwt.encode(payload)
             self._invocation_metadata["authorization"] = f"Bearer {token}"

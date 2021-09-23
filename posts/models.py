@@ -42,7 +42,7 @@ def position_between(before: Optional[str], after: Optional[str]) -> str:
         return after[:-1] + "a" + "z"
 
 
-class ValidatableModel(models.Model, MessageConvertible):
+class ValidatableModel(UUIDModel, MessageConvertible):
     class Meta:
         abstract = True
 
@@ -114,7 +114,7 @@ class ActivePostManager(ExistingPostManager):
         return super().get_queryset().filter(date_published__gte=deadline, life__gt=0)
 
 
-class Post(UUIDModel, TimestampModel, SoftDeleteModel, ValidatableModel):
+class Post(TimestampModel, SoftDeleteModel, ValidatableModel):
     class Meta:
         ordering = ["date_published", "id"]
 
@@ -281,7 +281,7 @@ class Chapter(ValidatableModel):
         self.image.delete(save=save)
 
 
-class Stack(models.Model):
+class Stack(UUIDModel):
     class Meta:
         ordering = ["user"]
 
@@ -324,7 +324,7 @@ class Stack(models.Model):
         self.posts.clear()
 
 
-class Vote(models.Model):
+class Vote(UUIDModel):
     class Meta:
         unique_together = ["user", "post"]
         ordering = unique_together
@@ -339,7 +339,7 @@ class Vote(models.Model):
         return f"{self.user}, {self.post}: {self.spread}"
 
 
-class Visibility(models.Model):
+class Visibility(UUIDModel):
     class Meta:
         unique_together = ["stack", "post"]
         ordering = unique_together
@@ -386,7 +386,7 @@ class Comment(UUIDModel, TimestampModel, SoftDeleteModel):
         super().perform_soft_delete()
 
 
-class Subscription(models.Model):
+class Subscription(UUIDModel):
     class Meta:
         unique_together = ["user", "post"]
         ordering = unique_together

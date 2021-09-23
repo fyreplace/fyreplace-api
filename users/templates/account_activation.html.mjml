@@ -13,7 +13,7 @@
         <mj-image src="{% static 'logo.png' %}" width="80px" padding-bottom="40px"></mj-image>
         <mj-text mj-class="text" font-size="24px" padding-bottom="20px">Welcome to {{ app_name }}!</mj-text>
         <mj-text mj-class="text" padding-bottom="20px">You can confirm your email address and validate your account by clicking on the button below:</mj-text>
-        <mj-button mj-class="text" href="{{ link }}" padding-bottom="40px">Activate account</mj-button>
+        <mj-button mj-class="text" href="{{ link }}" rel="noopener noreferrer" padding-bottom="40px">Activate account</mj-button>
       </mj-column>
     </mj-section>
   </mj-body>

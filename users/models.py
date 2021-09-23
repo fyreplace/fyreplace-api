@@ -14,7 +14,7 @@ from core.validators import FileSizeValidator
 from protos import user_pb2
 
 
-class Block(models.Model):
+class Block(UUIDModel):
     class Meta:
         constraints = [
             models.CheckConstraint(
@@ -153,7 +153,7 @@ class Software(models.TextChoices):
     UNKNOWN = "unknown", _("Unknown")
 
 
-class Connection(TimestampModel):
+class Connection(UUIDModel, TimestampModel):
     class Meta:
         constraints = [
             models.CheckConstraint(
@@ -195,5 +195,5 @@ class Connection(TimestampModel):
         return data
 
     def get_token(self) -> str:
-        payload = {"user_id": str(self.user_id), "connection_id": self.id}
+        payload = {"user_id": str(self.user_id), "connection_id": str(self.id)}
         return jwt.encode(payload)

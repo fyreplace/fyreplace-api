@@ -186,7 +186,7 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
         return user_pb2.Token(token=connection.get_token())
 
     def Disconnect(
-        self, request: id_pb2.IntId, context: grpc.ServicerContext
+        self, request: id_pb2.StringId, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         token = get_token(context)
         user, connection = get_info_from_token(token)
@@ -280,9 +280,9 @@ class UserService(ImageUploadMixin, user_pb2_grpc.UserServiceServicer):
         user = get_user_model().existing_objects.get(id=request.id)
 
         if request.blocked:
-            context.caller.blocked_users.add(request.id)
+            context.caller.blocked_users.add(user)
         else:
-            context.caller.blocked_users.remove(request.id)
+            context.caller.blocked_users.remove(user)
 
         return empty_pb2.Empty()
 
