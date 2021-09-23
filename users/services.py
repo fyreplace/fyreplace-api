@@ -280,9 +280,9 @@ class UserService(ImageUploadMixin, user_pb2_grpc.UserServiceServicer):
         user = get_user_model().existing_objects.get(id=request.id)
 
         if request.blocked:
-            context.caller.blocked_users.add(request.id)
+            context.caller.blocked_users.add(user)
         else:
-            context.caller.blocked_users.remove(request.id)
+            context.caller.blocked_users.remove(user)
 
         return empty_pb2.Empty()
 
