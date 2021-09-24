@@ -576,7 +576,7 @@ class UserService_SendEmailUpdateEmail(UserServiceTestCase):
     def test_invalid_email(self):
         self.request.email = "bad"
 
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(InvalidArgument):
             self.service.SendEmailUpdateEmail(self.request, self.grpc_context)
 
 

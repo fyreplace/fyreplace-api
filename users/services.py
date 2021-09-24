@@ -38,6 +38,13 @@ def normalize(value: str) -> str:
     return re.sub(r"[^\w]", "", value.decode("ascii")).strip().upper()
 
 
+def check_email(email: str):
+    try:
+        validate_email(email)
+    except ValidationError:
+        raise InvalidArgument("invalid_email")
+
+
 class AccountService(user_pb2_grpc.AccountServiceServicer):
     def __init__(self):
         super().__init__()
@@ -117,10 +124,7 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
     def SendRecoveryEmail(
         self, request: user_pb2.Email, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        try:
-            validate_email(request.email)
-        except ValidationError:
-            raise InvalidArgument("invalid_email")
+        check_email(request.email)
 
         if user := get_user_model().objects.filter(email=request.email).first():
             if user.is_alive_and_kicking:
@@ -245,7 +249,7 @@ class UserService(ImageUploadMixin, user_pb2_grpc.UserServiceServicer):
     def SendEmailUpdateEmail(
         self, request: user_pb2.Email, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        validate_email(request.email)
+        check_email(request.email)
         send_user_email_update_email.delay(
             user_id=str(context.caller.id), email=request.email
         )
