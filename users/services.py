@@ -38,6 +38,13 @@ def normalize(value: str) -> str:
     return re.sub(r"[^\w]", "", value.decode("ascii")).strip().upper()
 
 
+def check_password(password: str):
+    try:
+        validate_password(password)
+    except ValidationError:
+        raise InvalidArgument("invalid_password")
+
+
 def check_email(email: str):
     try:
         validate_email(email)
@@ -240,7 +247,7 @@ class UserService(ImageUploadMixin, user_pb2_grpc.UserServiceServicer):
     def UpdatePassword(
         self, request: user_pb2.Password, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        validate_password(request.password)
+        check_password(request.password)
         user = get_user_model().objects.select_for_update().get(id=context.caller.id)
         user.set_password(request.password)
         user.save()

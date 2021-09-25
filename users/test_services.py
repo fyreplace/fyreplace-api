@@ -558,7 +558,7 @@ class UserService_UpdatePassword(UserServiceTestCase):
     def test_invalid_password(self):
         self.request.password = "weak"
 
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(InvalidArgument):
             self.service.UpdatePassword(self.request, self.grpc_context)
 
 
