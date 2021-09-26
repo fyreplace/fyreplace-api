@@ -238,7 +238,7 @@ class UserService(ImageUploadMixin, user_pb2_grpc.UserServiceServicer):
         request_iterator: Iterator[image_pb2.ImageChunk],
         context: grpc.ServicerContext,
     ) -> empty_pb2.Empty:
-        image = self.get_image(str(context.caller.id), request_iterator)
+        image = self.get_image(request_iterator)
         user = get_user_model().objects.select_for_update().get(id=context.caller.id)
         self.set_image(user, "avatar", image)
         return empty_pb2.Empty()

@@ -279,9 +279,7 @@ class ChapterService(ImageUploadMixin, post_pb2_grpc.ChapterServiceServicer):
         except:
             raise InvalidArgument("missing_location")
 
-        image = self.get_image(
-            str(context.caller.id), request_iterator, chunkator=lambda u: u.chunk
-        )
+        image = self.get_image(request_iterator, chunkator=lambda u: u.chunk)
         post = Post.existing_objects.get_writable_by(
             context.caller, id=location.post_id
         )
