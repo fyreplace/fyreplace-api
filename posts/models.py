@@ -100,12 +100,7 @@ class PublishedPostManager(ExistingPostManager):
 
 class DraftPostManager(ExistingPostManager):
     def get_queryset(self) -> models.QuerySet:
-        return (
-            super()
-            .get_queryset()
-            .filter(date_published__isnull=True)
-            .order_by("date_created", "id")
-        )
+        return super().get_queryset().filter(date_published__isnull=True)
 
 
 class ActivePostManager(ExistingPostManager):
@@ -116,7 +111,7 @@ class ActivePostManager(ExistingPostManager):
 
 class Post(TimestampModel, SoftDeleteModel, ValidatableModel):
     class Meta:
-        ordering = ["date_published", "id"]
+        ordering = ["date_published", "date_created", "id"]
 
     MAX_CHAPTERS = 10
     objects = models.Manager()
