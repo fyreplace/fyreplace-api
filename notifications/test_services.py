@@ -78,39 +78,6 @@ class NotificationService_List(NotificationServiceTestCase, PaginationTestCase):
     def setUp(self):
         super().setUp()
         self.notifications = self._create_test_notifications()
-        # self.initial_cursor = pagination_pb2.Cursor(
-        #     data=[
-        #         pagination_pb2.KeyValuePair(
-        #             key=self.date_field,
-        #             value=str(getattr(self.notifications[0], self.date_field)),
-        #         ),
-        #         pagination_pb2.KeyValuePair(
-        #             key="id", value=str(self.notifications[0].id)
-        #         ),
-        #     ],
-        #     is_next=True,
-        # )
-        # self.out_of_bounds_cursor = pagination_pb2.Cursor(
-        #     data=[
-        #         pagination_pb2.KeyValuePair(key=self.date_field, value=str(now())),
-        #         pagination_pb2.KeyValuePair(
-        #             key="id", value=str(self.notifications[-1].id)
-        #         ),
-        #     ],
-        #     is_next=True,
-        # )
-        self.initial_cursor = pagination_pb2.Cursor(
-            data=[
-                pagination_pb2.KeyValuePair(
-                    key=self.date_field,
-                    value=str(getattr(self.notifications[0], self.date_field)),
-                ),
-                pagination_pb2.KeyValuePair(
-                    key="id", value=str(self.notifications[0].id)
-                ),
-            ],
-            is_next=True,
-        )
         self.out_of_bounds_cursor = pagination_pb2.Cursor(
             data=[
                 pagination_pb2.KeyValuePair(key=self.date_field, value=str(now())),
@@ -146,8 +113,8 @@ class NotificationService_List(NotificationServiceTestCase, PaginationTestCase):
     def test_invalid_size(self):
         self.run_test_invalid_size()
 
-    def test_no_initial_size(self):
-        self.run_test_no_initial_size(self.initial_cursor)
+    def test_no_header(self):
+        self.run_test_no_header()
 
     def test_out_of_bounds(self):
         self.run_test_out_of_bounds(self.out_of_bounds_cursor)
@@ -166,7 +133,7 @@ class NotificationService_List(NotificationServiceTestCase, PaginationTestCase):
                 Comment.objects.create(post=post, author=self.other_user, text="Text")
 
         notifications = Notification.objects.filter(recipient=self.main_user)
-        adapter = NotificationPaginationAdapter()
+        adapter = NotificationPaginationAdapter(notifications)
         return list(notifications.order_by(*adapter.get_cursor_fields()))
 
 

@@ -13,18 +13,23 @@ from protos import pagination_pb2
 
 
 class PaginationAdapter(ABC):
+    def __init__(self, query: QuerySet):
+        self.initial_query = query.order_by(*self.get_cursor_fields())
+        self.query = self.initial_query
+        self.forward = True
+
     @abstractmethod
     def get_cursor_fields(self) -> Iterable[str]:
         raise NotImplementedError
 
-    def order_queryset(self, query: QuerySet) -> QuerySet:
-        return query.order_by(*self.get_cursor_fields())
+    def apply_header(self, header: pagination_pb2.Header):
+        self.forward = header.forward
 
     def make_queryset_filters(self, page: pagination_pb2.Page) -> Q:
         filters = Q()
         equalities = {}
 
-        if page.forward == page.cursor.is_next:
+        if self.forward == page.cursor.is_next:
             comp_normal = "gt"
             comp_reverse = "lt"
         else:
@@ -59,46 +64,48 @@ class PaginatorMixin:
     def paginate(
         self,
         request_iterator: Iterator[pagination_pb2.Page],
-        query: QuerySet,
         bundle_class: Type,
         adapter: PaginationAdapter,
         message_overrides: dict = {},
         on_items: Optional[Callable[[list], None]] = None,
     ):
         bundle_field = re.sub(r"(?<!^)(?=[A-Z])", "_", bundle_class.__name__).lower()
+        header_received = False
         size = 0
-        query = adapter.order_queryset(query)
 
         for request in request_iterator:
-            items = query
-
-            if not request.forward:
-                items = items.reverse()
-
             previous_cursor = None
             next_cursor = None
             position_type = request.WhichOneof("position")
-            is_cursor = position_type == "cursor"
+            is_header = position_type == "header"
             has_previous = False
             has_next = False
 
-            if is_cursor:
-                filters = adapter.make_queryset_filters(request)
+            if is_header:
+                header_received = True
+                size = request.header.size
+                adapter.apply_header(request.header)
 
-                items = items.filter(filters).select_related()
+                if not (0 < size <= settings.PAGINATION_MAX_SIZE):
+                    raise InvalidArgument("invalid_size")
 
+                continue
+            elif not header_received:
+                raise InvalidArgument("missing_header")
+
+            items = adapter.query
+            filters = adapter.make_queryset_filters(request)
+
+            if not adapter.forward:
+                items = items.reverse()
+
+            items = items.filter(filters).select_related()[: size + 1]
+
+            if len(request.cursor.data) > 0:
                 if request.cursor.is_next:
-                    items = items[: size + 1]
                     has_previous = True
                 else:
-                    items = items[:size]
                     has_next = True
-            else:
-                size = request.size
-                items = items[: size + 1]
-
-            if not (0 < size <= settings.PAGINATION_MAX_SIZE):
-                raise InvalidArgument("invalid_size")
 
             items = list(items)
             item_count = len(items)
@@ -111,10 +118,10 @@ class PaginatorMixin:
                 items.pop()
                 item_count -= 1
 
-                if is_cursor and not request.cursor.is_next:
-                    has_previous = True
-                else:
+                if request.cursor.is_next:
                     has_next = True
+                else:
+                    has_previous = True
 
             if has_previous:
                 previous_cursor = pagination_pb2.Cursor(

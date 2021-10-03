@@ -32,9 +32,8 @@ class NotificationService(
         notifications = Notification.objects.filter_readable_by(context.caller)
         return self.paginate(
             request_iterator,
-            notifications,
             bundle_class=notification_pb2.Notifications,
-            adapter=NotificationPaginationAdapter(),
+            adapter=NotificationPaginationAdapter(notifications),
         )
 
     def Clear(

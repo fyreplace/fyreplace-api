@@ -1,7 +1,7 @@
 import io
 import itertools
 from datetime import timedelta
-from typing import Iterator, List
+from typing import Iterator, List, Optional
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
@@ -55,16 +55,6 @@ class PostPaginationTestCase(PostServiceTestCase, PaginationTestCase):
     def setUp(self):
         super().setUp()
         self.posts = self._create_test_posts()
-        self.initial_cursor = pagination_pb2.Cursor(
-            data=[
-                pagination_pb2.KeyValuePair(
-                    key=self.date_field,
-                    value=str(getattr(self.posts[0], self.date_field)),
-                ),
-                pagination_pb2.KeyValuePair(key="id", value=str(self.posts[0].id)),
-            ],
-            is_next=True,
-        )
         self.out_of_bounds_cursor = pagination_pb2.Cursor(
             data=[
                 pagination_pb2.KeyValuePair(key=self.date_field, value=str(now())),
@@ -86,7 +76,7 @@ class PostPaginationTestCase(PostServiceTestCase, PaginationTestCase):
             post.delete()
 
         self.posts = self.posts[:-6]
-        page_requests = [pagination_pb2.Page(forward=True, size=self.page_size)]
+        page_requests = self.get_initial_requests(forward=True)
         posts_iterator = self.paginate(page_requests)
         posts = next(posts_iterator)
         self.assertEqual(len(posts.posts), self.page_size)
@@ -94,7 +84,7 @@ class PostPaginationTestCase(PostServiceTestCase, PaginationTestCase):
         for i, post in enumerate(posts.posts):
             self.assertEqual(post.id, str(self.posts[i].id))
 
-        page_requests.append(pagination_pb2.Page(forward=True, cursor=posts.next))
+        page_requests.append(pagination_pb2.Page(cursor=posts.next))
         posts = next(posts_iterator)
         self.assertCursorEmpty(posts.next)
         self.assertEqual(len(posts.posts), self.page_size - 6)
@@ -307,8 +297,8 @@ class PostService_ListArchive(PostPaginationTestCase):
     def test_invalid_size(self):
         self.run_test_invalid_size()
 
-    def test_no_initial_size(self):
-        self.run_test_no_initial_size(self.initial_cursor)
+    def test_no_header(self):
+        self.run_test_no_header()
 
     def test_out_of_bounds(self):
         self.run_test_out_of_bounds(self.out_of_bounds_cursor)
@@ -348,8 +338,8 @@ class PostService_ListOwnPosts(PostPaginationTestCase):
     def test_invalid_size(self):
         self.run_test_invalid_size()
 
-    def test_no_initial_size(self):
-        self.run_test_no_initial_size(self.initial_cursor)
+    def test_no_header(self):
+        self.run_test_no_header()
 
     def test_out_of_bounds(self):
         self.run_test_out_of_bounds(self.out_of_bounds_cursor)
@@ -389,8 +379,8 @@ class PostService_ListDrafts(PostPaginationTestCase):
     def test_invalid_size(self):
         self.run_test_invalid_size()
 
-    def test_no_initial_size(self):
-        self.run_test_no_initial_size(self.initial_cursor)
+    def test_no_header(self):
+        self.run_test_no_header()
 
     def test_out_of_bounds(self):
         self.run_test_out_of_bounds(self.out_of_bounds_cursor)
@@ -1037,16 +1027,6 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
     def setUp(self):
         super().setUp()
         self.comments = self._create_test_comments()
-        self.initial_cursor = pagination_pb2.Cursor(
-            data=[
-                pagination_pb2.KeyValuePair(
-                    key=self.date_field,
-                    value=str(getattr(self.comments[0], self.date_field)),
-                ),
-                pagination_pb2.KeyValuePair(key="id", value=str(self.comments[0].id)),
-            ],
-            is_next=True,
-        )
         self.out_of_bounds_cursor = pagination_pb2.Cursor(
             data=[
                 pagination_pb2.KeyValuePair(key=self.date_field, value=str(now())),
@@ -1055,9 +1035,10 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
             is_next=True,
         )
 
+    def get_context_id(self) -> Optional[str]:
+        return str(self.post.id)
+
     def paginate(self, request_iterator: Iterator[pagination_pb2.Page]) -> Iterator:
-        initial_request = pagination_pb2.Page(context_id=str(self.post.id))
-        request_iterator = itertools.chain([initial_request], request_iterator)
         return self.service.List(request_iterator, self.grpc_context)
 
     def check(self, item: comment_pb2.Comment, position: int):
@@ -1087,8 +1068,8 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
     def test_invalid_size(self):
         self.run_test_invalid_size()
 
-    def test_no_initial_size(self):
-        self.run_test_no_initial_size(self.initial_cursor)
+    def test_no_header(self):
+        self.run_test_no_header()
 
     def test_out_of_bounds(self):
         self.run_test_out_of_bounds(self.out_of_bounds_cursor)
@@ -1097,7 +1078,7 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
         for comment in self.comments[-6:]:
             comment.delete()
 
-        page_requests = [pagination_pb2.Page(forward=True, size=self.page_size)]
+        page_requests = self.get_initial_requests(forward=True)
         items_iterator = self.paginate(page_requests)
         comments = next(items_iterator)
         self.assertEqual(len(comments.comments), self.page_size)
@@ -1107,7 +1088,7 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
             self.assertEqual(comment.id, str(self_comment.id))
             self.assertEqual(comment.text, self_comment.text)
 
-        page_requests.append(pagination_pb2.Page(forward=True, cursor=comments.next))
+        page_requests.append(pagination_pb2.Page(cursor=comments.next))
         comments = next(items_iterator)
         self.assertCursorEmpty(comments.next)
         self.assertEqual(len(comments.comments), self.page_size)
@@ -1121,8 +1102,7 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
 
     def test_other_banned_forever(self):
         self.other_user.ban()
-
-        page_requests = [pagination_pb2.Page(forward=True, size=self.page_size)]
+        page_requests = self.get_initial_requests(forward=True)
         items_iterator = self.paginate(page_requests)
         comments = next(items_iterator)
         comment = comments.comments[-1]
