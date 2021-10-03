@@ -77,6 +77,23 @@ class PaginationTestCase(BaseTestCase):
         for pair in cursor.data:
             self.assertNotEqual(pair.value, "")
 
+    def get_context_id(self) -> Optional[str]:
+        return None
+
+    def get_initial_requests(
+        self, forward: bool, size: Optional[int] = None
+    ) -> List[pagination_pb2.Page]:
+        return [
+            pagination_pb2.Page(
+                header=pagination_pb2.Header(
+                    forward=forward,
+                    size=size if size is not None else self.page_size,
+                    context_id=self.get_context_id(),
+                )
+            ),
+            pagination_pb2.Page(cursor=pagination_pb2.Cursor(is_next=True)),
+        ]
+
     def paginate(self, request_iterator: Iterator[pagination_pb2.Page]) -> Iterator:
         raise NotImplementedError
 
@@ -84,7 +101,7 @@ class PaginationTestCase(BaseTestCase):
         return getattr(items, items.__class__.__name__.lower())
 
     def run_test(self, check: Callable[[Message, int], None]):
-        page_requests = [pagination_pb2.Page(forward=True, size=self.page_size)]
+        page_requests = self.get_initial_requests(forward=True)
         items_iterator = self.paginate(page_requests)
         items = next(items_iterator)
         self.assertCursorEmpty(items.previous)
@@ -94,7 +111,7 @@ class PaginationTestCase(BaseTestCase):
         for i, item in enumerate(self.items_list(items)):
             check(item, i)
 
-        page_requests.append(pagination_pb2.Page(forward=True, cursor=items.next))
+        page_requests.append(pagination_pb2.Page(cursor=items.next))
         items = next(items_iterator)
         self.assertCursorNotEmpty(items.previous)
         self.assertCursorEmpty(items.next)
@@ -104,16 +121,16 @@ class PaginationTestCase(BaseTestCase):
             check(item, i + self.page_size)
 
     def run_test_previous(self, check: Callable[[Any, int], None]):
-        page_requests = [pagination_pb2.Page(forward=True, size=self.page_size)]
+        page_requests = self.get_initial_requests(forward=True)
         items_iterator = self.paginate(page_requests)
         items = next(items_iterator)
         self.assertCursorEmpty(items.previous)
         self.assertCursorNotEmpty(items.next)
         self.assertEqual(len(self.items_list(items)), self.page_size)
-        page_requests.append(pagination_pb2.Page(forward=True, cursor=items.next))
+        page_requests.append(pagination_pb2.Page(cursor=items.next))
         items = next(items_iterator)
         self.assertCursorNotEmpty(items.previous)
-        page_requests.append(pagination_pb2.Page(forward=True, cursor=items.previous))
+        page_requests.append(pagination_pb2.Page(cursor=items.previous))
         items = next(items_iterator)
         self.assertCursorEmpty(items.previous)
         self.assertCursorNotEmpty(items.next)
@@ -122,7 +139,7 @@ class PaginationTestCase(BaseTestCase):
             check(item, i)
 
     def run_test_reverse(self, check: Callable[[Any, int], None]):
-        page_requests = [pagination_pb2.Page(forward=False, size=self.page_size)]
+        page_requests = self.get_initial_requests(forward=False)
         items_iterator = self.paginate(page_requests)
         items = next(items_iterator)
         self.assertCursorEmpty(items.previous)
@@ -132,7 +149,7 @@ class PaginationTestCase(BaseTestCase):
         for i, item in enumerate(self.items_list(items)):
             check(item, -i - 1)
 
-        page_requests.append(pagination_pb2.Page(forward=False, cursor=items.next))
+        page_requests.append(pagination_pb2.Page(cursor=items.next))
         items = next(items_iterator)
         self.assertCursorNotEmpty(items.previous)
         self.assertCursorEmpty(items.next)
@@ -142,16 +159,16 @@ class PaginationTestCase(BaseTestCase):
             check(item, -i - 1 - self.page_size)
 
     def run_test_reverse_previous(self, check: Callable[[Any, int], None]):
-        page_requests = [pagination_pb2.Page(forward=False, size=self.page_size)]
+        page_requests = self.get_initial_requests(forward=False)
         items_iterator = self.paginate(page_requests)
         items = next(items_iterator)
         self.assertCursorEmpty(items.previous)
         self.assertCursorNotEmpty(items.next)
         self.assertEqual(len(self.items_list(items)), self.page_size)
-        page_requests.append(pagination_pb2.Page(forward=False, cursor=items.next))
+        page_requests.append(pagination_pb2.Page(cursor=items.next))
         items = next(items_iterator)
         self.assertCursorNotEmpty(items.previous)
-        page_requests.append(pagination_pb2.Page(forward=False, cursor=items.previous))
+        page_requests.append(pagination_pb2.Page(cursor=items.previous))
         items = next(items_iterator)
         self.assertCursorEmpty(items.previous)
         self.assertCursorNotEmpty(items.next)
@@ -167,24 +184,22 @@ class PaginationTestCase(BaseTestCase):
 
     def run_test_invalid_size(self):
         for size in [0, settings.PAGINATION_MAX_SIZE + 1]:
-            page_requests = [pagination_pb2.Page(forward=True, size=size)]
+            page_requests = self.get_initial_requests(forward=True, size=size)
             items_iterator = self.paginate(page_requests)
 
             with self.assertRaises(InvalidArgument):
                 next(items_iterator)
 
-    def run_test_no_initial_size(self, cursor: pagination_pb2.Cursor):
-        page_requests = [pagination_pb2.Page(forward=True, cursor=cursor)]
+    def run_test_no_header(self):
+        page_requests = self.get_initial_requests(forward=True)[-1:]
         items_iterator = self.paginate(page_requests)
 
         with self.assertRaises(InvalidArgument):
             next(items_iterator)
 
     def run_test_out_of_bounds(self, cursor: pagination_pb2.Cursor):
-        page_requests = [
-            pagination_pb2.Page(forward=True, size=12),
-            pagination_pb2.Page(forward=True, cursor=cursor),
-        ]
+        page_requests = self.get_initial_requests(forward=True)
+        page_requests.append(pagination_pb2.Page(cursor=cursor))
         items_iterator = self.paginate(page_requests)
         items = next(items_iterator)
         self.assertEqual(len(self.items_list(items)), self.page_size)

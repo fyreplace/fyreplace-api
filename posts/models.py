@@ -1,6 +1,6 @@
 from datetime import timedelta
 from math import ceil
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser
@@ -100,12 +100,7 @@ class PublishedPostManager(ExistingPostManager):
 
 class DraftPostManager(ExistingPostManager):
     def get_queryset(self) -> models.QuerySet:
-        return (
-            super()
-            .get_queryset()
-            .filter(date_published__isnull=True)
-            .order_by("date_created", "id")
-        )
+        return super().get_queryset().filter(date_published__isnull=True)
 
 
 class ActivePostManager(ExistingPostManager):
@@ -116,7 +111,7 @@ class ActivePostManager(ExistingPostManager):
 
 class Post(TimestampModel, SoftDeleteModel, ValidatableModel):
     class Meta:
-        ordering = ["date_published", "id"]
+        ordering = ["date_published", "date_created", "id"]
 
     MAX_CHAPTERS = 10
     objects = models.Manager()
@@ -155,6 +150,13 @@ class Post(TimestampModel, SoftDeleteModel, ValidatableModel):
 
         data["chapters"] = [self.convert_value("chapters", c) for c in chapters]
         return data
+
+    def convert_field(self, field: str) -> Any:
+        return super().convert_field(
+            field
+            if field != "date_created" or not self.date_published
+            else "date_published"
+        )
 
     def delete(self, *args, **kwargs) -> Tuple[int, Dict[str, int]]:
         return (

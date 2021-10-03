@@ -1,4 +1,5 @@
 import io
+import uuid
 from inspect import isclass
 from typing import Any, Callable, Iterator, List, Optional, Type, Union
 
@@ -24,7 +25,6 @@ def get_servicer_interfaces(cls: type) -> List[type]:
 class ImageUploadMixin:
     def get_image(
         self,
-        name: str,
         request_iterator: Iterator,
         chunkator: Optional[Callable[[MaybeImageChunk], MaybeImageChunk]] = None,
     ) -> Optional[ImageFile]:
@@ -54,7 +54,11 @@ class ImageUploadMixin:
         if data and not type_checked:
             validate_type()
 
-        return ImageFile(io.BytesIO(data), name=f"{name}.{extension}") if data else None
+        return (
+            ImageFile(io.BytesIO(data), name=f"{uuid.uuid4()}.{extension}")
+            if data
+            else None
+        )
 
     def set_image(
         self, model: Type[models.Model], field: str, image: Optional[ImageFile]

@@ -20,8 +20,12 @@ from protos import (
     post_pb2_grpc,
 )
 
-from .models import Chapter, Comment, Post, Stack, Vote
-from .pagination import CreationDatePaginationAdapter, PublicationDatePaginationAdapter
+from .models import Chapter, Comment, Post, Stack, Subscription, Vote
+from .pagination import (
+    CommentPaginationAdapter,
+    CreationDatePaginationAdapter,
+    PublicationDatePaginationAdapter,
+)
 from .signals import fetched
 
 
@@ -95,11 +99,11 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         request_iterator: Iterator[pagination_pb2.Page],
         context: grpc.ServicerContext,
     ) -> Iterator[post_pb2.Posts]:
+        posts = Post.published_objects.filter(subscribers=context.caller)
         return self.paginate(
             request_iterator,
-            Post.published_objects.filter(subscribers=context.caller),
             bundle_class=post_pb2.Posts,
-            adapter=PublicationDatePaginationAdapter(),
+            adapter=PublicationDatePaginationAdapter(posts),
             message_overrides={"is_preview": True},
         )
 
@@ -108,11 +112,11 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         request_iterator: Iterator[pagination_pb2.Page],
         context: grpc.ServicerContext,
     ):
+        posts = Post.existing_objects.filter(author=context.caller)
         return self.paginate(
             request_iterator,
-            Post.existing_objects.filter(author=context.caller),
             bundle_class=post_pb2.Posts,
-            adapter=PublicationDatePaginationAdapter(),
+            adapter=PublicationDatePaginationAdapter(posts),
             message_overrides={"is_preview": True},
         )
 
@@ -121,11 +125,11 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         request_iterator: Iterator[pagination_pb2.Page],
         context: grpc.ServicerContext,
     ):
+        drafts = Post.draft_objects.filter(author=context.caller)
         return self.paginate(
             request_iterator,
-            Post.draft_objects.filter(author=context.caller),
             bundle_class=post_pb2.Posts,
-            adapter=CreationDatePaginationAdapter(),
+            adapter=CreationDatePaginationAdapter(drafts),
             message_overrides={"is_preview": True},
         )
 
@@ -279,9 +283,7 @@ class ChapterService(ImageUploadMixin, post_pb2_grpc.ChapterServiceServicer):
         except:
             raise InvalidArgument("missing_location")
 
-        image = self.get_image(
-            str(context.caller.id), request_iterator, chunkator=lambda u: u.chunk
-        )
+        image = self.get_image(request_iterator, chunkator=lambda u: u.chunk)
         post = Post.existing_objects.get_writable_by(
             context.caller, id=location.post_id
         )
@@ -305,28 +307,23 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
         request_iterator: Iterator[pagination_pb2.Page],
         context: grpc.ServicerContext,
     ) -> Iterator[comment_pb2.Comments]:
-        try:
-            post_id = next(request_iterator).context_id
-        except:
-            raise InvalidArgument("missing_context_id")
-
-        post = Post.existing_objects.get_published_readable_by(
-            context.caller, id=post_id
-        )
-
         def on_items(comments: List[Comment]):
             comments = sorted(comments, key=lambda c: c.date_created)
-            post.subscriptions.filter(user=context.caller).update(
-                last_comment_seen=comments[-1]
-            )
+
+            if len(comments) > 0:
+                last_comment = comments[-1]
+                Subscription.objects.filter(
+                    user=context.caller, post_id=last_comment.post_id
+                ).update(last_comment_seen=last_comment)
+
             pk_set = set(c.id for c in comments)
             fetched.send(sender=Comment, user=context.caller, pk_set=pk_set)
 
+        comments = Comment.objects.all()
         return self.paginate(
             request_iterator,
-            post.comments.all(),
             bundle_class=comment_pb2.Comments,
-            adapter=CreationDatePaginationAdapter(),
+            adapter=CommentPaginationAdapter(comments, context),
             on_items=on_items,
         )
 

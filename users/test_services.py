@@ -1,5 +1,5 @@
+import uuid
 from datetime import datetime, timedelta
-from uuid import uuid4
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
@@ -488,7 +488,7 @@ class UserService_Retrieve(UserServiceTestCase):
             self.service.Retrieve(self.request, self.grpc_context)
 
     def test_non_existent(self):
-        self.request.id = str(uuid4())
+        self.request.id = str(uuid.uuid4())
 
         with (self.assertRaises(ObjectDoesNotExist)):
             self.service.Retrieve(self.request, self.grpc_context)
@@ -558,7 +558,7 @@ class UserService_UpdatePassword(UserServiceTestCase):
     def test_invalid_password(self):
         self.request.password = "weak"
 
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(InvalidArgument):
             self.service.UpdatePassword(self.request, self.grpc_context)
 
 
@@ -576,7 +576,7 @@ class UserService_SendEmailUpdateEmail(UserServiceTestCase):
     def test_invalid_email(self):
         self.request.email = "bad"
 
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(InvalidArgument):
             self.service.SendEmailUpdateEmail(self.request, self.grpc_context)
 
 
@@ -651,7 +651,7 @@ class UserService_UpdateBlock(UserServiceTestCase):
         self.assertEqual(self.main_user.blocked_users.count(), 0)
 
     def test_block_non_existent(self):
-        self.request.id = str(uuid4())
+        self.request.id = str(uuid.uuid4())
 
         with self.assertRaises(ObjectDoesNotExist):
             self.service.UpdateBlock(self.request, self.grpc_context)

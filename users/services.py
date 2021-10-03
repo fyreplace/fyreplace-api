@@ -38,6 +38,20 @@ def normalize(value: str) -> str:
     return re.sub(r"[^\w]", "", value.decode("ascii")).strip().upper()
 
 
+def check_password(password: str):
+    try:
+        validate_password(password)
+    except ValidationError:
+        raise InvalidArgument("invalid_password")
+
+
+def check_email(email: str):
+    try:
+        validate_email(email)
+    except ValidationError:
+        raise InvalidArgument("invalid_email")
+
+
 class AccountService(user_pb2_grpc.AccountServiceServicer):
     def __init__(self):
         super().__init__()
@@ -117,10 +131,7 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
     def SendRecoveryEmail(
         self, request: user_pb2.Email, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        try:
-            validate_email(request.email)
-        except ValidationError:
-            raise InvalidArgument("invalid_email")
+        check_email(request.email)
 
         if user := get_user_model().objects.filter(email=request.email).first():
             if user.is_alive_and_kicking:
@@ -227,7 +238,7 @@ class UserService(ImageUploadMixin, user_pb2_grpc.UserServiceServicer):
         request_iterator: Iterator[image_pb2.ImageChunk],
         context: grpc.ServicerContext,
     ) -> empty_pb2.Empty:
-        image = self.get_image(str(context.caller.id), request_iterator)
+        image = self.get_image(request_iterator)
         user = get_user_model().objects.select_for_update().get(id=context.caller.id)
         self.set_image(user, "avatar", image)
         return empty_pb2.Empty()
@@ -236,7 +247,7 @@ class UserService(ImageUploadMixin, user_pb2_grpc.UserServiceServicer):
     def UpdatePassword(
         self, request: user_pb2.Password, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        validate_password(request.password)
+        check_password(request.password)
         user = get_user_model().objects.select_for_update().get(id=context.caller.id)
         user.set_password(request.password)
         user.save()
@@ -245,7 +256,7 @@ class UserService(ImageUploadMixin, user_pb2_grpc.UserServiceServicer):
     def SendEmailUpdateEmail(
         self, request: user_pb2.Email, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        validate_email(request.email)
+        check_email(request.email)
         send_user_email_update_email.delay(
             user_id=str(context.caller.id), email=request.email
         )
