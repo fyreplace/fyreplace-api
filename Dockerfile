@@ -1,7 +1,4 @@
-FROM python:3-slim
-
-RUN apt-get update
-RUN apt-get install -y make gcc default-libmysqlclient-dev libpq-dev libmagic1
+FROM python:3
 
 WORKDIR /app
 
