@@ -24,10 +24,10 @@ from .services import get_servicer_interfaces
 User = get_user_model()
 
 
-def create_server(debug: bool = settings.DEBUG) -> grpc.Server:
+def create_server() -> grpc.Server:
     services = list(all_servicers())
     server = grpc.server(
-        futures.ThreadPoolExecutor(max_workers=1 if debug else cpu_count()),
+        futures.ThreadPoolExecutor(),
         interceptors=(
             ExceptionInterceptor(),
             AuthorizationInterceptor(services),
