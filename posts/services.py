@@ -22,9 +22,10 @@ from protos import (
 
 from .models import Chapter, Comment, Post, Stack, Subscription, Vote
 from .pagination import (
+    ArchivePaginationAdapter,
     CommentPaginationAdapter,
-    CreationDatePaginationAdapter,
-    PublicationDatePaginationAdapter,
+    DraftsPaginationAdapter,
+    OwnPostsPaginationAdapter,
 )
 from .signals import fetched
 
@@ -103,7 +104,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         return self.paginate(
             request_iterator,
             bundle_class=post_pb2.Posts,
-            adapter=PublicationDatePaginationAdapter(posts),
+            adapter=ArchivePaginationAdapter(posts),
             message_overrides={"is_preview": True},
         )
 
@@ -116,7 +117,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         return self.paginate(
             request_iterator,
             bundle_class=post_pb2.Posts,
-            adapter=PublicationDatePaginationAdapter(posts),
+            adapter=OwnPostsPaginationAdapter(posts),
             message_overrides={"is_preview": True},
         )
 
@@ -129,7 +130,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         return self.paginate(
             request_iterator,
             bundle_class=post_pb2.Posts,
-            adapter=CreationDatePaginationAdapter(drafts),
+            adapter=DraftsPaginationAdapter(drafts),
             message_overrides={"is_preview": True},
         )
 

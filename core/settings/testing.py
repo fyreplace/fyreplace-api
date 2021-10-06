@@ -1,3 +1,5 @@
+AWS_ACCESS_KEY_ID = None
+
 from . import *
 
 CELERY_TASK_ALWAYS_EAGER = True

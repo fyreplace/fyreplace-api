@@ -68,7 +68,7 @@ class PaginatorMixin:
         adapter: PaginationAdapter,
         message_overrides: dict = {},
         on_items: Optional[Callable[[list], None]] = None,
-    ):
+    ) -> Iterator:
         bundle_field = re.sub(r"(?<!^)(?=[A-Z])", "_", bundle_class.__name__).lower()
         header_received = False
         size = 0
@@ -139,7 +139,8 @@ class PaginatorMixin:
             yield bundle_class(
                 **{
                     bundle_field: [
-                        adapter.make_message(p, **message_overrides) for p in items
+                        adapter.make_message(item, **message_overrides)
+                        for item in items
                     ],
                     "previous": previous_cursor,
                     "next": next_cursor,
