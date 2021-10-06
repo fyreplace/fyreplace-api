@@ -172,7 +172,7 @@ class Post(TimestampModel, SoftDeleteModel, ValidatableModel):
     @atomic
     def publish(self, anonymous: bool):
         if self.date_published is not None:
-            raise IntegrityError(self.error_already_published)
+            raise IntegrityError("already_published")
 
         self.validate()
         self.is_anonymous = anonymous
