@@ -124,6 +124,7 @@ jobs:
           echo "S3_STORAGE_BUCKET_NAME=${{ secrets.S3_STORAGE_BUCKET_NAME }}" >> configuration.properties
           echo "S3_ENDPOINT_URL=${{ secrets.S3_ENDPOINT_URL }}" >> configuration.properties
           echo "S3_CUSTOM_DOMAIN=${{ secrets.S3_CUSTOM_DOMAIN }}" >> configuration.properties
+          echo "MAX_CONCURRENCY=${{ secrets.MAX_CONCURRENCY }}" >> configuration.properties
           echo "MAILGUN_API_URL=${{ secrets.MAILGUN_API_URL }}" >> configuration.properties
           echo "DEFAULT_FROM_EMAIL=${{ secrets.DEFAULT_FROM_EMAIL }}" >> configuration.properties
           echo "SERVER_EMAIL=${{ secrets.SERVER_EMAIL }}" >> configuration.properties
