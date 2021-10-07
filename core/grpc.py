@@ -12,7 +12,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils.timezone import now
 from google.protobuf.message import Message
 from grpc_interceptor.exceptions import Unauthenticated
-from psutil import cpu_count
 
 from users.models import Connection
 from users.tasks import use_connection
@@ -24,10 +23,10 @@ from .services import get_servicer_interfaces
 User = get_user_model()
 
 
-def create_server(debug: bool = settings.DEBUG) -> grpc.Server:
+def create_server() -> grpc.Server:
     services = list(all_servicers())
     server = grpc.server(
-        futures.ThreadPoolExecutor(max_workers=1 if debug else cpu_count()),
+        futures.ThreadPoolExecutor(max_workers=settings.MAX_CONCURRENCY),
         interceptors=(
             ExceptionInterceptor(),
             AuthorizationInterceptor(services),

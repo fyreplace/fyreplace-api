@@ -24,14 +24,13 @@ class Command(BaseCommand):
         self.run_server()
 
     def run_server(self):
-        server = create_server()
-        self.server = server
+        self.server = create_server()
 
         try:
             print("gRPC server starting...")
-            server.start()
+            self.server.start()
             print("gRPC server started")
-            server.wait_for_termination()
+            self.server.wait_for_termination()
         finally:
             print("gRPC server stopping...")
             self.stop_server()

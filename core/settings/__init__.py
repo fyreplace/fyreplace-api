@@ -276,6 +276,8 @@ if path := os.getenv("SSL_CERTIFICATE_PATH"):
 else:
     SSL_CERTIFICATE_CHAIN = None
 
+MAX_CONCURRENCY = int(os.getenv("MAX_CONCURRENCY", os.cpu_count()))
+
 # Celery
 
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
