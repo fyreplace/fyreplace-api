@@ -1,4 +1,4 @@
-.PHONY: all protos static migrations emails
+.PHONY: protobufs static migrations emails
 
 protobufs: protos protos/__init__.py
 
