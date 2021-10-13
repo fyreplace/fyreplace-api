@@ -1,6 +1,5 @@
 import jwt as j
 from django.conf import settings
-from jwt import *
 
 
 def encode(payload: dict) -> str:
