@@ -1,6 +1,10 @@
+from . import *
+
 AWS_ACCESS_KEY_ID = None
 
-from . import *
+STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+
+DEFAULT_FILE_STORAGE = "core.storages.FileSystemStorage"
 
 CELERY_TASK_ALWAYS_EAGER = True
 
