@@ -1,14 +1,18 @@
 # Django
 django[argon2]
+django-stubs
 django-celery-beat
 django-storages[boto3]
 django-anymail[mailgun,mailjet]
 django-health-check
+django-extensions
 pillow
 
 # gRPC
 grpcio
+grpcio-tools
 grpc-interceptor
+mypy-protobuf
 
 # Celery
 celery[redis]
@@ -33,9 +37,6 @@ pytest-xdist[psutil]
 rollbar
 
 # Development tools
-grpcio-tools
-django-extensions
-mypy-protobuf
 ipython
 isort
 black
