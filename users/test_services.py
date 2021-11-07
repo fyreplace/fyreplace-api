@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timedelta
+from typing import Iterator, List
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
@@ -17,10 +18,10 @@ from grpc_interceptor.exceptions import (
 
 from core import jwt
 from core.storages import get_image_url
-from core.tests import ImageTestCaseMixin, get_asset
+from core.tests import ImageTestCaseMixin, PaginationTestCase, get_asset
 from notifications.models import CountUnit, Notification
 from notifications.tests import BaseNotificationTestCase
-from protos import id_pb2, user_pb2
+from protos import id_pb2, pagination_pb2, user_pb2
 
 from .emails import AccountActivationEmail, AccountRecoveryEmail, UserEmailUpdateEmail
 from .models import Connection, Hardware, Software
@@ -45,6 +46,16 @@ class UserServiceTestCase(AuthenticatedTestCase, BaseNotificationTestCase):
     def setUp(self):
         super().setUp()
         self.service = UserService()
+
+    def _create_users(self, count: int) -> List[AbstractUser]:
+        return [
+            get_user_model().objects.create_user(
+                username=f"user {i}",
+                email=make_email(f"user-{i}"),
+                password=self.STRONG_PASSWORD,
+            )
+            for i in range(count)
+        ]
 
 
 class AccountService_Create(AccountServiceTestCase):
@@ -600,17 +611,56 @@ class UserService_ConfirmEmailUpdate(UserServiceTestCase):
         return UserEmailUpdateEmail(user.id, make_email("new")).token
 
 
-class UserService_ListBlocked(UserServiceTestCase):
+class UserService_ListBlocked(UserServiceTestCase, PaginationTestCase):
+    main_pagination_field = "username"
+
     def setUp(self):
         super().setUp()
-        self.main_user.blocked_users.add(self.other_user)
+        self.users = self._create_test_users()
+        self.main_user.blocked_users.set(self.users)
+        self.out_of_bounds_cursor = pagination_pb2.Cursor(
+            data=[
+                pagination_pb2.KeyValuePair(
+                    key=self.main_pagination_field, value="zzz"
+                ),
+                pagination_pb2.KeyValuePair(key="id", value=str(self.users[-1].id)),
+            ],
+            is_next=True,
+        )
+
+    def paginate(self, request_iterator: Iterator[pagination_pb2.Page]) -> Iterator:
+        return self.service.ListBlocked(request_iterator, self.grpc_context)
+
+    def check(self, item: user_pb2.Profile, position: int):
+        self.assertEqual(item.id, str(self.users[position].id))
+        self.assertEqual(item.username, self.users[position].username)
 
     def test(self):
-        profiles = self.service.ListBlocked(self.request, self.grpc_context)
-        self.assertEqual(
-            [p.id for p in profiles.profiles],
-            [str(u.id) for u in self.main_user.blocked_users.all()],
-        )
+        self.run_test(self.check)
+
+    def test_previous(self):
+        self.run_test_previous(self.check)
+
+    def test_reverse(self):
+        self.run_test_reverse(self.check)
+
+    def test_reverse_previous(self):
+        self.run_test_reverse_previous(self.check)
+
+    def test_empty(self):
+        self.run_test_empty(self.main_user.blocked_users.all())
+
+    def test_invalid_size(self):
+        self.run_test_invalid_size()
+
+    def test_no_header(self):
+        self.run_test_no_header()
+
+    def test_out_of_bounds(self):
+        self.run_test_out_of_bounds(self.out_of_bounds_cursor)
+
+    def _create_test_users(self) -> List[AbstractUser]:
+        return sorted(self._create_users(count=24), key=lambda u: u.username)
 
 
 class UserService_UpdateBlock(UserServiceTestCase):

@@ -18,12 +18,14 @@ from grpc_interceptor.exceptions import AlreadyExists, InvalidArgument, Permissi
 from core import jwt
 from core.authentication import no_auth
 from core.grpc import get_info_from_token, get_token, serialize_message
+from core.pagination import PaginatorMixin
 from core.services import ImageUploadMixin
 from notifications.models import delete_notifications_for
 from notifications.tasks import report_content
-from protos import id_pb2, image_pb2, user_pb2, user_pb2_grpc
+from protos import id_pb2, image_pb2, pagination_pb2, user_pb2, user_pb2_grpc
 
 from .models import Connection
+from .pagination import UsersPaginationAdapter
 from .tasks import (
     fetch_default_user_avatar,
     send_account_activation_email,
@@ -211,7 +213,7 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
         return empty_pb2.Empty()
 
 
-class UserService(ImageUploadMixin, user_pb2_grpc.UserServiceServicer):
+class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceServicer):
     def Retrieve(
         self, request: id_pb2.StringId, context: grpc.ServicerContext
     ) -> user_pb2.User:
@@ -278,11 +280,16 @@ class UserService(ImageUploadMixin, user_pb2_grpc.UserServiceServicer):
         return empty_pb2.Empty()
 
     def ListBlocked(
-        self, request: empty_pb2.Empty, context: grpc.ServicerContext
+        self,
+        request_iterator: Iterator[pagination_pb2.Page],
+        context: grpc.ServicerContext,
     ) -> user_pb2.Profiles:
         users = context.caller.blocked_users.all()
-        return user_pb2.Profiles(
-            profiles=[u.to_message(message_class=user_pb2.Profile) for u in users]
+        return self.paginate(
+            request_iterator,
+            bundle_class=user_pb2.Profiles,
+            adapter=UsersPaginationAdapter(users),
+            message_overrides={"message_class": user_pb2.Profile},
         )
 
     def UpdateBlock(
