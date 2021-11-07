@@ -57,7 +57,9 @@ class PostPaginationTestCase(PostServiceTestCase, PaginationTestCase):
         self.posts = self._create_test_posts()
         self.out_of_bounds_cursor = pagination_pb2.Cursor(
             data=[
-                pagination_pb2.KeyValuePair(key=self.date_field, value=str(now())),
+                pagination_pb2.KeyValuePair(
+                    key=self.main_pagination_field, value=str(now())
+                ),
                 pagination_pb2.KeyValuePair(key="id", value=str(self.posts[-1].id)),
             ],
             is_next=True,
@@ -259,7 +261,7 @@ class PostService_ListFeed(PostServiceTestCase):
 
 
 class PostService_ListArchive(PostPaginationTestCase):
-    date_field = "date_published"
+    main_pagination_field = "date_published"
 
     def _create_test_posts(self) -> List[Post]:
         posts = self._create_posts(author=self.other_user, count=10, published=True)
@@ -308,7 +310,7 @@ class PostService_ListArchive(PostPaginationTestCase):
 
 
 class PostService_ListOwnPosts(PostPaginationTestCase):
-    date_field = "date_published"
+    main_pagination_field = "date_published"
 
     def _create_test_posts(self) -> List[Post]:
         the_posts = self._create_posts(author=self.main_user, count=14, published=True)
@@ -1029,7 +1031,9 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
         self.comments = self._create_test_comments()
         self.out_of_bounds_cursor = pagination_pb2.Cursor(
             data=[
-                pagination_pb2.KeyValuePair(key=self.date_field, value=str(now())),
+                pagination_pb2.KeyValuePair(
+                    key=self.main_pagination_field, value=str(now())
+                ),
                 pagination_pb2.KeyValuePair(key="id", value=str(self.comments[-1].id)),
             ],
             is_next=True,

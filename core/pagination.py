@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Callable, Iterable, Iterator, List, Optional, Type
 
 from django.conf import settings
-from django.db.models import Model, QuerySet, Q
+from django.db.models import Model, Q, QuerySet
 from google.protobuf.message import Message
 from grpc_interceptor.exceptions import InvalidArgument
 

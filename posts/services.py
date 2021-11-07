@@ -23,7 +23,7 @@ from protos import (
 from .models import Chapter, Comment, Post, Stack, Subscription, Vote
 from .pagination import (
     ArchivePaginationAdapter,
-    CommentPaginationAdapter,
+    CommentsPaginationAdapter,
     DraftsPaginationAdapter,
     OwnPostsPaginationAdapter,
 )
@@ -324,7 +324,7 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
         return self.paginate(
             request_iterator,
             bundle_class=comment_pb2.Comments,
-            adapter=CommentPaginationAdapter(comments, context),
+            adapter=CommentsPaginationAdapter(comments, context),
             on_items=on_items,
         )
 

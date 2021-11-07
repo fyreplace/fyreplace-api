@@ -73,14 +73,16 @@ class NotificationService_Count(NotificationServiceTestCase):
 
 
 class NotificationService_List(NotificationServiceTestCase, PaginationTestCase):
-    date_field = "date_updated"
+    main_pagination_field = "date_updated"
 
     def setUp(self):
         super().setUp()
         self.notifications = self._create_test_notifications()
         self.out_of_bounds_cursor = pagination_pb2.Cursor(
             data=[
-                pagination_pb2.KeyValuePair(key=self.date_field, value=str(now())),
+                pagination_pb2.KeyValuePair(
+                    key=self.main_pagination_field, value=str(now())
+                ),
                 pagination_pb2.KeyValuePair(
                     key="id", value=str(self.notifications[-1].id)
                 ),

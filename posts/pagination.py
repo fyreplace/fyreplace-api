@@ -44,7 +44,7 @@ class DraftsPaginationAdapter(
     pass
 
 
-class CommentPaginationAdapter(CreationDatePaginationAdapter):
+class CommentsPaginationAdapter(CreationDatePaginationAdapter):
     def __init__(self, query: QuerySet, context: grpc.ServicerContext):
         super().__init__(query)
         self.context = context

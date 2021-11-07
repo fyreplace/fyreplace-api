@@ -63,7 +63,7 @@ class BaseTestCase(TestCase):
 
 
 class PaginationTestCase(BaseTestCase):
-    date_field = "date_created"
+    main_pagination_field = "date_created"
 
     def setUp(self):
         super().setUp()
