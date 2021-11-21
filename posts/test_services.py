@@ -8,6 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.images import ImageFile
 from django.utils.timezone import now
+from google.protobuf.message import Message
 from grpc_interceptor.exceptions import InvalidArgument, PermissionDenied
 
 from core.tests import ImageTestCaseMixin, PaginationTestCase, get_asset
@@ -65,7 +66,9 @@ class PostPaginationTestCase(PostServiceTestCase, PaginationTestCase):
             is_next=True,
         )
 
-    def paginate(self, request_iterator: Iterator[pagination_pb2.Page]) -> Iterator:
+    def paginate(
+        self, request_iterator: Iterator[pagination_pb2.Page]
+    ) -> Iterator[Message]:
         raise NotImplementedError
 
     def check(self, item: post_pb2.Post, position: int):
@@ -278,7 +281,9 @@ class PostService_ListArchive(PostPaginationTestCase):
 
         return the_posts
 
-    def paginate(self, request_iterator: Iterator[pagination_pb2.Page]) -> Iterator:
+    def paginate(
+        self, request_iterator: Iterator[pagination_pb2.Page]
+    ) -> Iterator[Message]:
         return self.service.ListArchive(request_iterator, self.grpc_context)
 
     def test(self):
@@ -319,7 +324,9 @@ class PostService_ListOwnPosts(PostPaginationTestCase):
         the_posts = sorted(the_posts, key=lambda p: p.date_published)
         return the_posts
 
-    def paginate(self, request_iterator: Iterator[pagination_pb2.Page]) -> Iterator:
+    def paginate(
+        self, request_iterator: Iterator[pagination_pb2.Page]
+    ) -> Iterator[Message]:
         return self.service.ListOwnPosts(request_iterator, self.grpc_context)
 
     def test(self):
@@ -360,7 +367,9 @@ class PostService_ListDrafts(PostPaginationTestCase):
         the_posts = sorted(the_posts, key=lambda p: p.date_created)
         return the_posts
 
-    def paginate(self, request_iterator: Iterator[pagination_pb2.Page]) -> Iterator:
+    def paginate(
+        self, request_iterator: Iterator[pagination_pb2.Page]
+    ) -> Iterator[Message]:
         return self.service.ListDrafts(request_iterator, self.grpc_context)
 
     def test(self):
@@ -1042,7 +1051,23 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
     def get_context_id(self) -> Optional[str]:
         return str(self.post.id)
 
-    def paginate(self, request_iterator: Iterator[pagination_pb2.Page]) -> Iterator:
+    def get_initial_requests(
+        self, forward: bool, size: Optional[int] = None
+    ) -> List[pagination_pb2.Page]:
+        return [
+            pagination_pb2.Page(
+                header=pagination_pb2.Header(
+                    forward=forward,
+                    size=size if size is not None else self.page_size,
+                    context_id=self.get_context_id(),
+                )
+            ),
+            pagination_pb2.Page(limit=0),
+        ]
+
+    def paginate(
+        self, request_iterator: Iterator[pagination_pb2.Page]
+    ) -> Iterator[Message]:
         return self.service.List(request_iterator, self.grpc_context)
 
     def check(self, item: comment_pb2.Comment, position: int):
@@ -1051,20 +1076,20 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
         self.assertEqual(item.author.id, str(self.comments[position].author.id))
 
     def test(self):
-        self.run_test(self.check)
+        self.run_test(self.check, limit=True)
         subscription = self.post.subscriptions.get(user=self.main_user)
         self.assertEqual(
             subscription.last_comment_seen, self.post.comments.latest("date_created")
         )
 
     def test_previous(self):
-        self.run_test_previous(self.check)
+        self.run_test_previous(self.check, limit=True)
 
     def test_reverse(self):
-        self.run_test_reverse(self.check)
+        self.run_test_reverse(self.check, limit=True)
 
     def test_reverse_previous(self):
-        self.run_test_reverse_previous(self.check)
+        self.run_test_reverse_previous(self.check, limit=True)
 
     def test_empty(self):
         self.run_test_empty(self.post.comments.all())
@@ -1092,9 +1117,8 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
             self.assertEqual(comment.id, str(self_comment.id))
             self.assertEqual(comment.text, self_comment.text)
 
-        page_requests.append(pagination_pb2.Page(cursor=comments.next))
+        page_requests.append(pagination_pb2.Page(limit=self.page_size))
         comments = next(items_iterator)
-        self.assertCursorEmpty(comments.next)
         self.assertEqual(len(comments.comments), self.page_size)
 
         for i, comment in enumerate(comments.comments):

@@ -45,6 +45,10 @@ class DraftsPaginationAdapter(
 
 
 class CommentsPaginationAdapter(CreationDatePaginationAdapter):
+    @property
+    def random_access(self) -> bool:
+        return True
+
     def __init__(self, query: QuerySet, context: grpc.ServicerContext):
         super().__init__(query)
         self.context = context
