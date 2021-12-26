@@ -2,16 +2,28 @@ from typing import Iterable
 
 import grpc
 from django.db.models import QuerySet
-from google.protobuf.message import Message
 
 from core.pagination import PaginationAdapter
-from protos import pagination_pb2
+from protos import pagination_pb2, post_pb2
 
 from .models import Post
 
 
-class AnonymousPostsPaginationAdapter(PaginationAdapter):
-    def make_message(self, item: Post, **overrides) -> Message:
+class PostsPaginationAdapter(PaginationAdapter):
+    def __init__(self, query: QuerySet, context: grpc.ServicerContext):
+        super().__init__(query)
+        self.context = context
+
+    def make_message(self, item: Post, **overrides) -> post_pb2.Post:
+        message: post_pb2.Post = super().make_message(item, **overrides)
+        message.is_subscribed = item.subscribers.filter(
+            id=self.context.caller.id
+        ).exists()
+        return message
+
+
+class AnonymousPostsPaginationAdapter(PostsPaginationAdapter):
+    def make_message(self, item: Post, **overrides) -> post_pb2.Post:
         if item.is_anonymous:
             overrides["author"] = None
 
@@ -34,13 +46,13 @@ class ArchivePaginationAdapter(
     pass
 
 
-class OwnPostsPaginationAdapter(PublicationDatePaginationAdapter):
+class OwnPostsPaginationAdapter(
+    PostsPaginationAdapter, PublicationDatePaginationAdapter
+):
     pass
 
 
-class DraftsPaginationAdapter(
-    AnonymousPostsPaginationAdapter, CreationDatePaginationAdapter
-):
+class DraftsPaginationAdapter(PostsPaginationAdapter, CreationDatePaginationAdapter):
     pass
 
 

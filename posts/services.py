@@ -104,7 +104,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         return self.paginate(
             request_iterator,
             bundle_class=post_pb2.Posts,
-            adapter=ArchivePaginationAdapter(posts),
+            adapter=ArchivePaginationAdapter(posts, context),
             message_overrides={"is_preview": True},
         )
 
@@ -117,7 +117,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         return self.paginate(
             request_iterator,
             bundle_class=post_pb2.Posts,
-            adapter=OwnPostsPaginationAdapter(posts),
+            adapter=OwnPostsPaginationAdapter(posts, context),
             message_overrides={"is_preview": True},
         )
 
@@ -130,7 +130,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         return self.paginate(
             request_iterator,
             bundle_class=post_pb2.Posts,
-            adapter=DraftsPaginationAdapter(drafts),
+            adapter=DraftsPaginationAdapter(drafts, context),
             message_overrides={"is_preview": True},
         )
 
