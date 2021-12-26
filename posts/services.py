@@ -145,6 +145,9 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         if post.is_anonymous and context.caller.id != post.author_id:
             overrides["author"] = None
 
+        if post.subscribers.filter(id=context.caller.id).exists():
+            overrides["is_subscribed"] = True
+
         if subscription := post.subscriptions.filter(user=context.caller).first():
             date_container = subscription.last_comment_seen or post
             overrides["date_seen"] = timestamp_pb2.Timestamp(
