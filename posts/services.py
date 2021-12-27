@@ -212,6 +212,9 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
             context.caller, id=request.id
         )
 
+        if post.author == context.caller:
+            raise PermissionDenied("invalid_post")
+
         report_content.delay(
             content_type_id=ContentType.objects.get_for_model(Post).id,
             target_id=post.id,
@@ -369,7 +372,9 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
     ) -> empty_pb2.Empty:
         comment = Comment.objects.get(id=request.id)
 
-        if comment.is_deleted:
+        if comment.author == context.caller:
+            raise PermissionDenied("invalid_comment")
+        elif comment.is_deleted:
             raise PermissionDenied("comment_deleted")
 
         report_content.delay(

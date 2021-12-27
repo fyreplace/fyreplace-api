@@ -311,6 +311,10 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
 
         if user == context.caller:
             raise PermissionDenied("invalid_user")
+        elif not user.is_active:
+            raise PermissionDenied("user_not_active")
+        elif user.is_banned:
+            raise PermissionDenied("user_banned")
 
         report_content.delay(
             content_type_id=ContentType.objects.get_for_model(get_user_model()).id,

@@ -683,6 +683,14 @@ class PostService_Report(PostServiceTestCase):
         with self.assertRaises(ObjectDoesNotExist):
             self.service.Report(self.request, self.grpc_context)
 
+    def test_self_author(self):
+        posts = self._create_posts(author=self.main_user, count=1, published=True)
+        self.post = posts[0]
+        self.request = id_pb2.StringId(id=str(self.post.id))
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Report(self.request, self.grpc_context)
+
 
 class PostService_Absolve(PostServiceTestCase):
     def setUp(self):
@@ -1237,6 +1245,14 @@ class CommentService_Report(CommentServiceTestCase):
         flag = Notification.flag_objects.first()
         self.assertEqual(flag.target_type, ContentType.objects.get_for_model(Comment))
         self.assertEqual(flag.target_id, str(self.comment.id))
+
+    def test_self_author(self):
+        comments = self._create_comments(author=self.main_user, count=1)
+        self.comment = comments[0]
+        self.request = id_pb2.StringId(id=str(self.comment.id))
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Report(self.request, self.grpc_context)
 
     def test_deleted(self):
         self.comment.delete()

@@ -733,6 +733,19 @@ class UserService_Report(UserServiceTestCase):
         with self.assertRaises(PermissionDenied):
             self.service.Report(self.request, self.grpc_context)
 
+    def test_not_active(self):
+        self.other_user.is_active = False
+        self.other_user.save()
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Report(self.request, self.grpc_context)
+
+    def test_banned(self):
+        self.other_user.ban()
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Report(self.request, self.grpc_context)
+
 
 class UserService_Absolve(UserServiceTestCase):
     def setUp(self):
