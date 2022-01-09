@@ -464,31 +464,31 @@ class UserService_Retrieve(UserServiceTestCase):
 
     def test(self):
         user = self.service.Retrieve(self.request, self.grpc_context)
-        self.assertEqual(user.id, str(self.other_user.id))
+        self.assertEqual(user.profile.id, str(self.other_user.id))
         self.assertAlmostEqual(
             datetime.fromtimestamp(user.date_joined.seconds, tz=get_current_timezone()),
             self.other_user.date_joined,
             delta=timedelta(seconds=1),
         )
-        self.assertEqual(user.rank, user_pb2.RANK_CITIZEN)
-        self.assertEqual(user.username, str(self.other_user.username))
-        self.assertEqual(user.avatar.url, get_image_url(self.other_user.avatar))
+        self.assertEqual(user.profile.rank, user_pb2.RANK_CITIZEN)
+        self.assertEqual(user.profile.username, str(self.other_user.username))
+        self.assertEqual(user.profile.avatar.url, get_image_url(self.other_user.avatar))
         self.assertEqual(user.bio, self.other_user.bio)
         self.assertEqual(user.email, "")
 
     def test_banned_forever(self):
         self.other_user.ban()
         user = self.service.Retrieve(self.request, self.grpc_context)
-        self.assertEqual(user.id, str(self.other_user.id))
+        self.assertEqual(user.profile.id, str(self.other_user.id))
         self.assertAlmostEqual(
             datetime.fromtimestamp(user.date_joined.seconds, tz=get_current_timezone()),
             self.other_user.date_joined,
             delta=timedelta(seconds=1),
         )
-        self.assertEqual(user.rank, user_pb2.RANK_UNSPECIFIED)
-        self.assertTrue(user.is_banned)
-        self.assertEqual(user.username, "")
-        self.assertEqual(user.avatar.url, "")
+        self.assertEqual(user.profile.rank, user_pb2.RANK_UNSPECIFIED)
+        self.assertTrue(user.profile.is_banned)
+        self.assertEqual(user.profile.username, "")
+        self.assertEqual(user.profile.avatar.url, "")
         self.assertEqual(user.bio, "")
         self.assertEqual(user.email, "")
 
@@ -508,8 +508,8 @@ class UserService_Retrieve(UserServiceTestCase):
 class UserService_RetrieveMe(UserServiceTestCase):
     def test(self):
         user = self.service.RetrieveMe(self.request, self.grpc_context)
-        self.assertEqual(user.id, str(self.main_user.id))
-        self.assertEqual(user.username, str(self.main_user.username))
+        self.assertEqual(user.profile.id, str(self.main_user.id))
+        self.assertEqual(user.profile.username, str(self.main_user.username))
         self.assertEqual(user.email, str(self.main_user.email))
 
 

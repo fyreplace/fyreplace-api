@@ -86,6 +86,10 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
         return self.is_alive and not self.is_active
 
     @property
+    def profile(self) -> "User":
+        return self
+
+    @property
     def rank(self) -> user_pb2.Rank:
         if self.is_superuser:
             return user_pb2.RANK_SUPERUSER
@@ -104,12 +108,12 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
 
     def get_message_fields(self, **overrides) -> List[str]:
         if overrides.get("is_banned", self.is_banned) and not self.date_ban_end:
-            fields = ["id", "is_banned"]
-
             if self._message_class == user_pb2.User:
-                fields.append("date_joined")
-
-            return fields
+                return ["profile", "date_joined"]
+            elif self._message_class == user_pb2.Profile:
+                return ["id", "is_banned"]
+            else:
+                return []
 
         return super().get_message_fields(**overrides)
 
