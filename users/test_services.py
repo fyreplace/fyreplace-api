@@ -296,7 +296,7 @@ class AccountService_ConfirmRecovery(AccountServiceTestCase, AuthenticatedTestCa
         self.connection_count = Connection.objects.count()
         self.request = user_pb2.ConnectionToken(
             token=AccountActivationEmail(self.main_user.id).token,
-            client=self.main_connection.to_message().client,
+            client=self.main_connection.to_message(context=self.grpc_context).client,
         )
 
     def test(self):
@@ -471,6 +471,8 @@ class UserService_Retrieve(UserServiceTestCase):
             delta=timedelta(seconds=1),
         )
         self.assertEqual(user.profile.rank, user_pb2.RANK_CITIZEN)
+        self.assertFalse(user.profile.is_banned)
+        self.assertFalse(user.profile.is_blocked)
         self.assertEqual(user.profile.username, str(self.other_user.username))
         self.assertEqual(user.profile.avatar.url, get_image_url(self.other_user.avatar))
         self.assertEqual(user.bio, self.other_user.bio)
@@ -491,6 +493,12 @@ class UserService_Retrieve(UserServiceTestCase):
         self.assertEqual(user.profile.avatar.url, "")
         self.assertEqual(user.bio, "")
         self.assertEqual(user.email, "")
+
+    def test_blocked(self):
+        self.main_user.blocked_users.add(self.other_user)
+        user = self.service.Retrieve(self.request, self.grpc_context)
+        self.assertEqual(user.profile.id, str(self.other_user.id))
+        self.assertTrue(user.profile.is_blocked)
 
     def test_deleted(self):
         self.other_user.delete()

@@ -3,6 +3,7 @@ from datetime import datetime
 from importlib import import_module
 from typing import Any, Dict, List, Optional, Tuple, Type
 
+import grpc
 from django.db import models
 from django.db.models.fields.files import ImageFieldFile
 from google.protobuf import empty_pb2, timestamp_pb2
@@ -16,28 +17,39 @@ from .signals import post_soft_delete, pre_soft_delete
 
 class MessageConvertible:
     default_message_class = empty_pb2.Empty
-    _message_class = None
-    _field_message_classes = {}
+    _message_class: Optional[Type[Message]] = None
+    _field_message_classes: Dict[str, Type[Message]] = {}
+    _context: Optional[grpc.ServicerContext] = None
 
     def get_message_fields(self, **overrides) -> List[str]:
         return self._message_class.DESCRIPTOR.fields_by_name.keys()
 
     def get_message_field_values(self, **overrides) -> dict:
-        return {
+        values = {
             field: self.convert_field(field)
             for field in self.get_message_fields(**overrides)
             if hasattr(self, field) and field not in overrides
         }
 
+        for field in overrides:
+            if hasattr(self._message_class, field):
+                values[field] = overrides[field]
+
+        return values
+
     def to_message(
-        self, message_class: Optional[Type[Message]] = None, **overrides
+        self,
+        message_class: Optional[Type[Message]] = None,
+        context: Optional[grpc.ServicerContext] = None,
+        **overrides,
     ) -> Message:
         old_messages_class = self._message_class
+        old_context = self._context
         self._message_class = message_class or self.default_message_class
-        values = self.get_message_field_values(**overrides)
-        values.update(overrides)
-        message = self._message_class(**values)
+        self._context = context or self._context
+        message = self._message_class(**self.get_message_field_values(**overrides))
         self._message_class = old_messages_class
+        self._context = old_context
         return message
 
     def convert_field(self, field: str) -> Any:

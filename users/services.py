@@ -164,7 +164,9 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
         self, request: empty_pb2.Empty, context: grpc.ServicerContext
     ) -> user_pb2.Connections:
         connections = Connection.objects.filter(user=context.caller)
-        return user_pb2.Connections(connections=[c.to_message() for c in connections])
+        return user_pb2.Connections(
+            connections=[c.to_message(context=context) for c in connections]
+        )
 
     @no_auth
     def Connect(
@@ -217,12 +219,16 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
     def Retrieve(
         self, request: id_pb2.StringId, context: grpc.ServicerContext
     ) -> user_pb2.User:
-        return get_user_model().existing_objects.get(id=request.id).to_message(email="")
+        return (
+            get_user_model()
+            .existing_objects.get(id=request.id)
+            .to_message(context=context, email="")
+        )
 
     def RetrieveMe(
         self, request: empty_pb2.Empty, context: grpc.ServicerContext
     ) -> user_pb2.User:
-        return context.caller.to_message()
+        return context.caller.to_message(context=context)
 
     @atomic
     def UpdateBio(
@@ -288,7 +294,7 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
         return self.paginate(
             request_iterator,
             bundle_class=user_pb2.Profiles,
-            adapter=UsersPaginationAdapter(users),
+            adapter=UsersPaginationAdapter(context, users),
             message_overrides={"message_class": user_pb2.Profile},
         )
 

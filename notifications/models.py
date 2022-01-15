@@ -79,7 +79,9 @@ class Notification(UUIDModel, MessageConvertible):
     def get_message_field_values(self, **overrides) -> dict:
         values = super().get_message_field_values(**overrides)
         values["is_flag"] = not self.recipient
-        values[self.target_type.model.lower()] = self.target.to_message()
+        values[self.target_type.model.lower()] = self.target.to_message(
+            context=self._context
+        )
         return values
 
 

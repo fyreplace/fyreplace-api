@@ -2,6 +2,7 @@ import re
 from abc import ABC, abstractmethod
 from typing import Callable, Iterable, Iterator, List, Optional, Type
 
+import grpc
 from django.conf import settings
 from django.db.models import Model, Q, QuerySet
 from google.protobuf.message import Message
@@ -12,7 +13,8 @@ from protos import pagination_pb2
 
 
 class PaginationAdapter(ABC):
-    def __init__(self, query: QuerySet):
+    def __init__(self, context: grpc.ServicerContext, query: QuerySet):
+        self.context = context
         self.initial_query = query.order_by(*self.get_cursor_fields())
         self.query = self.initial_query
         self.forward = True
@@ -58,7 +60,7 @@ class PaginationAdapter(ABC):
 
     def make_message(self, item: Model, **overrides) -> Message:
         if isinstance(item, MessageConvertible):
-            return item.to_message(**overrides)
+            return item.to_message(context=self.context, **overrides)
         else:
             raise ValueError
 

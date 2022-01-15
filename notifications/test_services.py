@@ -135,7 +135,7 @@ class NotificationService_List(NotificationServiceTestCase, PaginationTestCase):
                 Comment.objects.create(post=post, author=self.other_user, text="Text")
 
         notifications = Notification.objects.filter(recipient=self.main_user)
-        adapter = NotificationPaginationAdapter(notifications)
+        adapter = NotificationPaginationAdapter(self.grpc_context, notifications)
         return list(notifications.order_by(*adapter.get_cursor_fields()))
 
 

@@ -10,10 +10,6 @@ from .models import Post
 
 
 class PostsPaginationAdapter(PaginationAdapter):
-    def __init__(self, query: QuerySet, context: grpc.ServicerContext):
-        super().__init__(query)
-        self.context = context
-
     def make_message(self, item: Post, **overrides) -> post_pb2.Post:
         message: post_pb2.Post = super().make_message(item, **overrides)
         message.is_subscribed = item.subscribers.filter(
@@ -60,10 +56,6 @@ class CommentsPaginationAdapter(CreationDatePaginationAdapter):
     @property
     def random_access(self) -> bool:
         return True
-
-    def __init__(self, query: QuerySet, context: grpc.ServicerContext):
-        super().__init__(query)
-        self.context = context
 
     def apply_header(self, header: pagination_pb2.Header):
         super().apply_header(header)

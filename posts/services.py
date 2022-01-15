@@ -69,7 +69,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
             posts += new_posts
 
         refill_stack()
-        yield from (p.to_message() for p in posts[:3])
+        yield from (p.to_message(context=context) for p in posts[:3])
 
         for request in request_iterator:
             if len(posts) == 0:
@@ -87,10 +87,10 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
             should_refill = post_count < 3
 
             if not should_refill:
-                yield posts[2].to_message()
+                yield posts[2].to_message(context=context)
             elif not end_reached:
                 refill_stack()
-                yield posts[-1 if len(posts) < 3 else 2].to_message()
+                yield posts[-1 if len(posts) < 3 else 2].to_message(context=context)
 
                 if len(posts) < Stack.MAX_SIZE:
                     end_reached = True
@@ -104,7 +104,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         return self.paginate(
             request_iterator,
             bundle_class=post_pb2.Posts,
-            adapter=ArchivePaginationAdapter(posts, context),
+            adapter=ArchivePaginationAdapter(context, posts),
             message_overrides={"is_preview": True},
         )
 
@@ -117,7 +117,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         return self.paginate(
             request_iterator,
             bundle_class=post_pb2.Posts,
-            adapter=OwnPostsPaginationAdapter(posts, context),
+            adapter=OwnPostsPaginationAdapter(context, posts),
             message_overrides={"is_preview": True},
         )
 
@@ -130,7 +130,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         return self.paginate(
             request_iterator,
             bundle_class=post_pb2.Posts,
-            adapter=DraftsPaginationAdapter(drafts, context),
+            adapter=DraftsPaginationAdapter(context, drafts),
             message_overrides={"is_preview": True},
         )
 
@@ -154,7 +154,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
                 seconds=round(date_container.date_created.timestamp())
             )
 
-        return post.to_message(**overrides)
+        return post.to_message(context=context, **overrides)
 
     def Create(
         self, request: empty_pb2.Empty, context: grpc.ServicerContext
@@ -330,7 +330,7 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
         return self.paginate(
             request_iterator,
             bundle_class=comment_pb2.Comments,
-            adapter=CommentsPaginationAdapter(comments, context),
+            adapter=CommentsPaginationAdapter(context, comments),
             on_items=on_items,
         )
 
