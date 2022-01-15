@@ -93,7 +93,7 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "ordering": ["date_published", 'date_created', "id"],
+                "ordering": ["date_published", "date_created", "id"],
             },
             bases=(models.Model, core.models.MessageConvertible),
         ),

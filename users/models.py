@@ -193,8 +193,8 @@ class Connection(UUIDModel, TimestampModel):
     def __str__(self) -> str:
         return f"{self.user}: {self.hardware}/{self.software} ({self.date_created})"
 
-    def get_message_field_values(self, **options) -> dict:
-        data = super().get_message_field_values(**options)
+    def get_message_field_values(self, **overrides) -> dict:
+        data = super().get_message_field_values(**overrides)
         data["client"] = user_pb2.Client(hardware=self.hardware, software=self.software)
         return data
 
