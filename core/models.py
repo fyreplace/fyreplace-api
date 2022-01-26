@@ -59,7 +59,9 @@ class MessageConvertible:
         if isinstance(value, datetime):
             return timestamp_pb2.Timestamp(seconds=round(value.timestamp()))
         elif isinstance(value, MessageConvertible):
-            return value.to_message(message_class=self._retrieve_message_class(field))
+            return value.to_message(
+                message_class=self._retrieve_message_class(field), context=self._context
+            )
         elif isinstance(value, ImageFieldFile):
             return image_pb2.Image(url=get_image_url(value)) if value else None
         else:

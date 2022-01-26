@@ -118,7 +118,7 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
         return super().get_message_fields(**overrides)
 
     def get_message_field_values(self, **overrides) -> dict:
-        if self._context:
+        if self._context and self._context.caller:
             overrides["is_blocked"] = self._context.caller.blocked_users.filter(
                 id=self.id
             ).exists()
