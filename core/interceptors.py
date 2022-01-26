@@ -72,7 +72,7 @@ class ExceptionInterceptor(ServerInterceptor):
             "method": method_name,
             "request": request,
             "context_metadata": context.invocation_metadata(),
-            "user_id": str(context.caller.id) if hasattr(context, "caller") else None,
+            "user_id": str(context.caller.id) if context.caller else None,
         }
         rollbar.report_exc_info(extra_data=extras, level=level)
 

@@ -35,7 +35,6 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
     def ListFeed(
         self, request_iterator: Iterator[post_pb2.Vote], context: grpc.ServicerContext
     ) -> Iterator[post_pb2.Post]:
-        caller = getattr(context, "caller", None)
         posts = []
         fetch_after = None
         end_reached = False
@@ -44,13 +43,15 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
             nonlocal posts
             nonlocal fetch_after
 
-            if caller:
+            if context.caller:
                 with atomic():
-                    stack = Stack.objects.select_for_update().get(id=caller.stack.id)
+                    stack = Stack.objects.select_for_update().get(
+                        id=context.caller.stack.id
+                    )
                     stack.fill()
 
                 current_ids = [str(p.id) for p in posts]
-                new_posts = caller.stack.posts.exclude(id__in=current_ids)
+                new_posts = context.caller.stack.posts.exclude(id__in=current_ids)
             elif fetch_after:
                 new_posts = Post.active_objects.filter(date_published__gt=fetch_after)
             else:
@@ -58,7 +59,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
 
             new_posts = new_posts.order_by("date_published")
 
-            if not caller:
+            if not context.caller:
                 new_posts = new_posts[: Stack.MAX_SIZE]
 
             new_posts = list(new_posts.select_related())
@@ -75,9 +76,9 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
             if len(posts) == 0:
                 return
 
-            if caller:
+            if context.caller:
                 Vote.objects.create(
-                    user=caller,
+                    user=context.caller,
                     post_id=request.post_id,
                     spread=request.spread,
                 )

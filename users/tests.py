@@ -28,8 +28,8 @@ class UserContext(FakeContext):
             self.caller_connection = connection
         else:
             del self._invocation_metadata["authorization"]
-            del self.caller
-            del self.caller_connection
+            self.caller = None
+            self.caller_connection = None
 
 
 class BaseUserTestCase(BaseTestCase):
