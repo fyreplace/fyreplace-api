@@ -115,7 +115,17 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
             else:
                 return []
 
-        return super().get_message_fields(**overrides)
+        fields = super().get_message_fields(**overrides)
+
+        if self._message_class == user_pb2.User and (
+            not self._context
+            or not self._context.caller
+            or (self.id != self._context.caller.id)
+        ):
+            fields.remove("email")
+            fields.remove("blocked_users")
+
+        return fields
 
     def get_message_field_values(self, **overrides) -> dict:
         if self._context and self._context.caller:
@@ -123,7 +133,17 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
                 id=self.id
             ).exists()
 
-        return super().get_message_field_values(**overrides)
+        values = super().get_message_field_values(**overrides)
+
+        if (
+            self._message_class == user_pb2.User
+            and self._context
+            and self._context.caller
+            and self.id == self._context.caller.id
+        ):
+            values["blocked_users"] = self.blocked_users.count()
+
+        return values
 
     def delete(self, *args, **kwargs) -> Tuple[int, Dict[str, int]]:
         return self.soft_delete()

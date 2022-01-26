@@ -463,6 +463,7 @@ class UserService_Retrieve(UserServiceTestCase):
         self.request = id_pb2.StringId(id=str(self.other_user.id))
 
     def test(self):
+        self.other_user.blocked_users.add(self.main_user)
         user = self.service.Retrieve(self.request, self.grpc_context)
         self.assertEqual(user.profile.id, str(self.other_user.id))
         self.assertAlmostEqual(
@@ -477,6 +478,7 @@ class UserService_Retrieve(UserServiceTestCase):
         self.assertEqual(user.profile.avatar.url, get_image_url(self.other_user.avatar))
         self.assertEqual(user.bio, self.other_user.bio)
         self.assertEqual(user.email, "")
+        self.assertEqual(user.blocked_users, 0)
 
     def test_banned_forever(self):
         self.other_user.ban()
@@ -515,10 +517,12 @@ class UserService_Retrieve(UserServiceTestCase):
 
 class UserService_RetrieveMe(UserServiceTestCase):
     def test(self):
+        self.main_user.blocked_users.add(self.other_user)
         user = self.service.RetrieveMe(self.request, self.grpc_context)
         self.assertEqual(user.profile.id, str(self.main_user.id))
         self.assertEqual(user.profile.username, str(self.main_user.username))
         self.assertEqual(user.email, str(self.main_user.email))
+        self.assertEqual(user.blocked_users, self.main_user.blocked_users.count())
 
 
 class UserService_UpdateBio(UserServiceTestCase):

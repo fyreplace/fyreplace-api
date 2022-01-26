@@ -222,7 +222,7 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
         return (
             get_user_model()
             .existing_objects.get(id=request.id)
-            .to_message(context=context, email="")
+            .to_message(context=context)
         )
 
     def RetrieveMe(
