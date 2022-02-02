@@ -758,6 +758,13 @@ class UserService_Report(UserServiceTestCase):
         with self.assertRaises(PermissionDenied):
             self.service.Report(self.request, self.grpc_context)
 
+    def test_rank_insufficient(self):
+        self.other_user.is_staff = True
+        self.other_user.save()
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Report(self.request, self.grpc_context)
+
 
 class UserService_Absolve(UserServiceTestCase):
     def setUp(self):
