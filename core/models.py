@@ -88,7 +88,7 @@ class UUIDModel(models.Model, MessageConvertible):
         data = super().get_message_field_values(**overrides)
 
         if data_id := data.get("id"):
-            data["id"] = str(data_id)
+            data["id"] = data_id.bytes
 
         return data
 

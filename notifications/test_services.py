@@ -1,4 +1,5 @@
 from typing import Iterator, List
+from uuid import UUID
 
 from django.utils.timezone import now
 
@@ -94,7 +95,9 @@ class NotificationService_List(NotificationServiceTestCase, PaginationTestCase):
         return self.service.List(request_iterator, self.grpc_context)
 
     def check(self, item: notification_pb2.Notification, position: int):
-        self.assertEqual(item.post.id, str(self.notifications[position].target_id))
+        self.assertEqual(
+            item.post.id, UUID(self.notifications[position].target_id).bytes
+        )
         self.assertEqual(item.count, self.notifications[position].count)
 
     def test(self):

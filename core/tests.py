@@ -77,7 +77,7 @@ class PaginationTestCase(BaseTestCase):
         for pair in cursor.data:
             self.assertNotEqual(pair.value, "")
 
-    def get_context_id(self) -> Optional[str]:
+    def get_context_id(self) -> Optional[bytes]:
         return None
 
     def get_initial_requests(

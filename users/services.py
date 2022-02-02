@@ -3,6 +3,7 @@ import unicodedata
 from datetime import timedelta
 from os import path
 from typing import Iterator
+from uuid import UUID
 
 import grpc
 from django.contrib.auth import get_user_model
@@ -201,11 +202,13 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
         return user_pb2.Token(token=connection.get_token())
 
     def Disconnect(
-        self, request: id_pb2.StringId, context: grpc.ServicerContext
+        self, request: id_pb2.Id, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         token = get_token(context)
         user, connection = get_info_from_token(token)
-        Connection.objects.get(id=request.id or connection.id, user=user).delete()
+        Connection.objects.get(
+            id__bytes=request.id or connection.id, user=user
+        ).delete()
         return empty_pb2.Empty()
 
     def DisconnectAll(
@@ -217,11 +220,11 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
 
 class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceServicer):
     def Retrieve(
-        self, request: id_pb2.StringId, context: grpc.ServicerContext
+        self, request: id_pb2.Id, context: grpc.ServicerContext
     ) -> user_pb2.User:
         return (
             get_user_model()
-            .existing_objects.get(id=request.id)
+            .existing_objects.get(id__bytes=request.id)
             .to_message(context=context)
         )
 
@@ -301,7 +304,7 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
     def UpdateBlock(
         self, request: user_pb2.Block, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        user = get_user_model().existing_objects.get(id=request.id)
+        user = get_user_model().existing_objects.get(id__bytes=request.id)
 
         if request.blocked:
             context.caller.blocked_users.add(user)
@@ -311,9 +314,9 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
         return empty_pb2.Empty()
 
     def Report(
-        self, request: id_pb2.StringId, context: grpc.ServicerContext
+        self, request: id_pb2.Id, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        user = get_user_model().existing_objects.get(id=request.id)
+        user = get_user_model().existing_objects.get(id__bytes=request.id)
 
         if user == context.caller:
             raise PermissionDenied("invalid_user")
@@ -324,18 +327,18 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
 
         report_content.delay(
             content_type_id=ContentType.objects.get_for_model(get_user_model()).id,
-            target_id=request.id,
+            target_id=str(UUID(bytes=request.id)),
             reporter_id=str(context.caller.id),
         )
         return empty_pb2.Empty()
 
     def Absolve(
-        self, request: id_pb2.StringId, context: grpc.ServicerContext
+        self, request: id_pb2.Id, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         if not context.caller.is_staff:
             raise PermissionDenied("caller_not_staff")
 
-        user = get_user_model().existing_objects.get(id=request.id)
+        user = get_user_model().existing_objects.get(id__bytes=request.id)
 
         if user == context.caller:
             raise PermissionDenied("user_is_caller")
@@ -350,7 +353,11 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
         if not context.caller.is_staff:
             raise PermissionDenied("caller_not_staff")
 
-        user = get_user_model().existing_objects.select_for_update().get(id=request.id)
+        user = (
+            get_user_model()
+            .existing_objects.select_for_update()
+            .get(id__bytes=request.id)
+        )
 
         if user == context.caller:
             raise PermissionDenied("invalid_user")
@@ -367,7 +374,11 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
         if not context.caller.is_superuser:
             raise PermissionDenied("caller_not_superuser")
 
-        user = get_user_model().existing_objects.select_for_update().get(id=request.id)
+        user = (
+            get_user_model()
+            .existing_objects.select_for_update()
+            .get(id__bytes=request.id)
+        )
 
         if request.rank == user_pb2.RANK_UNSPECIFIED:
             raise InvalidArgument("RANK_unspecified")

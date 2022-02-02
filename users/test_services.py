@@ -353,10 +353,10 @@ class AccountService_ListConnections(AccountServiceTestCase, AuthenticatedTestCa
         self.assertEqual(len(ids), len(main_user_connections))
 
         for connection in Connection.objects.filter(user=self.main_user):
-            self.assertIn(str(connection.id), ids)
+            self.assertIn(connection.id.bytes, ids)
 
         for connection in Connection.objects.filter(user=self.other_user):
-            self.assertNotIn(str(connection.id), ids)
+            self.assertNotIn(connection.id.bytes, ids)
 
 
 class AccountService_Connect(AccountServiceTestCase):
@@ -417,7 +417,7 @@ class AccountService_Connect(AccountServiceTestCase):
 class AccountService_Disconnect(AccountServiceTestCase, AuthenticatedTestCase):
     def setUp(self):
         super().setUp()
-        self.request = id_pb2.StringId()
+        self.request = id_pb2.Id()
 
     def test(self):
         connection_count = Connection.objects.count()
@@ -428,14 +428,14 @@ class AccountService_Disconnect(AccountServiceTestCase, AuthenticatedTestCase):
     def test_specific(self):
         connection = Connection.objects.create(user=self.main_user)
         connection_count = Connection.objects.count()
-        self.request.id = str(connection.id)
+        self.request.id = connection.id.bytes
         self.service.Disconnect(self.request, self.grpc_context)
         self.assertEqual(Connection.objects.count(), connection_count - 1)
 
     def test_other(self):
         connection = Connection.objects.create(user=self.other_user)
         connection_count = Connection.objects.count()
-        self.request.id = str(connection.id)
+        self.request.id = connection.id.bytes
 
         with self.assertRaises(ObjectDoesNotExist):
             self.service.Disconnect(self.request, self.grpc_context)
@@ -460,12 +460,12 @@ class UserService_Retrieve(UserServiceTestCase):
         self.other_user.bio = "Bio"
         self.other_user.avatar = ImageFile(file=asset, name="image.png")
         self.other_user.save()
-        self.request = id_pb2.StringId(id=str(self.other_user.id))
+        self.request = id_pb2.Id(id=self.other_user.id.bytes)
 
     def test(self):
         self.other_user.blocked_users.add(self.main_user)
         user = self.service.Retrieve(self.request, self.grpc_context)
-        self.assertEqual(user.profile.id, str(self.other_user.id))
+        self.assertEqual(user.profile.id, self.other_user.id.bytes)
         self.assertAlmostEqual(
             datetime.fromtimestamp(user.date_joined.seconds, tz=get_current_timezone()),
             self.other_user.date_joined,
@@ -483,7 +483,7 @@ class UserService_Retrieve(UserServiceTestCase):
     def test_banned_forever(self):
         self.other_user.ban()
         user = self.service.Retrieve(self.request, self.grpc_context)
-        self.assertEqual(user.profile.id, str(self.other_user.id))
+        self.assertEqual(user.profile.id, self.other_user.id.bytes)
         self.assertAlmostEqual(
             datetime.fromtimestamp(user.date_joined.seconds, tz=get_current_timezone()),
             self.other_user.date_joined,
@@ -499,7 +499,7 @@ class UserService_Retrieve(UserServiceTestCase):
     def test_blocked(self):
         self.main_user.blocked_users.add(self.other_user)
         user = self.service.Retrieve(self.request, self.grpc_context)
-        self.assertEqual(user.profile.id, str(self.other_user.id))
+        self.assertEqual(user.profile.id, self.other_user.id.bytes)
         self.assertTrue(user.profile.is_blocked)
 
     def test_deleted(self):
@@ -509,7 +509,7 @@ class UserService_Retrieve(UserServiceTestCase):
             self.service.Retrieve(self.request, self.grpc_context)
 
     def test_non_existent(self):
-        self.request.id = str(uuid.uuid4())
+        self.request.id = uuid.uuid4().bytes
 
         with (self.assertRaises(ObjectDoesNotExist)):
             self.service.Retrieve(self.request, self.grpc_context)
@@ -519,7 +519,7 @@ class UserService_RetrieveMe(UserServiceTestCase):
     def test(self):
         self.main_user.blocked_users.add(self.other_user)
         user = self.service.RetrieveMe(self.request, self.grpc_context)
-        self.assertEqual(user.profile.id, str(self.main_user.id))
+        self.assertEqual(user.profile.id, self.main_user.id.bytes)
         self.assertEqual(user.profile.username, str(self.main_user.username))
         self.assertEqual(user.email, str(self.main_user.email))
         self.assertEqual(user.blocked_users, self.main_user.blocked_users.count())
@@ -644,7 +644,7 @@ class UserService_ListBlocked(UserServiceTestCase, PaginationTestCase):
         return self.service.ListBlocked(request_iterator, self.grpc_context)
 
     def check(self, item: user_pb2.Profile, position: int):
-        self.assertEqual(item.id, str(self.users[position].id))
+        self.assertEqual(item.id, self.users[position].id.bytes)
         self.assertEqual(item.username, self.users[position].username)
 
     def test(self):
@@ -678,7 +678,7 @@ class UserService_ListBlocked(UserServiceTestCase, PaginationTestCase):
 class UserService_UpdateBlock(UserServiceTestCase):
     def setUp(self):
         super().setUp()
-        self.request = user_pb2.Block(id=str(self.other_user.id), blocked=True)
+        self.request = user_pb2.Block(id=self.other_user.id.bytes, blocked=True)
 
     def test(self):
         self.service.UpdateBlock(self.request, self.grpc_context)
@@ -688,7 +688,7 @@ class UserService_UpdateBlock(UserServiceTestCase):
         )
 
     def test_block_me(self):
-        self.request.id = str(self.main_user.id)
+        self.request.id = self.main_user.id.bytes
 
         with self.assertRaises(IntegrityError):
             self.service.UpdateBlock(self.request, self.grpc_context)
@@ -713,7 +713,7 @@ class UserService_UpdateBlock(UserServiceTestCase):
         self.assertEqual(self.main_user.blocked_users.count(), 0)
 
     def test_block_non_existent(self):
-        self.request.id = str(uuid.uuid4())
+        self.request.id = uuid.uuid4().bytes
 
         with self.assertRaises(ObjectDoesNotExist):
             self.service.UpdateBlock(self.request, self.grpc_context)
@@ -722,7 +722,7 @@ class UserService_UpdateBlock(UserServiceTestCase):
 class UserService_Report(UserServiceTestCase):
     def setUp(self):
         super().setUp()
-        self.request = id_pb2.StringId(id=str(self.other_user.id))
+        self.request = id_pb2.Id(id=self.other_user.id.bytes)
 
     def test(self):
         self.service.Report(self.request, self.grpc_context)
@@ -740,7 +740,7 @@ class UserService_Report(UserServiceTestCase):
             self.service.Report(self.request, self.grpc_context)
 
     def test_self(self):
-        self.request.id = str(self.main_user.id)
+        self.request.id = self.main_user.id.bytes
 
         with self.assertRaises(PermissionDenied):
             self.service.Report(self.request, self.grpc_context)
@@ -766,7 +766,7 @@ class UserService_Absolve(UserServiceTestCase):
         CountUnit.objects.create(notification=flag, count_item=self.main_user)
         self.main_user.is_staff = True
         self.main_user.save()
-        self.request = id_pb2.StringId(id=str(self.other_user.id))
+        self.request = id_pb2.Id(id=self.other_user.id.bytes)
 
     def test(self):
         self.service.Absolve(self.request, self.grpc_context)
@@ -785,7 +785,7 @@ class UserService_Absolve(UserServiceTestCase):
             self.service.Absolve(self.request, self.grpc_context)
 
     def test_on_self(self):
-        self.request.id = str(self.main_user.id)
+        self.request.id = self.main_user.id.bytes
 
         with self.assertRaises(PermissionDenied):
             self.service.Absolve(self.request, self.grpc_context)
@@ -797,7 +797,7 @@ class UserService_Ban(UserServiceTestCase):
         self.main_user.is_staff = True
         self.main_user.save()
         self.before = now()
-        self.request = user_pb2.BanSentence(id=str(self.other_user.id), days=3)
+        self.request = user_pb2.BanSentence(id=self.other_user.id.bytes, days=3)
 
     def test(self):
         self.service.Ban(self.request, self.grpc_context)
@@ -866,7 +866,7 @@ class UserService_Promote(UserServiceTestCase):
         self.main_user.is_staff = True
         self.main_user.is_superuser = True
         self.main_user.save()
-        self.request = user_pb2.Promotion(id=str(self.other_user.id))
+        self.request = user_pb2.Promotion(id=self.other_user.id.bytes)
 
     def test_citizen_to_staff(self):
         self.other_user.is_staff = False

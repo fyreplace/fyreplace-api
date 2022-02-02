@@ -60,6 +60,6 @@ class CommentsPaginationAdapter(CreationDatePaginationAdapter):
     def apply_header(self, header: pagination_pb2.Header):
         super().apply_header(header)
         post = Post.existing_objects.get_published_readable_by(
-            self.context.caller, id=header.context_id
+            self.context.caller, id__bytes=header.context_id
         )
         self.query = self.initial_query.filter(post=post)
