@@ -24,13 +24,13 @@ backcall==0.2.0
     # via ipython
 billiard==3.6.4.0
     # via celery
-black==21.12b0
+black==22.1.0
     # via
     #   -r requirements.in
     #   ipython
-boto3==1.20.44
+boto3==1.20.47
     # via django-storages
-botocore==1.23.44
+botocore==1.23.47
     # via
     #   boto3
     #   s3transfer
@@ -45,7 +45,7 @@ certifi==2021.10.8
     #   requests
 cffi==1.15.0
     # via argon2-cffi-bindings
-charset-normalizer==2.0.10
+charset-normalizer==2.0.11
     # via
     #   httpx
     #   requests
@@ -66,7 +66,7 @@ decorator==5.1.1
     # via ipython
 deprecated==1.2.13
     # via redis
-django[argon2]==3.2.11
+django[argon2]==3.2.12
     # via
     #   -r requirements.in
     #   django-anymail
@@ -97,7 +97,7 @@ execnet==1.9.0
     # via pytest-xdist
 executing==0.8.2
     # via stack-data
-grpc-interceptor==0.13.0
+grpc-interceptor==0.13.1
     # via -r requirements.in
 grpcio==1.43.0
     # via
@@ -108,7 +108,7 @@ grpcio-tools==1.43.0
     # via -r requirements.in
 h11==0.12.0
     # via httpcore
-httpcore==0.14.5
+httpcore==0.14.6
     # via httpx
 httpx==0.22.0
     # via -r requirements.in
@@ -161,11 +161,11 @@ platformdirs==2.4.1
     # via black
 pluggy==1.0.0
     # via pytest
-prompt-toolkit==3.0.24
+prompt-toolkit==3.0.26
     # via
     #   click-repl
     #   ipython
-protobuf==3.19.3
+protobuf==3.19.4
     # via
     #   grpcio-tools
     #   mypy-protobuf
@@ -208,14 +208,14 @@ python-dateutil==2.8.2
     #   python-crontab
 python-dotenv==0.19.2
     # via -r requirements.in
-python-magic==0.4.24
+python-magic==0.4.25
     # via -r requirements.in
 pytz==2021.3
     # via
     #   celery
     #   django
     #   django-timezone-field
-redis==4.1.1
+redis==4.1.2
     # via celery
 requests==2.27.1
     # via
@@ -225,7 +225,7 @@ rfc3986[idna2008]==1.5.0
     # via httpx
 rollbar==0.16.2
     # via -r requirements.in
-s3transfer==0.5.0
+s3transfer==0.5.1
     # via boto3
 six==1.16.0
     # via
@@ -247,7 +247,7 @@ toml==0.10.2
     # via
     #   django-stubs
     #   pytest
-tomli==1.2.3
+tomli==2.0.0
     # via
     #   black
     #   mypy
@@ -257,17 +257,16 @@ traitlets==5.1.1
     # via
     #   ipython
     #   matplotlib-inline
-types-futures==3.3.7
+types-futures==3.3.8
     # via types-protobuf
-types-protobuf==3.19.6
+types-protobuf==3.19.8
     # via mypy-protobuf
 types-pytz==2021.3.4
     # via django-stubs
-types-pyyaml==6.0.3
+types-pyyaml==6.0.4
     # via django-stubs
 typing-extensions==4.0.1
     # via
-    #   black
     #   django-stubs
     #   django-stubs-ext
     #   mypy
