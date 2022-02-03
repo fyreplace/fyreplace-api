@@ -23,7 +23,7 @@ from notifications.models import CountUnit, Notification
 from notifications.tests import BaseNotificationTestCase
 from protos import id_pb2, pagination_pb2, user_pb2
 
-from .emails import AccountActivationEmail, AccountRecoveryEmail, UserEmailUpdateEmail
+from .emails import AccountActivationEmail, AccountConnectionEmail, UserEmailUpdateEmail
 from .models import Connection, Hardware, Software
 from .services import AccountService, UserService
 from .tests import AuthenticatedTestCase, BaseUserTestCase, make_email
@@ -35,11 +35,7 @@ class AccountServiceTestCase(BaseUserTestCase):
         self.service = AccountService()
 
     def _make_create_request(self, **kwargs):
-        return user_pb2.UserCreation(
-            email=make_email("new"),
-            username="new",
-            password=self.STRONG_PASSWORD,
-        )
+        return user_pb2.UserCreation(email=make_email("new"), username="new")
 
 
 class UserServiceTestCase(AuthenticatedTestCase, BaseNotificationTestCase):
@@ -50,9 +46,7 @@ class UserServiceTestCase(AuthenticatedTestCase, BaseNotificationTestCase):
     def _create_users(self, count: int) -> List[AbstractUser]:
         return [
             get_user_model().objects.create_user(
-                username=f"user {i}",
-                email=make_email(f"user-{i}"),
-                password=self.STRONG_PASSWORD,
+                username=f"user {i}", email=make_email(f"user-{i}")
             )
             for i in range(count)
         ]
@@ -129,14 +123,6 @@ class AccountService_Create(AccountServiceTestCase):
 
         self.assertEqual(get_user_model().objects.count(), self.user_count)
 
-    def test_bad_password(self):
-        self.request.password = "password"
-
-        with self.assertRaises(InvalidArgument):
-            self.service.Create(self.request, self.grpc_context)
-
-        self.assertEqual(get_user_model().objects.count(), self.user_count)
-
 
 class AccountService_Delete(AccountServiceTestCase, AuthenticatedTestCase):
     def test(self):
@@ -144,7 +130,6 @@ class AccountService_Delete(AccountServiceTestCase, AuthenticatedTestCase):
         self.main_user.refresh_from_db()
         self.assertIsNone(self.main_user.username)
         self.assertIsNone(self.main_user.email)
-        self.assertFalse(self.main_user.has_usable_password())
         self.assertFalse(self.main_user.is_active)
         self.assertTrue(self.main_user.is_deleted)
         self.assertFalse(self.main_user.avatar)
@@ -269,77 +254,6 @@ class AccountService_ConfirmActivation(AccountServiceTestCase):
         self.assertEqual(Connection.objects.count(), self.connection_count)
 
 
-class AccountService_SendRecoveryEmail(AccountServiceTestCase):
-    def setUp(self):
-        super().setUp()
-        self.request = user_pb2.Email(email=self.main_user.email)
-
-    def test(self):
-        self.service.SendRecoveryEmail(self.request, self.grpc_context)
-        self.assertEmails([AccountRecoveryEmail(self.main_user.id)])
-
-    def test_unused_email(self):
-        self.request.email = make_email("bad")
-        self.service.SendRecoveryEmail(self.request, self.grpc_context)
-        self.assertEmails([])
-
-    def test_bad_email(self):
-        self.request.email = "not an email"
-
-        with self.assertRaises(InvalidArgument):
-            self.service.SendRecoveryEmail(self.request, self.grpc_context)
-
-
-class AccountService_ConfirmRecovery(AccountServiceTestCase, AuthenticatedTestCase):
-    def setUp(self):
-        super().setUp()
-        self.connection_count = Connection.objects.count()
-        self.request = user_pb2.ConnectionToken(
-            token=AccountActivationEmail(self.main_user.id).token,
-            client=self.main_connection.to_message(context=self.grpc_context).client,
-        )
-
-    def test(self):
-        token = self.service.ConfirmRecovery(self.request, self.grpc_context)
-        self.assertEqual(Connection.objects.count(), self.connection_count + 1)
-        connection = Connection.objects.latest("date_created")
-        claims = jwt.decode(token.token)
-        self.assertIn("user_id", claims)
-        self.assertIn("connection_id", claims)
-        self.assertEqual(claims["user_id"], str(self.main_user.id))
-        self.assertEqual(claims["connection_id"], str(connection.id))
-        self.main_user.refresh_from_db()
-        self.assertTrue(self.main_user.is_active)
-        self.assertEqual(connection.user, self.main_user)
-        self.assertEqual(connection.hardware, Hardware.UNKNOWN)
-        self.assertEqual(connection.software, Software.UNKNOWN)
-
-    def test_pending_user(self):
-        self.main_user.is_active = False
-        self.main_user.save()
-
-        with self.assertRaises(PermissionDenied):
-            self.service.ConfirmRecovery(self.request, self.grpc_context)
-
-        self.assertEqual(Connection.objects.count(), self.connection_count)
-
-    def test_deleted_user(self):
-        self.main_user.delete()
-
-        with self.assertRaises(PermissionDenied):
-            self.service.ConfirmRecovery(self.request, self.grpc_context)
-
-        self.assertEqual(Connection.objects.count(), self.connection_count - 1)
-
-    def test_banned_user(self):
-        self.main_user.ban(timedelta(days=3))
-
-        with self.assertRaises(PermissionDenied):
-            self.service.ConfirmRecovery(self.request, self.grpc_context)
-
-        self.assertEqual(Connection.objects.count(), self.connection_count - 1)
-
-
 class AccountService_ListConnections(AccountServiceTestCase, AuthenticatedTestCase):
     def setUp(self):
         super().setUp()
@@ -359,59 +273,105 @@ class AccountService_ListConnections(AccountServiceTestCase, AuthenticatedTestCa
             self.assertNotIn(connection.id.bytes, ids)
 
 
-class AccountService_Connect(AccountServiceTestCase):
+class AccountService_SendConnectionEmail(AccountServiceTestCase):
     def setUp(self):
         super().setUp()
-        self.request = user_pb2.Credentials(
-            identifier=self.main_user.username,
-            password=self.MAIN_USER_PASSWORD,
-            client=user_pb2.Client(
-                hardware=Hardware.UNKNOWN,
-                software=Software.UNKNOWN,
-            ),
+        self.request = user_pb2.Email(email=self.main_user.email)
+
+    def test(self):
+        self.service.SendConnectionEmail(self.request, self.grpc_context)
+        self.assertEmails([AccountConnectionEmail(self.main_user.id)])
+
+    def test_unused_email(self):
+        self.request.email = make_email("bad")
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.SendConnectionEmail(self.request, self.grpc_context)
+
+        self.assertEmails([])
+
+    def test_bad_email(self):
+        self.request.email = "not an email"
+
+        with self.assertRaises(InvalidArgument):
+            self.service.SendConnectionEmail(self.request, self.grpc_context)
+
+        self.assertEmails([])
+
+    def test_pending_user(self):
+        self.main_user.is_active = False
+        self.main_user.save()
+
+        with self.assertRaises(PermissionDenied):
+            self.service.SendConnectionEmail(self.request, self.grpc_context)
+
+        self.assertEmails([])
+
+    def test_deleted_user(self):
+        self.main_user.delete()
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.SendConnectionEmail(self.request, self.grpc_context)
+
+        self.assertEmails([])
+
+    def test_banned_user(self):
+        self.main_user.ban(timedelta(days=3))
+
+        with self.assertRaises(PermissionDenied):
+            self.service.SendConnectionEmail(self.request, self.grpc_context)
+
+        self.assertEmails([])
+
+
+class AccountService_ConfirmConnection(AccountServiceTestCase, AuthenticatedTestCase):
+    def setUp(self):
+        super().setUp()
+        self.connection_count = Connection.objects.count()
+        self.request = user_pb2.ConnectionToken(
+            token=AccountActivationEmail(self.main_user.id).token,
+            client=self.main_connection.to_message(context=self.grpc_context).client,
         )
 
     def test(self):
-        connection_count = Connection.objects.count()
-        token = self.service.Connect(self.request, self.grpc_context)
-        self.assertEqual(Connection.objects.count(), connection_count + 1)
+        token = self.service.ConfirmConnection(self.request, self.grpc_context)
+        self.assertEqual(Connection.objects.count(), self.connection_count + 1)
         connection = Connection.objects.latest("date_created")
         claims = jwt.decode(token.token)
         self.assertIn("user_id", claims)
         self.assertIn("connection_id", claims)
         self.assertEqual(claims["user_id"], str(self.main_user.id))
         self.assertEqual(claims["connection_id"], str(connection.id))
+        self.main_user.refresh_from_db()
+        self.assertTrue(self.main_user.is_active)
+        self.assertEqual(connection.user, self.main_user)
+        self.assertEqual(connection.hardware, Hardware.UNKNOWN)
+        self.assertEqual(connection.software, Software.UNKNOWN)
 
-    def test_bad_username(self):
-        self.request.identifier = "bad"
-
-        with self.assertRaises(InvalidArgument):
-            self.service.Connect(self.request, self.grpc_context)
-
-    def test_bad_password(self):
-        self.request.password = "bad"
-
-        with self.assertRaises(InvalidArgument):
-            self.service.Connect(self.request, self.grpc_context)
-
-    def test_pending(self):
+    def test_pending_user(self):
         self.main_user.is_active = False
         self.main_user.save()
 
         with self.assertRaises(PermissionDenied):
-            self.service.Connect(self.request, self.grpc_context)
+            self.service.ConfirmConnection(self.request, self.grpc_context)
 
-    def test_deleted(self):
+        self.assertEqual(Connection.objects.count(), self.connection_count)
+
+    def test_deleted_user(self):
         self.main_user.delete()
 
-        with self.assertRaises(InvalidArgument):
-            self.service.Connect(self.request, self.grpc_context)
+        with self.assertRaises(PermissionDenied):
+            self.service.ConfirmConnection(self.request, self.grpc_context)
 
-    def test_banned(self):
+        self.assertEqual(Connection.objects.count(), self.connection_count - 1)
+
+    def test_banned_user(self):
         self.main_user.ban(timedelta(days=3))
 
         with self.assertRaises(PermissionDenied):
-            self.service.Connect(self.request, self.grpc_context)
+            self.service.ConfirmConnection(self.request, self.grpc_context)
+
+        self.assertEqual(Connection.objects.count(), self.connection_count - 1)
 
 
 class AccountService_Disconnect(AccountServiceTestCase, AuthenticatedTestCase):
@@ -566,23 +526,6 @@ class UserService_UpdateAvatar(ImageTestCaseMixin, UserServiceTestCase):
     def test_bad_format(self):
         with self.assertRaises(InvalidArgument):
             self.service.UpdateAvatar(self.make_request("txt"), self.grpc_context)
-
-
-class UserService_UpdatePassword(UserServiceTestCase):
-    def setUp(self):
-        super().setUp()
-        self.request = user_pb2.Password(password="New password")
-
-    def test(self):
-        self.service.UpdatePassword(self.request, self.grpc_context)
-        self.main_user.refresh_from_db()
-        self.assertTrue(self.main_user.check_password(self.request.password))
-
-    def test_invalid_password(self):
-        self.request.password = "weak"
-
-        with self.assertRaises(InvalidArgument):
-            self.service.UpdatePassword(self.request, self.grpc_context)
 
 
 class UserService_SendEmailUpdateEmail(UserServiceTestCase):

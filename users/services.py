@@ -7,7 +7,6 @@ from uuid import UUID
 
 import grpc
 from django.contrib.auth import get_user_model
-from django.contrib.auth.password_validation import validate_password
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
@@ -30,7 +29,7 @@ from .pagination import UsersPaginationAdapter
 from .tasks import (
     fetch_default_user_avatar,
     send_account_activation_email,
-    send_account_recovery_email,
+    send_account_connection_email,
     send_user_email_update_email,
 )
 from .validators import validate_unicode_username
@@ -41,18 +40,23 @@ def normalize(value: str) -> str:
     return re.sub(r"[^\w]", "", value.decode("ascii")).strip().upper()
 
 
-def check_password(password: str):
-    try:
-        validate_password(password)
-    except ValidationError:
-        raise InvalidArgument("invalid_password")
-
-
 def check_email(email: str):
     try:
         validate_email(email)
     except ValidationError:
         raise InvalidArgument("invalid_email")
+
+
+def check_user(user: get_user_model()):
+    if not user.is_alive_and_kicking:
+        if user.is_pending:
+            message_end = "pending"
+        elif user.is_deleted:
+            message_end = "deleted"
+        else:
+            message_end = "banned"
+
+        raise PermissionDenied("caller_" + message_end)
 
 
 class AccountService(user_pb2_grpc.AccountServiceServicer):
@@ -80,8 +84,6 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
             validate_email(request.email)
             error_message = "invalid_username"
             validate_unicode_username(request.username)
-            error_message = "invalid_password"
-            validate_password(request.password)
         except ValidationError:
             raise InvalidArgument(error_message)
 
@@ -131,25 +133,21 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
         return user_pb2.Token(token=connection.get_token())
 
     @no_auth
-    def SendRecoveryEmail(
+    def SendConnectionEmail(
         self, request: user_pb2.Email, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         check_email(request.email)
-
-        if user := get_user_model().objects.filter(email=request.email).first():
-            if user.is_alive_and_kicking:
-                send_account_recovery_email.delay(user_id=str(user.id))
-
+        user = get_user_model().objects.get(email=request.email)
+        check_user(user)
+        send_account_connection_email.delay(user_id=str(user.id))
         return empty_pb2.Empty()
 
     @no_auth
-    def ConfirmRecovery(
+    def ConfirmConnection(
         self, request: user_pb2.ConnectionToken, context: grpc.ServicerContext
     ) -> user_pb2.Token:
         user, _ = get_info_from_token(request.token)
-
-        if not user.is_alive_and_kicking:
-            raise PermissionDenied("user_not_recoverable")
+        check_user(user)
 
         with atomic():
             connection = Connection.objects.create(
@@ -168,38 +166,6 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
         return user_pb2.Connections(
             connections=[c.to_message(context=context) for c in connections]
         )
-
-    @no_auth
-    def Connect(
-        self, request: user_pb2.Credentials, context: grpc.ServicerContext
-    ) -> user_pb2.Token:
-        user_query = Q(username=request.identifier) | Q(email=request.identifier)
-
-        if not request.identifier or not (
-            user := get_user_model().objects.filter(user_query).first()
-        ):
-            raise InvalidArgument("invalid_credentials")
-        elif not user.check_password(request.password):
-            raise InvalidArgument("invalid_credentials")
-        elif not user.is_alive_and_kicking:
-            if user.is_pending:
-                message_end = "pending"
-            elif user.is_deleted:
-                message_end = "deleted"
-            else:
-                message_end = "banned"
-
-            raise PermissionDenied("caller_" + message_end)
-
-        with atomic():
-            connection = Connection.objects.create(
-                user=user,
-                hardware=request.client.hardware,
-                software=request.client.software,
-            )
-            connection.full_clean()
-
-        return user_pb2.Token(token=connection.get_token())
 
     def Disconnect(
         self, request: id_pb2.Id, context: grpc.ServicerContext
@@ -252,16 +218,6 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
         image = self.get_image(request_iterator)
         user = get_user_model().objects.select_for_update().get(id=context.caller.id)
         self.set_image(user, "avatar", image)
-        return empty_pb2.Empty()
-
-    @atomic
-    def UpdatePassword(
-        self, request: user_pb2.Password, context: grpc.ServicerContext
-    ) -> empty_pb2.Empty:
-        check_password(request.password)
-        user = get_user_model().objects.select_for_update().get(id=context.caller.id)
-        user.set_password(request.password)
-        user.save()
         return empty_pb2.Empty()
 
     def SendEmailUpdateEmail(

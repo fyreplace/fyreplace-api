@@ -55,6 +55,7 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
         unique=True,
         null=True,
     )
+    password = None
     email = models.EmailField(unique=True, null=True)
     avatar = models.ImageField(
         upload_to="avatars",
@@ -151,7 +152,6 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
     def perform_soft_delete(self):
         self.username = None
         self.email = None
-        self.set_unusable_password()
         self.avatar.delete(save=False)
         self.bio = ""
         super().perform_soft_delete()

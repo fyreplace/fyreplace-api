@@ -1,3 +1,0 @@
-You can connect to your account and change your password by clicking on this link:
-
-{{ link }}

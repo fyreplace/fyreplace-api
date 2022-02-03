@@ -11,8 +11,8 @@
       <mj-column padding="0">
         <mj-divider border-color="#FF8243" padding="0 0 40px 0"></mj-divider>
         <mj-image src="{% static 'logo.png' %}" width="80px" padding-bottom="40px"></mj-image>
-        <mj-text mj-class="text" padding-bottom="20px">You can connect to your account and change your password by clicking on the button below:</mj-text>
-        <mj-button mj-class="text" href="{{ link }}" rel="noopener noreferrer" padding-bottom="40px">Activate account</mj-button>
+        <mj-text mj-class="text" padding-bottom="20px">You can connect to your account by clicking on the button below:</mj-text>
+        <mj-button mj-class="text" href="{{ link }}" rel="noopener noreferrer" padding-bottom="40px">Connect</mj-button>
       </mj-column>
     </mj-section>
   </mj-body>
