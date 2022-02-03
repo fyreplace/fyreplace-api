@@ -56,6 +56,9 @@ def check_user(user: get_user_model()):
         else:
             message_end = "banned"
 
+            if not user.date_ban_end:
+                message_end += "_permanently"
+
         raise PermissionDenied("caller_" + message_end)
 
 
