@@ -9,9 +9,9 @@ import grpc
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.core.validators import validate_email
 from django.db.models import Q
 from django.db.transaction import atomic
+from email_validator import EmailNotValidError, validate_email
 from google.protobuf import empty_pb2
 from grpc_interceptor.exceptions import AlreadyExists, InvalidArgument, PermissionDenied
 
@@ -43,7 +43,7 @@ def normalize(value: str) -> str:
 def check_email(email: str):
     try:
         validate_email(email)
-    except ValidationError:
+    except EmailNotValidError:
         raise InvalidArgument("invalid_email")
 
 
@@ -83,12 +83,10 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
             raise AlreadyExists("username_taken")
 
         try:
-            error_message = "invalid_email"
-            validate_email(request.email)
-            error_message = "invalid_username"
+            check_email(request.email)
             validate_unicode_username(request.username)
         except ValidationError:
-            raise InvalidArgument(error_message)
+            raise InvalidArgument("invalid_username")
 
         with atomic():
             user = User.objects.create_user(**data, is_active=False)
