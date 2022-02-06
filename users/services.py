@@ -276,7 +276,7 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
         user = get_user_model().existing_objects.get(id__bytes=request.id)
 
         if user == context.caller:
-            raise PermissionDenied("invalid_user")
+            raise PermissionDenied("user_is_caller")
         elif not user.is_active:
             raise PermissionDenied("user_not_active")
         elif user.is_banned:
@@ -294,13 +294,12 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
     def Absolve(
         self, request: id_pb2.Id, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        if not context.caller.is_staff:
-            raise PermissionDenied("caller_not_staff")
-
         user = get_user_model().existing_objects.get(id__bytes=request.id)
 
         if user == context.caller:
             raise PermissionDenied("user_is_caller")
+        elif user.rank >= context.caller.rank:
+            raise PermissionDenied("caller_rank_insufficient")
 
         delete_notifications_for(user)
         return empty_pb2.Empty()
@@ -309,9 +308,6 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
     def Ban(
         self, request: user_pb2.BanSentence, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        if not context.caller.is_staff:
-            raise PermissionDenied("caller_not_staff")
-
         user = (
             get_user_model()
             .existing_objects.select_for_update()
@@ -319,9 +315,9 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
         )
 
         if user == context.caller:
-            raise PermissionDenied("invalid_user")
-        elif user.is_superuser and not context.caller.is_superuser:
-            raise PermissionDenied("caller_not_superuser")
+            raise PermissionDenied("user_is_caller")
+        elif user.rank >= context.caller.rank:
+            raise PermissionDenied("caller_rank_insufficient")
 
         user.ban(timedelta(days=request.days) if request.days else None)
         return empty_pb2.Empty()
@@ -331,7 +327,7 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
         self, request: user_pb2.Promotion, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         if not context.caller.is_superuser:
-            raise PermissionDenied("caller_not_superuser")
+            raise PermissionDenied("caller_rank_insufficient")
 
         user = (
             get_user_model()

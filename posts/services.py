@@ -230,7 +230,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         self, request: id_pb2.Id, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         if not context.caller.is_staff:
-            raise PermissionDenied("caller_not_staff")
+            raise PermissionDenied("caller_rank_insufficient")
 
         post = Post.existing_objects.get_readable_by(
             context.caller, id__bytes=request.id
@@ -400,7 +400,7 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
         self, request: id_pb2.Id, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         if not context.caller.is_staff:
-            raise PermissionDenied("caller_not_staff")
+            raise PermissionDenied("caller_rank_insufficient")
 
         comment = Comment.existing_objects.get(id__bytes=request.id)
 
