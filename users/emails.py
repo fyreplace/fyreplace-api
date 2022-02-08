@@ -70,6 +70,12 @@ class AccountConnectionEmail(BaseUserEmail):
         return _(f"{settings.PRETTY_APP_NAME} account connection")
 
     @property
+    def payload_extras(self) -> dict:
+        extras = super().payload_extras
+        extras["connection_token"] = str(self.user.connection_token)
+        return extras
+
+    @property
     def method(self) -> Callable:
         return user_pb2_grpc.AccountService.ConfirmConnection
 

@@ -49,6 +49,7 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
     existing_objects = ExistingUserManager()
     default_message_class = user_pb2.User
 
+    email = models.EmailField(unique=True, null=True)
     username = models.CharField(
         max_length=50,
         validators=[AbstractUser.username_validator, MinLengthValidator(3)],
@@ -56,7 +57,7 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
         null=True,
     )
     password = None
-    email = models.EmailField(unique=True, null=True)
+    connection_token = models.UUIDField(null=True, blank=True)
     avatar = models.ImageField(
         upload_to="avatars",
         validators=[FileSizeValidator(max_megabytes=1)],

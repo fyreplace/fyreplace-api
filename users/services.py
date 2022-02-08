@@ -1,5 +1,6 @@
 import re
 import unicodedata
+import uuid
 from datetime import timedelta
 from os import path
 from typing import Iterator
@@ -138,8 +139,13 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
         self, request: user_pb2.Email, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         check_email(request.email)
-        user = get_user_model().objects.get(email=request.email)
-        check_user(user)
+
+        with atomic():
+            user = get_user_model().objects.select_for_update().get(email=request.email)
+            check_user(user)
+            user.connection_token = uuid.uuid4()
+            user.save()
+
         send_account_connection_email.delay(user_id=str(user.id))
         return empty_pb2.Empty()
 
@@ -149,8 +155,15 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
     ) -> user_pb2.Token:
         user, _ = get_info_from_token(request.token)
         check_user(user)
+        connection_token = jwt.decode(request.token).get("connection_token")
+
+        if connection_token != str(user.connection_token):
+            raise PermissionDenied("invalid_connection_token")
 
         with atomic():
+            user = get_user_model().objects.select_for_update().get(id=user.id)
+            user.connection_token = None
+            user.save()
             connection = Connection.objects.create(
                 user=user,
                 hardware=request.client.hardware,

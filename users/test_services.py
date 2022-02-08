@@ -327,9 +327,12 @@ class AccountService_SendConnectionEmail(AccountServiceTestCase):
 class AccountService_ConfirmConnection(AccountServiceTestCase, AuthenticatedTestCase):
     def setUp(self):
         super().setUp()
+        self.service.SendConnectionEmail(
+            user_pb2.Email(email=self.main_user.email), self.grpc_context
+        )
         self.connection_count = Connection.objects.count()
         self.request = user_pb2.ConnectionToken(
-            token=AccountActivationEmail(self.main_user.id).token,
+            token=AccountConnectionEmail(self.main_user.id).token,
             client=self.main_connection.to_message(context=self.grpc_context).client,
         )
 
@@ -347,6 +350,13 @@ class AccountService_ConfirmConnection(AccountServiceTestCase, AuthenticatedTest
         self.assertEqual(connection.user, self.main_user)
         self.assertEqual(connection.hardware, Hardware.UNKNOWN)
         self.assertEqual(connection.software, Software.UNKNOWN)
+
+    def test_twice(self):
+        self.service.ConfirmConnection(self.request, self.grpc_context)
+        self.assertEqual(Connection.objects.count(), self.connection_count + 1)
+
+        with self.assertRaises(PermissionDenied):
+            self.service.ConfirmConnection(self.request, self.grpc_context)
 
     def test_pending_user(self):
         self.main_user.is_active = False
