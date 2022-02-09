@@ -1069,7 +1069,7 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
                     context_id=self.get_context_id(),
                 )
             ),
-            pagination_pb2.Page(limit=0),
+            pagination_pb2.Page(offset=0),
         ]
 
     def paginate(
@@ -1083,20 +1083,20 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
         self.assertEqual(item.author.id, self.comments[position].author.id.bytes)
 
     def test(self):
-        self.run_test(self.check, limit=True)
+        self.run_test(self.check, offset=True)
         subscription = self.post.subscriptions.get(user=self.main_user)
         self.assertEqual(
             subscription.last_comment_seen, self.post.comments.latest("date_created")
         )
 
     def test_previous(self):
-        self.run_test_previous(self.check, limit=True)
+        self.run_test_previous(self.check, offset=True)
 
     def test_reverse(self):
-        self.run_test_reverse(self.check, limit=True)
+        self.run_test_reverse(self.check, offset=True)
 
     def test_reverse_previous(self):
-        self.run_test_reverse_previous(self.check, limit=True)
+        self.run_test_reverse_previous(self.check, offset=True)
 
     def test_empty(self):
         self.run_test_empty(self.post.comments.all())
@@ -1124,7 +1124,7 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
             self.assertEqual(comment.id, self_comment.id.bytes)
             self.assertEqual(comment.text, self_comment.text)
 
-        page_requests.append(pagination_pb2.Page(limit=self.page_size))
+        page_requests.append(pagination_pb2.Page(offset=self.page_size))
         comments = next(items_iterator)
         self.assertEqual(len(comments.comments), self.page_size)
 

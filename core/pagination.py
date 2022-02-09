@@ -105,7 +105,7 @@ class PaginatorMixin:
                     on_items,
                 )
             elif adapter.random_access:
-                yield self._paginate_limit(
+                yield self._paginate_offset(
                     request,
                     bundle_class,
                     bundle_field,
@@ -184,7 +184,7 @@ class PaginatorMixin:
             }
         )
 
-    def _paginate_limit(
+    def _paginate_offset(
         self,
         page: pagination_pb2.Page,
         bundle_class: Type,
@@ -200,7 +200,7 @@ class PaginatorMixin:
             items = items.reverse()
 
         count = items.count()
-        items = items.select_related()[page.limit : page.limit + size]
+        items = items.select_related()[page.offset : page.offset + size]
 
         if on_items:
             on_items(items)
