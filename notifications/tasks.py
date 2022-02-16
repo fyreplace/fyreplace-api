@@ -35,7 +35,7 @@ def send_notifications(comment_id: str):
 @shared_task
 def remove_comments_from_notifications(user_id: str, comment_ids: List[str]):
     CountUnit.objects.filter(
-        notification__user_id=user_id,
+        notification__recipient_id=user_id,
         count_item_type=ContentType.objects.get_for_model(Comment),
         count_item_id__in=comment_ids,
     ).delete()
