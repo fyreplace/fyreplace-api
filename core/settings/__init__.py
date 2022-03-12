@@ -18,12 +18,11 @@ if debug_str := os.getenv("DEBUG", "False"):
 else:
     DEBUG = False
 
-ENVIRONMENT = "development" if DEBUG else "production"
-
 TEST_RUNNER = "core.tests.PytestTestRunner"
 
 if ROLLBAR_TOKEN := os.getenv("ROLLBAR_TOKEN"):
-    rollbar.init(ROLLBAR_TOKEN, ENVIRONMENT)
+    is_dev = str_to_bool(os.getenv("ROLLBAR_DEVELOPMENT", "False"))
+    rollbar.init(ROLLBAR_TOKEN, "development" if is_dev else "production")
 
 # Self-awareness
 
