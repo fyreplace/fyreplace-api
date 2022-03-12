@@ -67,7 +67,8 @@ jobs:
   container:
     name: Build container
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags')
+    outputs:
+      environment: ${{ steps.environment.outputs.environment }}
 
     steps:
       - name: Checkout code
@@ -96,14 +97,23 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      - name: Set environment
+        id: environment
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/develop" ]
+          then
+            echo "::set-output name=environment::dev"
+          else
+            echo "::set-output name=environment::main"
+          fi
+
   deployment:
     name: Deploy to Kubernetes
     needs:
       - tests
       - container
     runs-on: ubuntu-latest
-    environment: main
-    if: startsWith(github.ref, 'refs/tags')
+    environment: ${{ needs.container.outputs.environment }}
 
     steps:
       - name: Checkout code
@@ -154,4 +164,10 @@ jobs:
 
       - name: Deploy
         working-directory: kubernetes
-        run: helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/develop" ]
+          then
+            helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace --set version=develop,domain=dev.api.fyreplace.app
+          else
+            helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace
+          fi
