@@ -1,4 +1,6 @@
-.PHONY: protobufs protos static migrations emails
+.PHONY: build protobufs protos static migrations emails chart
+
+build: protobufs chart
 
 protobufs: protos protos/__init__.py
 
@@ -21,3 +23,7 @@ migrations:
 
 emails:
 	npx mjml users/templates/*.mjml -c.minify=true -o users/templates
+
+chart:
+	cp kubernetes/fyreplace/Chart.template.yaml kubernetes/fyreplace/Chart.yaml
+	echo "appVersion: $(shell git describe --tags --dirty)" >> kubernetes/fyreplace/Chart.yaml
