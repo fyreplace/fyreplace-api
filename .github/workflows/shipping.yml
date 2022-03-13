@@ -127,6 +127,10 @@ jobs:
         env:
           KUBE_CONFIG_B64: ${{ secrets.KUBE_CONFIG_B64 }}
 
+      - name: Create namespace
+        working-directory: kubernetes
+        run: kubectl create namespace fyreplace -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml apply -f -
+
       - name: Create configuration
         working-directory: kubernetes
         run: |
