@@ -121,6 +121,9 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Make chart
+        run: make chart
+
       - name: Set Kubernetes config
         working-directory: kubernetes
         run: 'echo $KUBE_CONFIG_B64 | base64 -d > kube.yml'
@@ -169,7 +172,6 @@ jobs:
       - name: Deploy
         working-directory: kubernetes
         run: |
-          make chart
           if [ "${{ github.ref }}" = "refs/heads/develop" ]
           then
             helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace --set version=develop,domain=dev.api.fyreplace.app
