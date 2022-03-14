@@ -7,4 +7,4 @@ RUN python -m pip install --no-cache-dir --upgrade pip wheel
 RUN python -m pip install --no-cache-dir --requirement requirements.txt
 
 COPY . .
-RUN make
+RUN make protobufs
