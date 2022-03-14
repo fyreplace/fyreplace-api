@@ -92,7 +92,7 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=ref,event=branch
-            type=sha
+            type=sha,format=long
 
       - name: Build and push image
         uses: docker/build-push-action@v2
@@ -179,7 +179,7 @@ jobs:
         run: |
           if [ "${{ github.ref }}" = "refs/heads/develop" ]
           then
-            helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace --set version=${{ github.sha }},domain=dev.api.fyreplace.app
+            helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace --set version=sha-${{ github.sha }},domain=dev.api.fyreplace.app
           else
             helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace
           fi
