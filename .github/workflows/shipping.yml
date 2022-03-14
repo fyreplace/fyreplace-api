@@ -90,16 +90,12 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
 
-      - name: Extract version
-        id: version
-        run: echo "::set-output name=version::$(git describe --tags --dirty)"
-
       - name: Build and push image
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
-          tags: ${{ steps.version.outputs.version }}
+          tags: ${{ steps.meta.outputs.tags }} ${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Set environment
@@ -179,7 +175,7 @@ jobs:
         run: |
           if [ "${{ github.ref }}" = "refs/heads/develop" ]
           then
-            helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace --set version=${{ needs.container.outputs.version }},domain=dev.api.fyreplace.app
+            helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace --set version=${{ github.sha }},domain=dev.api.fyreplace.app
           else
             helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace
           fi
