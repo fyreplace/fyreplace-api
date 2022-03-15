@@ -179,7 +179,8 @@ jobs:
         run: |
           if [ "${{ github.ref }}" = "refs/heads/develop" ]
           then
-            helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace --set version=sha-${{ github.sha }},domain=dev.api.fyreplace.app
+            export variables="version=sha-${{ github.sha }},domain=dev.api.fyreplace.app"
           else
-            helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace
+            export variables="version=sha-${{ github.sha }}"
           fi
+          helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace --set "$variables"
