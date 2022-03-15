@@ -49,13 +49,15 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
     existing_objects = ExistingUserManager()
     default_message_class = user_pb2.User
 
+    email = models.EmailField(unique=True, null=True)
     username = models.CharField(
         max_length=50,
         validators=[AbstractUser.username_validator, MinLengthValidator(3)],
         unique=True,
         null=True,
     )
-    email = models.EmailField(unique=True, null=True)
+    password = None
+    connection_token = models.UUIDField(null=True, blank=True)
     avatar = models.ImageField(
         upload_to="avatars",
         validators=[FileSizeValidator(max_megabytes=1)],
@@ -86,6 +88,10 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
         return self.is_alive and not self.is_active
 
     @property
+    def profile(self) -> "User":
+        return self
+
+    @property
     def rank(self) -> user_pb2.Rank:
         if self.is_superuser:
             return user_pb2.RANK_SUPERUSER
@@ -104,14 +110,42 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
 
     def get_message_fields(self, **overrides) -> List[str]:
         if overrides.get("is_banned", self.is_banned) and not self.date_ban_end:
-            fields = ["id", "is_banned"]
-
             if self._message_class == user_pb2.User:
-                fields.append("date_joined")
+                return ["profile", "date_joined"]
+            elif self._message_class == user_pb2.Profile:
+                return ["id", "is_banned"]
+            else:
+                return []
 
-            return fields
+        fields = super().get_message_fields(**overrides)
 
-        return super().get_message_fields(**overrides)
+        if self._message_class == user_pb2.User and (
+            not self._context
+            or not self._context.caller
+            or (self.id != self._context.caller.id)
+        ):
+            fields.remove("email")
+            fields.remove("blocked_users")
+
+        return fields
+
+    def get_message_field_values(self, **overrides) -> dict:
+        if self._context and self._context.caller:
+            overrides["is_blocked"] = self._context.caller.blocked_users.filter(
+                id=self.id
+            ).exists()
+
+        values = super().get_message_field_values(**overrides)
+
+        if (
+            self._message_class == user_pb2.User
+            and self._context
+            and self._context.caller
+            and self.id == self._context.caller.id
+        ):
+            values["blocked_users"] = self.blocked_users.count()
+
+        return values
 
     def delete(self, *args, **kwargs) -> Tuple[int, Dict[str, int]]:
         return self.soft_delete()
@@ -119,7 +153,6 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
     def perform_soft_delete(self):
         self.username = None
         self.email = None
-        self.set_unusable_password()
         self.avatar.delete(save=False)
         self.bio = ""
         super().perform_soft_delete()
@@ -189,8 +222,8 @@ class Connection(UUIDModel, TimestampModel):
     def __str__(self) -> str:
         return f"{self.user}: {self.hardware}/{self.software} ({self.date_created})"
 
-    def get_message_field_values(self, **options) -> dict:
-        data = super().get_message_field_values(**options)
+    def get_message_field_values(self, **overrides) -> dict:
+        data = super().get_message_field_values(**overrides)
         data["client"] = user_pb2.Client(hardware=self.hardware, software=self.software)
         return data
 

@@ -1,5 +1,4 @@
 import io
-import itertools
 from datetime import timedelta
 from typing import Iterator, List, Optional
 
@@ -8,6 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.images import ImageFile
 from django.utils.timezone import now
+from google.protobuf.message import Message
 from grpc_interceptor.exceptions import InvalidArgument, PermissionDenied
 
 from core.tests import ImageTestCaseMixin, PaginationTestCase, get_asset
@@ -57,17 +57,21 @@ class PostPaginationTestCase(PostServiceTestCase, PaginationTestCase):
         self.posts = self._create_test_posts()
         self.out_of_bounds_cursor = pagination_pb2.Cursor(
             data=[
-                pagination_pb2.KeyValuePair(key=self.date_field, value=str(now())),
+                pagination_pb2.KeyValuePair(
+                    key=self.main_pagination_field, value=str(now())
+                ),
                 pagination_pb2.KeyValuePair(key="id", value=str(self.posts[-1].id)),
             ],
             is_next=True,
         )
 
-    def paginate(self, request_iterator: Iterator[pagination_pb2.Page]) -> Iterator:
+    def paginate(
+        self, request_iterator: Iterator[pagination_pb2.Page]
+    ) -> Iterator[Message]:
         raise NotImplementedError
 
     def check(self, item: post_pb2.Post, position: int):
-        self.assertEqual(item.id, str(self.posts[position].id))
+        self.assertEqual(item.id, self.posts[position].id.bytes)
         self.assertTrue(item.is_preview)
         self.assertEqual(len(item.chapters), 1)
 
@@ -82,7 +86,7 @@ class PostPaginationTestCase(PostServiceTestCase, PaginationTestCase):
         self.assertEqual(len(posts.posts), self.page_size)
 
         for i, post in enumerate(posts.posts):
-            self.assertEqual(post.id, str(self.posts[i].id))
+            self.assertEqual(post.id, self.posts[i].id.bytes)
 
         page_requests.append(pagination_pb2.Page(cursor=posts.next))
         posts = next(posts_iterator)
@@ -90,7 +94,7 @@ class PostPaginationTestCase(PostServiceTestCase, PaginationTestCase):
         self.assertEqual(len(posts.posts), self.page_size - 6)
 
         for i, post in enumerate(posts.posts):
-            self.assertEqual(post.id, str(self.posts[i + self.page_size].id))
+            self.assertEqual(post.id, self.posts[i + self.page_size].id.bytes)
 
     def _create_test_posts(self) -> List[Post]:
         raise NotImplementedError
@@ -134,7 +138,7 @@ class PostService_ListFeed(PostServiceTestCase):
         for post in posts:
             next_post = next(feed)
             chapters = post.chapters.all()
-            self.assertEqual(next_post.id, str(post.id))
+            self.assertEqual(next_post.id, post.id.bytes)
             self.assertFalse(next_post.is_preview)
             self.assertEqual(len(next_post.chapters), len(chapters))
 
@@ -151,7 +155,7 @@ class PostService_ListFeed(PostServiceTestCase):
         for post in posts:
             next_post = next(feed)
             chapters = post.chapters.all()
-            self.assertEqual(next_post.id, str(post.id))
+            self.assertEqual(next_post.id, post.id.bytes)
             self.assertFalse(next_post.is_preview)
             self.assertEqual(len(next_post.chapters), len(chapters))
 
@@ -179,7 +183,7 @@ class PostService_ListFeed(PostServiceTestCase):
         feed = self.service.ListFeed(iter(requests), self.grpc_context)
 
         for post in active_posts:
-            self.assertEqual(next(feed).id, str(post.id))
+            self.assertEqual(next(feed).id, post.id.bytes)
 
     def test_old_posts(self):
         posts = self._create_some_posts()
@@ -196,7 +200,7 @@ class PostService_ListFeed(PostServiceTestCase):
         feed = self.service.ListFeed(iter(requests), self.grpc_context)
 
         for post in active_posts:
-            self.assertEqual(next(feed).id, str(post.id))
+            self.assertEqual(next(feed).id, post.id.bytes)
 
     def test_dead_posts(self):
         posts = self._create_some_posts()
@@ -213,7 +217,7 @@ class PostService_ListFeed(PostServiceTestCase):
         feed = self.service.ListFeed(iter(requests), self.grpc_context)
 
         for post in alive_posts:
-            self.assertEqual(next(feed).id, str(post.id))
+            self.assertEqual(next(feed).id, post.id.bytes)
 
     def test_drafts(self):
         posts = self._create_some_posts()
@@ -230,7 +234,7 @@ class PostService_ListFeed(PostServiceTestCase):
         feed = self.service.ListFeed(iter(requests), self.grpc_context)
 
         for post in published_posts:
-            self.assertEqual(next(feed).id, str(post.id))
+            self.assertEqual(next(feed).id, post.id.bytes)
 
     def test_blocked_user(self):
         self.main_user.blocked_users.add(self.other_user)
@@ -253,13 +257,13 @@ class PostService_ListFeed(PostServiceTestCase):
 
     def _create_requests(self, posts: List[Post]) -> List[post_pb2.Vote]:
         return [
-            post_pb2.Vote(post_id=str(p.id), spread=i % 2 == 0)
+            post_pb2.Vote(post_id=p.id.bytes, spread=i % 2 == 0)
             for i, p in enumerate(posts)
         ]
 
 
 class PostService_ListArchive(PostPaginationTestCase):
-    date_field = "date_published"
+    main_pagination_field = "date_published"
 
     def _create_test_posts(self) -> List[Post]:
         posts = self._create_posts(author=self.other_user, count=10, published=True)
@@ -276,7 +280,9 @@ class PostService_ListArchive(PostPaginationTestCase):
 
         return the_posts
 
-    def paginate(self, request_iterator: Iterator[pagination_pb2.Page]) -> Iterator:
+    def paginate(
+        self, request_iterator: Iterator[pagination_pb2.Page]
+    ) -> Iterator[Message]:
         return self.service.ListArchive(request_iterator, self.grpc_context)
 
     def test(self):
@@ -308,7 +314,7 @@ class PostService_ListArchive(PostPaginationTestCase):
 
 
 class PostService_ListOwnPosts(PostPaginationTestCase):
-    date_field = "date_published"
+    main_pagination_field = "date_published"
 
     def _create_test_posts(self) -> List[Post]:
         the_posts = self._create_posts(author=self.main_user, count=14, published=True)
@@ -317,7 +323,9 @@ class PostService_ListOwnPosts(PostPaginationTestCase):
         the_posts = sorted(the_posts, key=lambda p: p.date_published)
         return the_posts
 
-    def paginate(self, request_iterator: Iterator[pagination_pb2.Page]) -> Iterator:
+    def paginate(
+        self, request_iterator: Iterator[pagination_pb2.Page]
+    ) -> Iterator[Message]:
         return self.service.ListOwnPosts(request_iterator, self.grpc_context)
 
     def test(self):
@@ -358,7 +366,9 @@ class PostService_ListDrafts(PostPaginationTestCase):
         the_posts = sorted(the_posts, key=lambda p: p.date_created)
         return the_posts
 
-    def paginate(self, request_iterator: Iterator[pagination_pb2.Page]) -> Iterator:
+    def paginate(
+        self, request_iterator: Iterator[pagination_pb2.Page]
+    ) -> Iterator[Message]:
         return self.service.ListDrafts(request_iterator, self.grpc_context)
 
     def test(self):
@@ -395,8 +405,8 @@ class PostService_Retrieve(PostServiceTestCase):
         post = self.service.Retrieve(request, self.grpc_context)
         self.assertEqual(post.id, request.id)
         self.assertFalse(post.is_preview)
-        self.assertEqual(post.author.id, str(self.main_user.id))
-        chapters = Post.objects.get(id=request.id).chapters.all()
+        self.assertEqual(post.author.id, self.main_user.id.bytes)
+        chapters = Post.objects.get(id__bytes=request.id).chapters.all()
 
         for i, chapter in enumerate(post.chapters):
             self.assertEqual(chapter.text, chapters[i].text)
@@ -407,7 +417,7 @@ class PostService_Retrieve(PostServiceTestCase):
         )
         post = self.service.Retrieve(request, self.grpc_context)
         self.assertEqual(post.id, request.id)
-        self.assertEqual(post.author.id, str(self.main_user.id))
+        self.assertEqual(post.author.id, self.main_user.id.bytes)
 
     def test_draft(self):
         request = self._get_request(author=self.main_user, published=False)
@@ -416,7 +426,7 @@ class PostService_Retrieve(PostServiceTestCase):
 
     def test_deleted(self):
         request = self._get_request(author=self.main_user, published=True)
-        post = Post.objects.get(id=request.id)
+        post = Post.objects.get(id__bytes=request.id)
         post.delete()
 
         with self.assertRaises(ObjectDoesNotExist):
@@ -427,8 +437,8 @@ class PostService_Retrieve(PostServiceTestCase):
         post = self.service.Retrieve(request, self.grpc_context)
         self.assertEqual(post.id, request.id)
         self.assertFalse(post.is_preview)
-        self.assertEqual(post.author.id, str(self.other_user.id))
-        chapters = Post.objects.get(id=request.id).chapters.all()
+        self.assertEqual(post.author.id, self.other_user.id.bytes)
+        chapters = Post.objects.get(id__bytes=request.id).chapters.all()
 
         for i, chapter in enumerate(post.chapters):
             self.assertEqual(chapter.text, chapters[i].text)
@@ -439,7 +449,7 @@ class PostService_Retrieve(PostServiceTestCase):
         )
         post = self.service.Retrieve(request, self.grpc_context)
         self.assertEqual(post.id, request.id)
-        self.assertEqual(post.author.id, "")
+        self.assertEqual(post.author.id, b"")
 
     def test_other_draft(self):
         request = self._get_request(author=self.other_user, published=False)
@@ -449,18 +459,18 @@ class PostService_Retrieve(PostServiceTestCase):
 
     def _get_request(
         self, author: get_user_model(), published: bool, anonymous: bool = False
-    ) -> id_pb2.StringId:
+    ) -> id_pb2.Id:
         posts = self._create_posts(
             author=author, count=1, published=published, anonymous=anonymous
         )
-        return id_pb2.StringId(id=str(posts[0].id))
+        return id_pb2.Id(id=posts[0].id.bytes)
 
 
 class PostService_Create(PostServiceTestCase):
     def test(self):
         post_id = self.service.Create(self.request, self.grpc_context)
         post = Post.objects.latest("date_created")
-        self.assertEqual(post_id.id, str(post.id))
+        self.assertEqual(post_id.id, post.id.bytes)
 
 
 class PostService_Publish(PostServiceTestCase):
@@ -468,7 +478,7 @@ class PostService_Publish(PostServiceTestCase):
         super().setUp()
         posts = self._create_posts(author=self.main_user, count=1, published=False)
         self.post = posts[0]
-        self.request = post_pb2.Publication(id=str(self.post.id), anonymous=False)
+        self.request = post_pb2.Publication(id=self.post.id.bytes, anonymous=False)
 
     def test(self):
         date = now()
@@ -542,7 +552,7 @@ class PostService_Publish(PostServiceTestCase):
 class PostService_Delete(PostServiceTestCase):
     def test(self):
         post = self._create_posts(author=self.main_user, count=1, published=True)[0]
-        request = id_pb2.StringId(id=str(post.id))
+        request = id_pb2.Id(id=post.id.bytes)
         self.service.Delete(request, self.grpc_context)
         post.refresh_from_db()
         self.assertTrue(post.is_deleted)
@@ -552,7 +562,7 @@ class PostService_Delete(PostServiceTestCase):
         post = self._create_posts(
             author=self.main_user, count=1, published=True, anonymous=True
         )[0]
-        request = id_pb2.StringId(id=str(post.id))
+        request = id_pb2.Id(id=post.id.bytes)
         self.service.Delete(request, self.grpc_context)
         post.refresh_from_db()
         self.assertTrue(post.is_deleted)
@@ -561,14 +571,14 @@ class PostService_Delete(PostServiceTestCase):
         post = self._create_posts(author=self.other_user, count=1, published=True)[0]
         self.main_user.is_staff = True
         self.main_user.save()
-        request = id_pb2.StringId(id=str(post.id))
+        request = id_pb2.Id(id=post.id.bytes)
         self.service.Delete(request, self.grpc_context)
         post.refresh_from_db()
         self.assertTrue(post.is_deleted)
 
     def test_draft(self):
         post = self._create_posts(author=self.main_user, count=1, published=False)[0]
-        request = id_pb2.StringId(id=str(post.id))
+        request = id_pb2.Id(id=post.id.bytes)
         self.service.Delete(request, self.grpc_context)
 
         with self.assertRaises(ObjectDoesNotExist):
@@ -577,28 +587,28 @@ class PostService_Delete(PostServiceTestCase):
     def test_deleted(self):
         post = self._create_posts(author=self.main_user, count=1, published=True)[0]
         post.delete()
-        request = id_pb2.StringId(id=str(post.id))
+        request = id_pb2.Id(id=post.id.bytes)
 
         with self.assertRaises(ObjectDoesNotExist):
             self.service.Delete(request, self.grpc_context)
 
     def test_other(self):
         post = self._create_posts(author=self.other_user, count=1, published=True)[0]
-        request = id_pb2.StringId(id=str(post.id))
+        request = id_pb2.Id(id=post.id.bytes)
 
         with self.assertRaises(PermissionDenied):
             self.service.Delete(request, self.grpc_context)
 
     def test_other_anonymous(self):
         post = self._create_posts(author=self.other_user, count=1, published=True)[0]
-        request = id_pb2.StringId(id=str(post.id))
+        request = id_pb2.Id(id=post.id.bytes)
 
         with self.assertRaises(PermissionDenied):
             self.service.Delete(request, self.grpc_context)
 
     def test_other_draft(self):
         post = self._create_posts(author=self.other_user, count=1, published=False)[0]
-        request = id_pb2.StringId(id=str(post.id))
+        request = id_pb2.Id(id=post.id.bytes)
 
         with self.assertRaises(ObjectDoesNotExist):
             self.service.Delete(request, self.grpc_context)
@@ -609,7 +619,7 @@ class PostService_UpdateSubscription(PostServiceTestCase):
         super().setUp()
         posts = self._create_posts(author=self.other_user, count=1, published=True)
         self.post = posts[0]
-        self.request = post_pb2.Subscription(id=str(self.post.id))
+        self.request = post_pb2.Subscription(id=self.post.id.bytes)
 
     def test(self):
         self.request.subscribed = True
@@ -623,7 +633,7 @@ class PostService_UpdateSubscription(PostServiceTestCase):
 
     def test_draft(self):
         post = self._create_posts(author=self.other_user, count=1, published=False)[0]
-        self.request.id = str(post.id)
+        self.request.id = post.id.bytes
         self.request.subscribed = True
 
         with self.assertRaises(ObjectDoesNotExist):
@@ -631,7 +641,7 @@ class PostService_UpdateSubscription(PostServiceTestCase):
 
     def test_self_draft(self):
         post = self._create_posts(author=self.main_user, count=1, published=False)[0]
-        self.request.id = str(post.id)
+        self.request.id = post.id.bytes
         self.request.subscribed = True
 
         with self.assertRaises(PermissionDenied):
@@ -650,7 +660,7 @@ class PostService_Report(PostServiceTestCase):
         super().setUp()
         posts = self._create_posts(author=self.other_user, count=1, published=True)
         self.post = posts[0]
-        self.request = id_pb2.StringId(id=str(self.post.id))
+        self.request = id_pb2.Id(id=self.post.id.bytes)
 
     def test(self):
         self.service.Report(self.request, self.grpc_context)
@@ -672,6 +682,14 @@ class PostService_Report(PostServiceTestCase):
         with self.assertRaises(ObjectDoesNotExist):
             self.service.Report(self.request, self.grpc_context)
 
+    def test_self_author(self):
+        posts = self._create_posts(author=self.main_user, count=1, published=True)
+        self.post = posts[0]
+        self.request = id_pb2.Id(id=self.post.id.bytes)
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Report(self.request, self.grpc_context)
+
 
 class PostService_Absolve(PostServiceTestCase):
     def setUp(self):
@@ -682,7 +700,7 @@ class PostService_Absolve(PostServiceTestCase):
         CountUnit.objects.create(notification=flag, count_item=self.main_user)
         self.main_user.is_staff = True
         self.main_user.save()
-        self.request = id_pb2.StringId(id=str(self.post.id))
+        self.request = id_pb2.Id(id=self.post.id.bytes)
 
     def test(self):
         self.service.Absolve(self.request, self.grpc_context)
@@ -718,7 +736,7 @@ class PostService_Absolve(PostServiceTestCase):
 class ChapterService_Create(ChapterServiceTestCase):
     def setUp(self):
         super().setUp()
-        self.request = post_pb2.ChapterLocation(post_id=str(self.post.id), position=0)
+        self.request = post_pb2.ChapterLocation(post_id=self.post.id.bytes, position=0)
 
     def test(self):
         self.service.Create(self.request, self.grpc_context)
@@ -778,7 +796,7 @@ class ChapterService_Create(ChapterServiceTestCase):
 
     def test_other(self):
         post = Post.objects.create(author=self.other_user)
-        self.request.post_id = str(post.id)
+        self.request.post_id = post.id.bytes
 
         with self.assertRaises(ObjectDoesNotExist):
             self.service.Create(self.request, self.grpc_context)
@@ -794,7 +812,7 @@ class ChapterService_Move(ChapterServiceTestCase):
             for i in range(4)
         ]
         self.request = post_pb2.ChapterRelocation(
-            post_id=str(self.post.id), from_position=2, to_position=1
+            post_id=self.post.id.bytes, from_position=2, to_position=1
         )
 
     def test(self):
@@ -856,7 +874,7 @@ class ChapterService_UpdateText(ChapterServiceTestCase):
         self.chapter = Chapter.objects.create(
             post=self.post, position=self.post.chapter_position(0)
         )
-        location = post_pb2.ChapterLocation(post_id=str(self.post.id), position=0)
+        location = post_pb2.ChapterLocation(post_id=self.post.id.bytes, position=0)
         self.request = post_pb2.ChapterTextUpdate(location=location, text="Text")
 
     def test(self):
@@ -928,7 +946,7 @@ class ChapterService_UpdateImage(ImageTestCaseMixin, ChapterServiceTestCase):
         self.assertRegex(str(self.chapter.image), r".*\." + "jpeg")
 
     def test_empty(self):
-        location = post_pb2.ChapterLocation(post_id=str(self.post.id), position=0)
+        location = post_pb2.ChapterLocation(post_id=self.post.id.bytes, position=0)
         request = [post_pb2.ChapterImageUpdate(location=location)]
         self.service.UpdateImage(iter(request), self.grpc_context)
         self.chapter.refresh_from_db()
@@ -976,7 +994,7 @@ class ChapterService_UpdateImage(ImageTestCaseMixin, ChapterServiceTestCase):
         self, extension: str, position: int = 0
     ) -> Iterator[post_pb2.ChapterImageUpdate]:
         location = post_pb2.ChapterLocation(
-            post_id=str(self.post.id), position=position
+            post_id=self.post.id.bytes, position=position
         )
         yield post_pb2.ChapterImageUpdate(location=location)
 
@@ -993,7 +1011,7 @@ class ChapterService_Delete(ChapterServiceTestCase):
             )
             for i in range(3)
         ]
-        self.request = post_pb2.ChapterLocation(post_id=str(self.post.id), position=1)
+        self.request = post_pb2.ChapterLocation(post_id=self.post.id.bytes, position=1)
 
     def test(self):
         self.service.Delete(self.request, self.grpc_context)
@@ -1029,38 +1047,56 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
         self.comments = self._create_test_comments()
         self.out_of_bounds_cursor = pagination_pb2.Cursor(
             data=[
-                pagination_pb2.KeyValuePair(key=self.date_field, value=str(now())),
+                pagination_pb2.KeyValuePair(
+                    key=self.main_pagination_field, value=str(now())
+                ),
                 pagination_pb2.KeyValuePair(key="id", value=str(self.comments[-1].id)),
             ],
             is_next=True,
         )
 
-    def get_context_id(self) -> Optional[str]:
-        return str(self.post.id)
+    def get_context_id(self) -> Optional[bytes]:
+        return self.post.id.bytes
 
-    def paginate(self, request_iterator: Iterator[pagination_pb2.Page]) -> Iterator:
+    def get_initial_requests(
+        self, forward: bool, size: Optional[int] = None
+    ) -> List[pagination_pb2.Page]:
+        return [
+            pagination_pb2.Page(
+                header=pagination_pb2.Header(
+                    forward=forward,
+                    size=size if size is not None else self.page_size,
+                    context_id=self.get_context_id(),
+                )
+            ),
+            pagination_pb2.Page(offset=0),
+        ]
+
+    def paginate(
+        self, request_iterator: Iterator[pagination_pb2.Page]
+    ) -> Iterator[Message]:
         return self.service.List(request_iterator, self.grpc_context)
 
     def check(self, item: comment_pb2.Comment, position: int):
-        self.assertEqual(item.id, str(self.comments[position].id))
+        self.assertEqual(item.id, self.comments[position].id.bytes)
         self.assertEqual(item.text, self.comments[position].text)
-        self.assertEqual(item.author.id, str(self.comments[position].author.id))
+        self.assertEqual(item.author.id, self.comments[position].author.id.bytes)
 
     def test(self):
-        self.run_test(self.check)
+        self.run_test(self.check, offset=True)
         subscription = self.post.subscriptions.get(user=self.main_user)
         self.assertEqual(
             subscription.last_comment_seen, self.post.comments.latest("date_created")
         )
 
     def test_previous(self):
-        self.run_test_previous(self.check)
+        self.run_test_previous(self.check, offset=True)
 
     def test_reverse(self):
-        self.run_test_reverse(self.check)
+        self.run_test_reverse(self.check, offset=True)
 
     def test_reverse_previous(self):
-        self.run_test_reverse_previous(self.check)
+        self.run_test_reverse_previous(self.check, offset=True)
 
     def test_empty(self):
         self.run_test_empty(self.post.comments.all())
@@ -1085,17 +1121,16 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
 
         for i, comment in enumerate(comments.comments):
             self_comment = self.comments[i]
-            self.assertEqual(comment.id, str(self_comment.id))
+            self.assertEqual(comment.id, self_comment.id.bytes)
             self.assertEqual(comment.text, self_comment.text)
 
-        page_requests.append(pagination_pb2.Page(cursor=comments.next))
+        page_requests.append(pagination_pb2.Page(offset=self.page_size))
         comments = next(items_iterator)
-        self.assertCursorEmpty(comments.next)
         self.assertEqual(len(comments.comments), self.page_size)
 
         for i, comment in enumerate(comments.comments):
             self_comment = self.comments[i + self.page_size]
-            self.assertEqual(comment.id, str(self_comment.id))
+            self.assertEqual(comment.id, self_comment.id.bytes)
             self.assertEqual(
                 comment.text, "" if self_comment.is_deleted else self_comment.text
             )
@@ -1106,7 +1141,7 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
         items_iterator = self.paginate(page_requests)
         comments = next(items_iterator)
         comment = comments.comments[-1]
-        self.assertEqual(comment.author.id, str(self.other_user.id))
+        self.assertEqual(comment.author.id, self.other_user.id.bytes)
         self.assertEqual(comment.author.username, "")
         self.assertTrue(comment.author.is_banned)
 
@@ -1124,7 +1159,7 @@ class CommentService_Create(CommentServiceTestCase):
     def setUp(self):
         super().setUp()
         self.request = comment_pb2.CommentCreation(
-            post_id=str(self.post.id), text="Text"
+            post_id=self.post.id.bytes, text="Text"
         )
 
     def test(self):
@@ -1132,7 +1167,7 @@ class CommentService_Create(CommentServiceTestCase):
         comment_id = self.service.Create(self.request, self.grpc_context)
         self.assertEqual(self.post.comments.count(), comment_count + 1)
         comment = self.post.comments.latest("date_created")
-        self.assertEqual(comment_id.id, str(comment.id))
+        self.assertEqual(comment_id.id, comment.id.bytes)
         self.assertEqual(comment.text, self.request.text)
         self.assertIn(self.main_user, self.post.subscribers.all())
 
@@ -1170,7 +1205,7 @@ class CommentService_Delete(CommentServiceTestCase):
         self.comment = Comment.objects.create(
             post=self.post, author=self.main_user, text="Text"
         )
-        self.request = id_pb2.StringId(id=str(self.comment.id))
+        self.request = id_pb2.Id(id=self.comment.id.bytes)
 
     def test(self):
         self.service.Delete(self.request, self.grpc_context)
@@ -1201,7 +1236,7 @@ class CommentService_Report(CommentServiceTestCase):
         super().setUp()
         comments = self._create_comments(author=self.other_user, count=1)
         self.comment = comments[0]
-        self.request = id_pb2.StringId(id=str(self.comment.id))
+        self.request = id_pb2.Id(id=self.comment.id.bytes)
 
     def test(self):
         self.service.Report(self.request, self.grpc_context)
@@ -1209,6 +1244,14 @@ class CommentService_Report(CommentServiceTestCase):
         flag = Notification.flag_objects.first()
         self.assertEqual(flag.target_type, ContentType.objects.get_for_model(Comment))
         self.assertEqual(flag.target_id, str(self.comment.id))
+
+    def test_self_author(self):
+        comments = self._create_comments(author=self.main_user, count=1)
+        self.comment = comments[0]
+        self.request = id_pb2.Id(id=self.comment.id.bytes)
+
+        with self.assertRaises(PermissionDenied):
+            self.service.Report(self.request, self.grpc_context)
 
     def test_deleted(self):
         self.comment.delete()
@@ -1226,7 +1269,7 @@ class CommentService_Absolve(CommentServiceTestCase):
         CountUnit.objects.create(notification=flag, count_item=self.main_user)
         self.main_user.is_staff = True
         self.main_user.save()
-        self.request = id_pb2.StringId(id=str(self.comment.id))
+        self.request = id_pb2.Id(id=self.comment.id.bytes)
 
     def test(self):
         self.service.Absolve(self.request, self.grpc_context)

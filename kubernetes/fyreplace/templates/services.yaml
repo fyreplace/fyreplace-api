@@ -7,8 +7,8 @@ metadata:
     {{- include "fyreplace.labels" . | nindent 4 }}
     app: {{ include "fyreplace.fullname" . }}
   annotations:
-    service.beta.kubernetes.io/do-loadbalancer-name: "api.fyreplace.app"
-    service.beta.kubernetes.io/do-loadbalancer-hostname: "api.fyreplace.app"
+    service.beta.kubernetes.io/do-loadbalancer-name: {{ .Values.domain }}
+    service.beta.kubernetes.io/do-loadbalancer-hostname: {{ .Values.domain }}
     service.beta.kubernetes.io/do-loadbalancer-tls-passthrough: "true"
     service.beta.kubernetes.io/do-loadbalancer-http2-ports: "50051"
     service.beta.kubernetes.io/do-loadbalancer-http-ports: "80"

@@ -60,22 +60,24 @@ class AccountActivationEmail(BaseUserEmail):
         return user_pb2_grpc.AccountService.ConfirmActivation
 
 
-class AccountRecoveryEmail(BaseUserEmail):
+class AccountConnectionEmail(BaseUserEmail):
     @property
     def template(self) -> str:
-        return "account_recovery"
+        return "account_connection"
 
     @property
     def subject(self) -> str:
-        return _(f"{settings.PRETTY_APP_NAME} account recovery")
+        return _(f"{settings.PRETTY_APP_NAME} account connection")
 
     @property
-    def payload_extras(self):
-        return {"email": self.user.email}
+    def payload_extras(self) -> dict:
+        extras = super().payload_extras
+        extras["connection_token"] = str(self.user.connection_token)
+        return extras
 
     @property
     def method(self) -> Callable:
-        return user_pb2_grpc.AccountService.ConfirmRecovery
+        return user_pb2_grpc.AccountService.ConfirmConnection
 
 
 class UserEmailUpdateEmail(BaseUserEmail):

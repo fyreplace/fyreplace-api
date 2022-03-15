@@ -24,6 +24,7 @@ psycopg2
 # Other utilities
 pyjwt
 python-magic
+email-validator
 httpx
 
 # Configuration injection

@@ -264,8 +264,8 @@ class Chapter(ValidatableModel):
     def __str__(self) -> str:
         return f"{self.post}: {self.position}"
 
-    def get_message_field_values(self, **options) -> dict:
-        data = super().get_message_field_values(**options)
+    def get_message_field_values(self, **overrides) -> dict:
+        data = super().get_message_field_values(**overrides)
 
         if data["image"]:
             data["image"].width = self.width

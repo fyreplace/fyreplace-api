@@ -48,6 +48,7 @@ def store_user(context: grpc.ServicerContext) -> Optional[User]:
         context.caller, context.caller_connection = get_info_from_token(token)
         return context.caller
     else:
+        context.caller, context.caller_connection = None, None
         return None
 
 

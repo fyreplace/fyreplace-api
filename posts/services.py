@@ -1,4 +1,5 @@
 from typing import Iterator, List
+from uuid import UUID
 
 import grpc
 from django.contrib.contenttypes.models import ContentType
@@ -23,7 +24,7 @@ from protos import (
 from .models import Chapter, Comment, Post, Stack, Subscription, Vote
 from .pagination import (
     ArchivePaginationAdapter,
-    CommentPaginationAdapter,
+    CommentsPaginationAdapter,
     DraftsPaginationAdapter,
     OwnPostsPaginationAdapter,
 )
@@ -35,7 +36,6 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
     def ListFeed(
         self, request_iterator: Iterator[post_pb2.Vote], context: grpc.ServicerContext
     ) -> Iterator[post_pb2.Post]:
-        caller = getattr(context, "caller", None)
         posts = []
         fetch_after = None
         end_reached = False
@@ -44,13 +44,15 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
             nonlocal posts
             nonlocal fetch_after
 
-            if caller:
+            if context.caller:
                 with atomic():
-                    stack = Stack.objects.select_for_update().get(id=caller.stack.id)
+                    stack = Stack.objects.select_for_update().get(
+                        id=context.caller.stack.id
+                    )
                     stack.fill()
 
                 current_ids = [str(p.id) for p in posts]
-                new_posts = caller.stack.posts.exclude(id__in=current_ids)
+                new_posts = context.caller.stack.posts.exclude(id__in=current_ids)
             elif fetch_after:
                 new_posts = Post.active_objects.filter(date_published__gt=fetch_after)
             else:
@@ -58,7 +60,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
 
             new_posts = new_posts.order_by("date_published")
 
-            if not caller:
+            if not context.caller:
                 new_posts = new_posts[: Stack.MAX_SIZE]
 
             new_posts = list(new_posts.select_related())
@@ -69,28 +71,28 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
             posts += new_posts
 
         refill_stack()
-        yield from (p.to_message() for p in posts[:3])
+        yield from (p.to_message(context=context) for p in posts[:3])
 
         for request in request_iterator:
             if len(posts) == 0:
                 return
 
-            if caller:
+            if context.caller:
                 Vote.objects.create(
-                    user=caller,
-                    post_id=request.post_id,
+                    user=context.caller,
+                    post_id=UUID(bytes=request.post_id),
                     spread=request.spread,
                 )
 
-            posts = [p for p in posts if str(p.id) != request.post_id]
+            posts = [p for p in posts if p.id.bytes != request.post_id]
             post_count = len(posts)
             should_refill = post_count < 3
 
             if not should_refill:
-                yield posts[2].to_message()
+                yield posts[2].to_message(context=context)
             elif not end_reached:
                 refill_stack()
-                yield posts[-1 if len(posts) < 3 else 2].to_message()
+                yield posts[-1 if len(posts) < 3 else 2].to_message(context=context)
 
                 if len(posts) < Stack.MAX_SIZE:
                     end_reached = True
@@ -104,7 +106,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         return self.paginate(
             request_iterator,
             bundle_class=post_pb2.Posts,
-            adapter=ArchivePaginationAdapter(posts),
+            adapter=ArchivePaginationAdapter(context, posts),
             message_overrides={"is_preview": True},
         )
 
@@ -117,7 +119,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         return self.paginate(
             request_iterator,
             bundle_class=post_pb2.Posts,
-            adapter=OwnPostsPaginationAdapter(posts),
+            adapter=OwnPostsPaginationAdapter(context, posts),
             message_overrides={"is_preview": True},
         )
 
@@ -130,20 +132,23 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         return self.paginate(
             request_iterator,
             bundle_class=post_pb2.Posts,
-            adapter=DraftsPaginationAdapter(drafts),
+            adapter=DraftsPaginationAdapter(context, drafts),
             message_overrides={"is_preview": True},
         )
 
     def Retrieve(
-        self, request: id_pb2.StringId, context: grpc.ServicerContext
+        self, request: id_pb2.Id, context: grpc.ServicerContext
     ) -> post_pb2.Post:
         post = Post.existing_objects.select_related().get_readable_by(
-            context.caller, id=request.id
+            context.caller, id__bytes=request.id
         )
         overrides = {}
 
         if post.is_anonymous and context.caller.id != post.author_id:
             overrides["author"] = None
+
+        if post.subscribers.filter(id=context.caller.id).exists():
+            overrides["is_subscribed"] = True
 
         if subscription := post.subscriptions.filter(user=context.caller).first():
             date_container = subscription.last_comment_seen or post
@@ -151,20 +156,20 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
                 seconds=round(date_container.date_created.timestamp())
             )
 
-        return post.to_message(**overrides)
+        return post.to_message(context=context, **overrides)
 
     def Create(
         self, request: empty_pb2.Empty, context: grpc.ServicerContext
-    ) -> id_pb2.StringId:
+    ) -> id_pb2.Id:
         post = Post.objects.create(author=context.caller)
-        return id_pb2.StringId(id=str(post.id))
+        return id_pb2.Id(id=post.id.bytes)
 
     @atomic
     def Publish(
         self, request: post_pb2.Publication, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         post = Post.existing_objects.select_for_update().get_writable_by(
-            context.caller, id=request.id
+            context.caller, id__bytes=request.id
         )
 
         if context.caller.is_banned:
@@ -175,10 +180,10 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
 
     @atomic
     def Delete(
-        self, request: id_pb2.StringId, context: grpc.ServicerContext
+        self, request: id_pb2.Id, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         post = Post.existing_objects.select_for_update().get_readable_by(
-            context.caller, id=request.id
+            context.caller, id__bytes=request.id
         )
 
         if context.caller.id != post.author_id and not context.caller.is_staff:
@@ -190,7 +195,9 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
     def UpdateSubscription(
         self, request: post_pb2.Subscription, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        post = Post.existing_objects.get_readable_by(context.caller, id=request.id)
+        post = Post.existing_objects.get_readable_by(
+            context.caller, id__bytes=request.id
+        )
 
         if not post.date_published:
             raise PermissionDenied("post_not_published")
@@ -203,11 +210,14 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         return empty_pb2.Empty()
 
     def Report(
-        self, request: id_pb2.StringId, context: grpc.ServicerContext
+        self, request: id_pb2.Id, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         post = Post.existing_objects.get_published_readable_by(
-            context.caller, id=request.id
+            context.caller, id__bytes=request.id
         )
+
+        if post.author == context.caller:
+            raise PermissionDenied("invalid_post")
 
         report_content.delay(
             content_type_id=ContentType.objects.get_for_model(Post).id,
@@ -217,12 +227,14 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         return empty_pb2.Empty()
 
     def Absolve(
-        self, request: id_pb2.StringId, context: grpc.ServicerContext
+        self, request: id_pb2.Id, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         if not context.caller.is_staff:
-            raise PermissionDenied("caller_not_staff")
+            raise PermissionDenied("caller_rank_insufficient")
 
-        post = Post.existing_objects.get_readable_by(context.caller, id=request.id)
+        post = Post.existing_objects.get_readable_by(
+            context.caller, id__bytes=request.id
+        )
 
         if post.author_id == context.caller.id:
             raise PermissionDenied("caller_owns_post")
@@ -235,7 +247,9 @@ class ChapterService(ImageUploadMixin, post_pb2_grpc.ChapterServiceServicer):
     def Create(
         self, request: post_pb2.ChapterLocation, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        post = Post.existing_objects.get_writable_by(context.caller, id=request.post_id)
+        post = Post.existing_objects.get_writable_by(
+            context.caller, id__bytes=request.post_id
+        )
         chapter_count = post.chapters.count()
 
         if request.position > chapter_count:
@@ -252,7 +266,9 @@ class ChapterService(ImageUploadMixin, post_pb2_grpc.ChapterServiceServicer):
     def Move(
         self, request: post_pb2.ChapterRelocation, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        post = Post.existing_objects.get_writable_by(context.caller, id=request.post_id)
+        post = Post.existing_objects.get_writable_by(
+            context.caller, id__bytes=request.post_id
+        )
         chapter = post.get_chapter_at(request.from_position, for_update=True)
         chapter.position = post.chapter_position(request.to_position)
         chapter.save()
@@ -263,7 +279,7 @@ class ChapterService(ImageUploadMixin, post_pb2_grpc.ChapterServiceServicer):
         self, request: post_pb2.ChapterTextUpdate, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         post = Post.existing_objects.get_writable_by(
-            context.caller, id=request.location.post_id
+            context.caller, id__bytes=request.location.post_id
         )
         chapter = post.get_chapter_at(request.location.position, for_update=True)
         chapter.clear(save=False)
@@ -286,7 +302,7 @@ class ChapterService(ImageUploadMixin, post_pb2_grpc.ChapterServiceServicer):
 
         image = self.get_image(request_iterator, chunkator=lambda u: u.chunk)
         post = Post.existing_objects.get_writable_by(
-            context.caller, id=location.post_id
+            context.caller, id__bytes=location.post_id
         )
         chapter = post.get_chapter_at(location.position, for_update=True)
         chapter.clear(save=False)
@@ -297,7 +313,9 @@ class ChapterService(ImageUploadMixin, post_pb2_grpc.ChapterServiceServicer):
     def Delete(
         self, request: post_pb2.ChapterLocation, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        post = Post.existing_objects.get_writable_by(context.caller, id=request.post_id)
+        post = Post.existing_objects.get_writable_by(
+            context.caller, id__bytes=request.post_id
+        )
         post.get_chapter_at(request.position, for_update=True).delete()
         return empty_pb2.Empty()
 
@@ -324,15 +342,15 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
         return self.paginate(
             request_iterator,
             bundle_class=comment_pb2.Comments,
-            adapter=CommentPaginationAdapter(comments, context),
+            adapter=CommentsPaginationAdapter(context, comments),
             on_items=on_items,
         )
 
     def Create(
         self, request: comment_pb2.CommentCreation, context: grpc.ServicerContext
-    ) -> id_pb2.StringId:
+    ) -> id_pb2.Id:
         post = Post.existing_objects.get_published_readable_by(
-            context.caller, id=request.post_id
+            context.caller, id__bytes=request.post_id
         )
 
         if (
@@ -347,13 +365,13 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
         comment = Comment.objects.create(
             post=post, author=context.caller, text=request.text
         )
-        return id_pb2.StringId(id=str(comment.id))
+        return id_pb2.Id(id=comment.id.bytes)
 
     @atomic
     def Delete(
-        self, request: id_pb2.StringId, context: grpc.ServicerContext
+        self, request: id_pb2.Id, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        comment = Comment.objects.select_for_update().get(id=request.id)
+        comment = Comment.objects.select_for_update().get(id__bytes=request.id)
 
         if context.caller != comment.author and not context.caller.is_staff:
             raise PermissionDenied("invalid_comment_author")
@@ -362,27 +380,29 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
         return empty_pb2.Empty()
 
     def Report(
-        self, request: id_pb2.StringId, context: grpc.ServicerContext
+        self, request: id_pb2.Id, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        comment = Comment.objects.get(id=request.id)
+        comment = Comment.objects.get(id__bytes=request.id)
 
-        if comment.is_deleted:
+        if comment.author == context.caller:
+            raise PermissionDenied("invalid_comment")
+        elif comment.is_deleted:
             raise PermissionDenied("comment_deleted")
 
         report_content.delay(
             content_type_id=ContentType.objects.get_for_model(Comment).id,
-            target_id=request.id,
+            target_id=str(UUID(bytes=request.id)),
             reporter_id=str(context.caller.id),
         )
         return empty_pb2.Empty()
 
     def Absolve(
-        self, request: id_pb2.StringId, context: grpc.ServicerContext
+        self, request: id_pb2.Id, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         if not context.caller.is_staff:
-            raise PermissionDenied("caller_not_staff")
+            raise PermissionDenied("caller_rank_insufficient")
 
-        comment = Comment.existing_objects.get(id=request.id)
+        comment = Comment.existing_objects.get(id__bytes=request.id)
 
         if comment.author_id == context.caller.id:
             raise PermissionDenied("caller_owns_comment")

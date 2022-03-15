@@ -28,4 +28,5 @@ class Command(BaseCommand):
             write_back=WriteBack.YES,
             mode=FileMode(),
             report=Report(quiet=True),
+            workers=None,
         )

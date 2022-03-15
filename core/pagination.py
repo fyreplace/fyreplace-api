@@ -2,8 +2,9 @@ import re
 from abc import ABC, abstractmethod
 from typing import Callable, Iterable, Iterator, List, Optional, Type
 
+import grpc
 from django.conf import settings
-from django.db.models import Model, QuerySet, Q
+from django.db.models import Model, Q, QuerySet
 from google.protobuf.message import Message
 from grpc_interceptor.exceptions import InvalidArgument
 
@@ -12,10 +13,15 @@ from protos import pagination_pb2
 
 
 class PaginationAdapter(ABC):
-    def __init__(self, query: QuerySet):
+    def __init__(self, context: grpc.ServicerContext, query: QuerySet):
+        self.context = context
         self.initial_query = query.order_by(*self.get_cursor_fields())
         self.query = self.initial_query
         self.forward = True
+
+    @property
+    def random_access(self) -> bool:
+        return False
 
     @abstractmethod
     def get_cursor_fields(self) -> Iterable[str]:
@@ -54,7 +60,7 @@ class PaginationAdapter(ABC):
 
     def make_message(self, item: Model, **overrides) -> Message:
         if isinstance(item, MessageConvertible):
-            return item.to_message(**overrides)
+            return item.to_message(context=self.context, **overrides)
         else:
             raise ValueError
 
@@ -67,18 +73,14 @@ class PaginatorMixin:
         adapter: PaginationAdapter,
         message_overrides: dict = {},
         on_items: Optional[Callable[[list], None]] = None,
-    ) -> Iterator:
+    ) -> Iterator[Message]:
         bundle_field = re.sub(r"(?<!^)(?=[A-Z])", "_", bundle_class.__name__).lower()
         header_received = False
         size = 0
 
         for request in request_iterator:
-            previous_cursor = None
-            next_cursor = None
             position_type = request.WhichOneof("position")
             is_header = position_type == "header"
-            has_previous = False
-            has_next = False
 
             if is_header:
                 header_received = True
@@ -92,56 +94,122 @@ class PaginatorMixin:
             elif not header_received:
                 raise InvalidArgument("missing_header")
 
-            items = adapter.query
-            filters = adapter.make_queryset_filters(request)
-
-            if not adapter.forward:
-                items = items.reverse()
-
-            items = items.filter(filters).select_related()[: size + 1]
-
-            if len(request.cursor.data) > 0:
-                if request.cursor.is_next:
-                    has_previous = True
-                else:
-                    has_next = True
-
-            items = list(items)
-            item_count = len(items)
-
-            if item_count == 0:
-                yield bundle_class(**{bundle_field: []})
-                continue
-
-            if item_count > size:
-                items.pop()
-                item_count -= 1
-
-                if request.cursor.is_next:
-                    has_next = True
-                else:
-                    has_previous = True
-
-            if has_previous:
-                previous_cursor = pagination_pb2.Cursor(
-                    data=adapter.make_cursor_data(items[0]), is_next=False
+            if position_type == "cursor":
+                yield self._paginate_cursor(
+                    request,
+                    bundle_class,
+                    bundle_field,
+                    adapter,
+                    message_overrides,
+                    size,
+                    on_items,
                 )
-
-            if has_next:
-                next_cursor = pagination_pb2.Cursor(
-                    data=adapter.make_cursor_data(items[-1]), is_next=True
+            elif adapter.random_access:
+                yield self._paginate_offset(
+                    request,
+                    bundle_class,
+                    bundle_field,
+                    adapter,
+                    message_overrides,
+                    size,
+                    on_items,
                 )
+            else:
+                raise InvalidArgument("random_access_unauthorized")
 
-            if on_items:
-                on_items(items)
+    def _paginate_cursor(
+        self,
+        page: pagination_pb2.Page,
+        bundle_class: Type,
+        bundle_field: str,
+        adapter: PaginationAdapter,
+        message_overrides: dict,
+        size: int,
+        on_items: Optional[Callable[[list], None]],
+    ) -> Message:
+        previous_cursor = None
+        next_cursor = None
+        has_previous = False
+        has_next = False
 
-            yield bundle_class(
-                **{
-                    bundle_field: [
-                        adapter.make_message(item, **message_overrides)
-                        for item in items
-                    ],
-                    "previous": previous_cursor,
-                    "next": next_cursor,
-                }
+        items = adapter.query
+        filters = adapter.make_queryset_filters(page)
+
+        if not adapter.forward:
+            items = items.reverse()
+
+        items = items.filter(filters).select_related()[: size + 1]
+
+        if len(page.cursor.data) > 0:
+            if page.cursor.is_next:
+                has_previous = True
+            else:
+                has_next = True
+
+        items = list(items)
+        item_count = len(items)
+
+        if item_count == 0:
+            return bundle_class(**{bundle_field: []})
+
+        if item_count > size:
+            items.pop()
+            item_count -= 1
+
+            if page.cursor.is_next:
+                has_next = True
+            else:
+                has_previous = True
+
+        if has_previous:
+            previous_cursor = pagination_pb2.Cursor(
+                data=adapter.make_cursor_data(items[0]), is_next=False
             )
+
+        if has_next:
+            next_cursor = pagination_pb2.Cursor(
+                data=adapter.make_cursor_data(items[-1]), is_next=True
+            )
+
+        if on_items:
+            on_items(items)
+
+        return bundle_class(
+            **{
+                bundle_field: [
+                    adapter.make_message(item, **message_overrides) for item in items
+                ],
+                "previous": previous_cursor,
+                "next": next_cursor,
+            }
+        )
+
+    def _paginate_offset(
+        self,
+        page: pagination_pb2.Page,
+        bundle_class: Type,
+        bundle_field: str,
+        adapter: PaginationAdapter,
+        message_overrides: dict,
+        size: int,
+        on_items: Optional[Callable[[list], None]],
+    ) -> Message:
+        items = adapter.query
+
+        if not adapter.forward:
+            items = items.reverse()
+
+        count = items.count()
+        items = items.select_related()[page.offset : page.offset + size]
+
+        if on_items:
+            on_items(items)
+
+        return bundle_class(
+            **{
+                bundle_field: [
+                    adapter.make_message(item, **message_overrides) for item in items
+                ],
+                "count": count,
+            }
+        )

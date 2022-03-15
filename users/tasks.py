@@ -12,7 +12,7 @@ from django.core.files.images import ImageFile
 from django.db.transaction import atomic
 from django.utils.timezone import now
 
-from .emails import AccountActivationEmail, AccountRecoveryEmail, UserEmailUpdateEmail
+from .emails import AccountActivationEmail, AccountConnectionEmail, UserEmailUpdateEmail
 from .models import Connection
 
 
@@ -70,8 +70,8 @@ def send_account_activation_email(user_id: str):
 
 
 @shared_task
-def send_account_recovery_email(user_id: str):
-    AccountRecoveryEmail(user_id).send()
+def send_account_connection_email(user_id: str):
+    AccountConnectionEmail(user_id).send()
 
 
 @shared_task

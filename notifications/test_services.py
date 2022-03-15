@@ -1,4 +1,5 @@
 from typing import Iterator, List
+from uuid import UUID
 
 from django.utils.timezone import now
 
@@ -73,14 +74,16 @@ class NotificationService_Count(NotificationServiceTestCase):
 
 
 class NotificationService_List(NotificationServiceTestCase, PaginationTestCase):
-    date_field = "date_updated"
+    main_pagination_field = "date_updated"
 
     def setUp(self):
         super().setUp()
         self.notifications = self._create_test_notifications()
         self.out_of_bounds_cursor = pagination_pb2.Cursor(
             data=[
-                pagination_pb2.KeyValuePair(key=self.date_field, value=str(now())),
+                pagination_pb2.KeyValuePair(
+                    key=self.main_pagination_field, value=str(now())
+                ),
                 pagination_pb2.KeyValuePair(
                     key="id", value=str(self.notifications[-1].id)
                 ),
@@ -92,7 +95,9 @@ class NotificationService_List(NotificationServiceTestCase, PaginationTestCase):
         return self.service.List(request_iterator, self.grpc_context)
 
     def check(self, item: notification_pb2.Notification, position: int):
-        self.assertEqual(item.post.id, str(self.notifications[position].target_id))
+        self.assertEqual(
+            item.post.id, UUID(self.notifications[position].target_id).bytes
+        )
         self.assertEqual(item.count, self.notifications[position].count)
 
     def test(self):
@@ -133,7 +138,7 @@ class NotificationService_List(NotificationServiceTestCase, PaginationTestCase):
                 Comment.objects.create(post=post, author=self.other_user, text="Text")
 
         notifications = Notification.objects.filter(recipient=self.main_user)
-        adapter = NotificationPaginationAdapter(notifications)
+        adapter = NotificationPaginationAdapter(self.grpc_context, notifications)
         return list(notifications.order_by(*adapter.get_cursor_fields()))
 
 

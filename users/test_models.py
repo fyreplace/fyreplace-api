@@ -31,3 +31,7 @@ class User_block(BaseUserTestCase):
 
         with self.assertRaises(IntegrityError):
             Block.objects.create(issuer=self.main_user, target=self.other_user)
+
+    def test_issuer_not_target(self):
+        with self.assertRaises(IntegrityError):
+            self.main_user.blocked_users.add(self.main_user)

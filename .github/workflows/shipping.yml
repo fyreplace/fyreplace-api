@@ -50,13 +50,13 @@ jobs:
           python-version: 3.x
 
       - name: Install tools
-        run: python -m pip install --upgrade pip setuptools wheel
+        run: python -m pip install --upgrade pip wheel
 
       - name: Install dependencies
         run: python -m pip install --requirement requirements.txt
 
       - name: Compile protos
-        run: make
+        run: make protobufs
 
       - name: Run tests
         run: python manage.py test
@@ -67,7 +67,9 @@ jobs:
   container:
     name: Build container
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags')
+    outputs:
+      environment: ${{ steps.environment.outputs.environment }}
+      version: ${{ steps.version.outputs.version }}
 
     steps:
       - name: Checkout code
@@ -87,6 +89,10 @@ jobs:
         uses: docker/metadata-action@v3
         with:
           images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=ref,event=branch
+            type=sha,format=long
 
       - name: Build and push image
         uses: docker/build-push-action@v2
@@ -96,14 +102,23 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      - name: Set environment
+        id: environment
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/develop" ]
+          then
+            echo "::set-output name=environment::dev"
+          else
+            echo "::set-output name=environment::main"
+          fi
+
   deployment:
     name: Deploy to Kubernetes
     needs:
       - tests
       - container
     runs-on: ubuntu-latest
-    environment: main
-    if: startsWith(github.ref, 'refs/tags')
+    environment: ${{ needs.container.outputs.environment }}
 
     steps:
       - name: Checkout code
@@ -111,11 +126,18 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Make chart
+        run: make chart
+
       - name: Set Kubernetes config
         working-directory: kubernetes
         run: 'echo $KUBE_CONFIG_B64 | base64 -d > kube.yml'
         env:
           KUBE_CONFIG_B64: ${{ secrets.KUBE_CONFIG_B64 }}
+
+      - name: Create namespace
+        working-directory: kubernetes
+        run: kubectl create namespace fyreplace -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml apply -f -
 
       - name: Create configuration
         working-directory: kubernetes
@@ -154,4 +176,10 @@ jobs:
 
       - name: Deploy
         working-directory: kubernetes
-        run: helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/develop" ]
+          then
+            helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace --set version=sha-${{ github.sha }},domain=dev.api.fyreplace.app
+          else
+            helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace
+          fi

@@ -5,7 +5,7 @@ metadata:
   name: api-fyreplace-app
 spec:
   dnsNames:
-    - api.fyreplace.app
+    - {{ .Values.domain }}
   secretName: api-fyreplace-app-tls
   issuerRef:
     name: letsencrypt

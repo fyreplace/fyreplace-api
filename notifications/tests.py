@@ -1,4 +1,5 @@
 from typing import Type
+from uuid import UUID
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Model
@@ -8,7 +9,7 @@ from .models import Notification
 
 
 class BaseNotificationTestCase(TestCase):
-    def assertNoFlags(self, model: Type[Model], target_id: str):
+    def assertNoFlags(self, model: Type[Model], target_id: UUID):
         self.assertFalse(
             Notification.objects.filter(
                 recipient__isnull=True,

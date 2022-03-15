@@ -25,13 +25,17 @@ def send_notifications(comment_id: str):
                 target_id=comment.post_id,
             )
 
-            CountUnit.objects.create(notification=notification, count_item=comment)
+            CountUnit.objects.get_or_create(
+                notification=notification,
+                count_item_type=ContentType.objects.get_for_model(Comment),
+                count_item_id=comment.id,
+            )
 
 
 @shared_task
 def remove_comments_from_notifications(user_id: str, comment_ids: List[str]):
     CountUnit.objects.filter(
-        notification__user_id=user_id,
+        notification__recipient_id=user_id,
         count_item_type=ContentType.objects.get_for_model(Comment),
         count_item_id__in=comment_ids,
     ).delete()
@@ -45,6 +49,8 @@ def report_content(content_type_id: int, target_id: str, reporter_id: str):
         target_type=ContentType.objects.get_for_id(content_type_id),
         target_id=target_id,
     )
-    CountUnit.objects.create(
-        notification=flag, count_item=get_user_model().objects.get(id=reporter_id)
+    CountUnit.objects.get_or_create(
+        notification=flag,
+        count_item_type=ContentType.objects.get_for_model(get_user_model()),
+        count_item_id=reporter_id,
     )
