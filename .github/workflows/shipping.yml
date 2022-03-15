@@ -3,7 +3,6 @@ name: Shipping
 on:
   push:
     branches:
-      - main
       - develop
     tags:
       - v*.*.*
