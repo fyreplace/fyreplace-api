@@ -25,7 +25,6 @@ spec:
       containers:
         - name: server-grpc
           image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
-          imagePullPolicy: Always
           command: ['python', 'manage.py', 'grpc']
           volumeMounts:
             - name: certificate
@@ -46,7 +45,6 @@ spec:
 
         - name: server-rest
           image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
-          imagePullPolicy: Always
           command: ['python', 'manage.py', 'runserver', '0.0.0.0:80']
           envFrom:
             - configMapRef:
@@ -58,7 +56,6 @@ spec:
 
         - name: celery-beat
           image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
-          imagePullPolicy: Always
           command: ['celery', '--app=core', 'beat', '--loglevel=info']
           envFrom:
             - configMapRef:
@@ -68,7 +65,6 @@ spec:
 
         - name: celery-worker
           image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
-          imagePullPolicy: Always
           command: ['celery', '--app=core', 'worker', '--loglevel=info']
           envFrom:
             - configMapRef:
@@ -78,7 +74,6 @@ spec:
 
         - name: celery-worker-messaging
           image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
-          imagePullPolicy: Always
           command: ['celery', '--app=core', 'worker', '--loglevel=info', '--queues=messaging']
           envFrom:
             - configMapRef:
@@ -88,7 +83,6 @@ spec:
 
         - name: celery-worker-trash
           image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
-          imagePullPolicy: Always
           command: ['celery', '--app=core', 'worker', '--loglevel=info', '--queues=trash']
           envFrom:
             - configMapRef:
@@ -99,7 +93,6 @@ spec:
       initContainers:
         - name: migrations
           image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
-          imagePullPolicy: Always
           command: ['python', 'manage.py', 'migrate']
           envFrom:
             - configMapRef:
@@ -109,7 +102,6 @@ spec:
 
         - name: static-files
           image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
-          imagePullPolicy: Always
           command: ['python', 'manage.py', 'collectstatic', '--no-input']
           envFrom:
             - configMapRef:
