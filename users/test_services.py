@@ -324,7 +324,7 @@ class AccountService_SendConnectionEmail(AccountServiceTestCase):
         self.assertEmails([])
 
 
-class AccountService_ConfirmConnection(AccountServiceTestCase, AuthenticatedTestCase):
+class AccountService_ConfirmConnection(AccountServiceTestCase):
     def setUp(self):
         super().setUp()
         self.service.SendConnectionEmail(
@@ -333,7 +333,9 @@ class AccountService_ConfirmConnection(AccountServiceTestCase, AuthenticatedTest
         self.connection_count = Connection.objects.count()
         self.request = user_pb2.ConnectionToken(
             token=AccountConnectionEmail(self.main_user.id).token,
-            client=self.main_connection.to_message(context=self.grpc_context).client,
+            client=user_pb2.Client(
+                hardware=Hardware.UNKNOWN, software=Software.UNKNOWN
+            ),
         )
 
     def test(self):
@@ -373,7 +375,7 @@ class AccountService_ConfirmConnection(AccountServiceTestCase, AuthenticatedTest
         with self.assertRaises(PermissionDenied):
             self.service.ConfirmConnection(self.request, self.grpc_context)
 
-        self.assertEqual(Connection.objects.count(), self.connection_count - 1)
+        self.assertEqual(Connection.objects.count(), self.connection_count)
 
     def test_banned_user(self):
         self.main_user.ban(timedelta(days=3))
@@ -381,7 +383,7 @@ class AccountService_ConfirmConnection(AccountServiceTestCase, AuthenticatedTest
         with self.assertRaises(PermissionDenied):
             self.service.ConfirmConnection(self.request, self.grpc_context)
 
-        self.assertEqual(Connection.objects.count(), self.connection_count - 1)
+        self.assertEqual(Connection.objects.count(), self.connection_count)
 
 
 class AccountService_Disconnect(AccountServiceTestCase, AuthenticatedTestCase):
