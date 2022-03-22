@@ -10,11 +10,15 @@ import grpc
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.db.models import Q
 from django.db.transaction import atomic
 from email_validator import EmailNotValidError, validate_email
 from google.protobuf import empty_pb2
-from grpc_interceptor.exceptions import AlreadyExists, InvalidArgument, PermissionDenied
+from grpc_interceptor.exceptions import (
+    AlreadyExists,
+    Cancelled,
+    InvalidArgument,
+    PermissionDenied,
+)
 
 from core import jwt
 from core.authentication import no_auth
@@ -134,6 +138,14 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
         connection.full_clean()
         return user_pb2.Token(token=connection.get_token())
 
+    def ListConnections(
+        self, request: empty_pb2.Empty, context: grpc.ServicerContext
+    ) -> user_pb2.Connections:
+        connections = Connection.objects.filter(user=context.caller)
+        return user_pb2.Connections(
+            connections=[c.to_message(context=context) for c in connections]
+        )
+
     @no_auth
     def SendConnectionEmail(
         self, request: user_pb2.Email, context: grpc.ServicerContext
@@ -143,6 +155,10 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
         with atomic():
             user = get_user_model().objects.select_for_update().get(email=request.email)
             check_user(user)
+
+            if user.has_usable_password():
+                raise Cancelled("caller_has_password")
+
             user.connection_token = uuid.uuid4()
             user.save()
 
@@ -173,13 +189,25 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
 
         return user_pb2.Token(token=connection.get_token())
 
-    def ListConnections(
-        self, request: empty_pb2.Empty, context: grpc.ServicerContext
-    ) -> user_pb2.Connections:
-        connections = Connection.objects.filter(user=context.caller)
-        return user_pb2.Connections(
-            connections=[c.to_message(context=context) for c in connections]
+    @no_auth
+    @atomic
+    def Connect(
+        self, request: user_pb2.ConnectionCredentials, context: grpc.ServicerContext
+    ) -> user_pb2.Token:
+        user = get_user_model().objects.get(email=request.email)
+        check_user(user)
+
+        if not user.check_password(request.password):
+            raise InvalidArgument("invalid_password")
+
+        connection = Connection.objects.create(
+            user=user,
+            hardware=request.client.hardware,
+            software=request.client.software,
         )
+        connection.full_clean()
+
+        return user_pb2.Token(token=connection.get_token())
 
     def Disconnect(
         self, request: id_pb2.Id, context: grpc.ServicerContext

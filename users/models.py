@@ -2,6 +2,10 @@ from datetime import timedelta
 from typing import Dict, List, Optional, Tuple
 
 from django.conf import settings
+from django.contrib.auth.hashers import (
+    UNUSABLE_PASSWORD_PREFIX,
+    UNUSABLE_PASSWORD_SUFFIX_LENGTH,
+)
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.core.validators import MaxLengthValidator, MinLengthValidator
 from django.db import models
@@ -56,7 +60,10 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
         unique=True,
         null=True,
     )
-    password = None
+    password = models.CharField(
+        max_length=128,
+        default=UNUSABLE_PASSWORD_PREFIX * (UNUSABLE_PASSWORD_SUFFIX_LENGTH + 1),
+    )
     connection_token = models.UUIDField(null=True, blank=True)
     avatar = models.ImageField(
         upload_to="avatars",
@@ -152,6 +159,7 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
 
     def perform_soft_delete(self):
         self.username = None
+        self.set_unusable_password()
         self.email = None
         self.avatar.delete(save=False)
         self.bio = ""

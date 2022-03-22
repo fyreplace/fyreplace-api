@@ -11,6 +11,7 @@ from django.db.utils import DataError, IntegrityError
 from django.utils.timezone import get_current_timezone, now
 from grpc_interceptor.exceptions import (
     AlreadyExists,
+    Cancelled,
     InvalidArgument,
     PermissionDenied,
     Unauthenticated,
@@ -323,8 +324,17 @@ class AccountService_SendConnectionEmail(AccountServiceTestCase):
 
         self.assertEmails([])
 
+    def test_password(self):
+        self.main_user.set_password("Random password")
+        self.main_user.save()
 
-class AccountService_ConfirmConnection(AccountServiceTestCase, AuthenticatedTestCase):
+        with self.assertRaises(Cancelled):
+            self.service.SendConnectionEmail(self.request, self.grpc_context)
+
+        self.assertEmails([])
+
+
+class AccountService_ConfirmConnection(AccountServiceTestCase):
     def setUp(self):
         super().setUp()
         self.service.SendConnectionEmail(
@@ -333,7 +343,9 @@ class AccountService_ConfirmConnection(AccountServiceTestCase, AuthenticatedTest
         self.connection_count = Connection.objects.count()
         self.request = user_pb2.ConnectionToken(
             token=AccountConnectionEmail(self.main_user.id).token,
-            client=self.main_connection.to_message(context=self.grpc_context).client,
+            client=user_pb2.Client(
+                hardware=Hardware.UNKNOWN, software=Software.UNKNOWN
+            ),
         )
 
     def test(self):
@@ -345,8 +357,6 @@ class AccountService_ConfirmConnection(AccountServiceTestCase, AuthenticatedTest
         self.assertIn("connection_id", claims)
         self.assertEqual(claims["user_id"], str(self.main_user.id))
         self.assertEqual(claims["connection_id"], str(connection.id))
-        self.main_user.refresh_from_db()
-        self.assertTrue(self.main_user.is_active)
         self.assertEqual(connection.user, self.main_user)
         self.assertEqual(connection.hardware, Hardware.UNKNOWN)
         self.assertEqual(connection.software, Software.UNKNOWN)
@@ -373,7 +383,7 @@ class AccountService_ConfirmConnection(AccountServiceTestCase, AuthenticatedTest
         with self.assertRaises(PermissionDenied):
             self.service.ConfirmConnection(self.request, self.grpc_context)
 
-        self.assertEqual(Connection.objects.count(), self.connection_count - 1)
+        self.assertEqual(Connection.objects.count(), self.connection_count)
 
     def test_banned_user(self):
         self.main_user.ban(timedelta(days=3))
@@ -381,7 +391,55 @@ class AccountService_ConfirmConnection(AccountServiceTestCase, AuthenticatedTest
         with self.assertRaises(PermissionDenied):
             self.service.ConfirmConnection(self.request, self.grpc_context)
 
-        self.assertEqual(Connection.objects.count(), self.connection_count - 1)
+        self.assertEqual(Connection.objects.count(), self.connection_count)
+
+
+class AccountService_Connect(AccountServiceTestCase):
+    def setUp(self):
+        super().setUp()
+        password = "Random password"
+        self.main_user.set_password(password)
+        self.main_user.save()
+        self.connection_count = Connection.objects.count()
+        self.request = user_pb2.ConnectionCredentials(
+            email=self.main_user.email,
+            password=password,
+            client=user_pb2.Client(
+                hardware=Hardware.UNKNOWN, software=Software.UNKNOWN
+            ),
+        )
+
+    def test(self):
+        token = self.service.Connect(self.request, self.grpc_context)
+        self.assertEqual(Connection.objects.count(), self.connection_count + 1)
+        connection = Connection.objects.latest("date_created")
+        claims = jwt.decode(token.token)
+        self.assertIn("user_id", claims)
+        self.assertIn("connection_id", claims)
+        self.assertEqual(claims["user_id"], str(self.main_user.id))
+        self.assertEqual(claims["connection_id"], str(connection.id))
+        self.assertEqual(connection.user, self.main_user)
+        self.assertEqual(connection.hardware, Hardware.UNKNOWN)
+        self.assertEqual(connection.software, Software.UNKNOWN)
+
+    def test_wrong_email(self):
+        self.request.email = make_email("bad")
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.Connect(self.request, self.grpc_context)
+
+    def test_wrong_password(self):
+        self.request.password = "bad"
+
+        with self.assertRaises(InvalidArgument):
+            self.service.Connect(self.request, self.grpc_context)
+
+    def test_no_password(self):
+        self.main_user.set_unusable_password()
+        self.main_user.save()
+
+        with self.assertRaises(InvalidArgument):
+            self.service.Connect(self.request, self.grpc_context)
 
 
 class AccountService_Disconnect(AccountServiceTestCase, AuthenticatedTestCase):
