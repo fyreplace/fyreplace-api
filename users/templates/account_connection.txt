@@ -1,3 +1,5 @@
 You can connect to your account by clicking on this link:
 
 {{ link }}
+
+This link will expire in 24 hours.

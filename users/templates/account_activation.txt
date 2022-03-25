@@ -3,3 +3,5 @@ Welcome to {{ app_name }}!
 You can confirm your email address and validate your account by clicking on this link:
 
 {{ link }}
+
+This link will expire in 24 hours.
