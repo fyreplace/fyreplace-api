@@ -215,7 +215,7 @@ class AccountService_ConfirmActivation(AccountServiceTestCase):
         token = jwt.encode(
             {
                 "user_id": str(self.user.id),
-                "timestamp": (now() + timedelta(hours=-1)).timestamp(),
+                "timestamp": (now() + timedelta(days=-1)).timestamp(),
             }
         )
         self.request = user_pb2.ConnectionToken(
