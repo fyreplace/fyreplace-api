@@ -185,11 +185,3 @@ jobs:
             export variables="version=sha-${{ github.sha }}"
           fi
           helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace --set "$variables"
-
-      - name: Inform Rollbar
-        uses: rollbar/github-deploy-action@2.1.1
-        with:
-          environment: ${{ needs.container.outputs.rollbar_environment }}
-          version: ${{ github.sha }}
-        env:
-          ROLLBAR_ACCESS_TOKEN: ${{ secrets.ROLLBAR_TOKEN }}
