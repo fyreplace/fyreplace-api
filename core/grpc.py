@@ -83,7 +83,7 @@ def get_info_from_token(
             else:
                 raise Unauthenticated("user_id_connection_id_mismatch")
         elif timestamp := claims.get("timestamp"):
-            deadline = now() - timedelta(hours=1)
+            deadline = now() - timedelta(days=1)
 
             if timestamp < deadline.timestamp():
                 raise Unauthenticated("timestamp_exceeded")
