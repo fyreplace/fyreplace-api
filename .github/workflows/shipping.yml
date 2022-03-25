@@ -107,8 +107,10 @@ jobs:
           if [ "${{ github.ref }}" = "refs/heads/develop" ]
           then
             echo "::set-output name=environment::dev"
+            echo "::set-output name=rollbar_environment::development"
           else
             echo "::set-output name=environment::main"
+            echo "::set-output name=rollbar_environment::production"
           fi
 
   deployment:
@@ -183,3 +185,11 @@ jobs:
             export variables="version=sha-${{ github.sha }}"
           fi
           helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace --set "$variables"
+
+      - name: Inform Rollbar
+        uses: rollbar/github-deploy-action@2
+        with:
+          environment: ${{ needs.container.outputs.rollbar_environment }}
+          version: ${{ github.sha }}
+        env:
+          ROLLBAR_ACCESS_TOKEN: ${{ secrets.ROLLBAR_TOKEN }}
