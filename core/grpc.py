@@ -91,12 +91,8 @@ def get_info_from_token(
             raise Unauthenticated("missing_connection_id_or_timestamp")
 
         return user, connection
-    except KeyError:
-        raise Unauthenticated("missing_user_id")
-    except jwt.InvalidTokenError:
+    except (KeyError, jwt.InvalidTokenError, ObjectDoesNotExist):
         raise Unauthenticated("invalid_token")
-    except ObjectDoesNotExist:
-        raise Unauthenticated("token_not_found")
 
 
 def serialize_message(message: Message) -> dict:
