@@ -34,6 +34,7 @@ class NotificationService(
             request_iterator,
             bundle_class=notification_pb2.Notifications,
             adapter=NotificationPaginationAdapter(context, notifications),
+            message_overrides={"is_preview": True},
         )
 
     def Clear(
