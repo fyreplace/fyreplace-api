@@ -25,7 +25,7 @@ psycopg2
 pyjwt
 python-magic
 email-validator
-httpx
+requests
 
 # Configuration injection
 python-dotenv

@@ -6,8 +6,6 @@
 #
 amqp==5.1.1
     # via kombu
-anyio==3.6.1
-    # via httpcore
 appnope==0.1.3
     # via ipython
 argon2-cffi==21.3.0
@@ -39,16 +37,11 @@ celery[redis]==5.2.6
     #   -r requirements.in
     #   django-celery-beat
 certifi==2021.10.8
-    # via
-    #   httpcore
-    #   httpx
-    #   requests
+    # via requests
 cffi==1.15.0
     # via argon2-cffi-bindings
 charset-normalizer==2.0.12
-    # via
-    #   httpx
-    #   requests
+    # via requests
 click==8.1.3
     # via
     #   black
@@ -110,18 +103,10 @@ grpcio==1.46.1
     #   grpcio-tools
 grpcio-tools==1.46.1
     # via -r requirements.in
-h11==0.12.0
-    # via httpcore
-httpcore==0.14.7
-    # via httpx
-httpx==0.22.0
-    # via -r requirements.in
 idna==3.3
     # via
-    #   anyio
     #   email-validator
     #   requests
-    #   rfc3986
 iniconfig==1.1.1
     # via pytest
 ipython==8.3.0
@@ -224,10 +209,9 @@ redis==4.3.1
     # via celery
 requests==2.27.1
     # via
+    #   -r requirements.in
     #   django-anymail
     #   rollbar
-rfc3986[idna2008]==1.5.0
-    # via httpx
 rollbar==0.16.2
     # via -r requirements.in
 s3transfer==0.5.2
@@ -239,11 +223,6 @@ six==1.16.0
     #   grpcio
     #   python-dateutil
     #   rollbar
-sniffio==1.2.0
-    # via
-    #   anyio
-    #   httpcore
-    #   httpx
 sqlparse==0.4.2
     # via django
 stack-data==0.2.0
