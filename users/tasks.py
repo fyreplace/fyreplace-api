@@ -3,7 +3,6 @@ import io
 from datetime import timedelta
 from urllib.parse import urljoin
 
-import httpx
 import magic
 from celery import shared_task
 from django.conf import settings
@@ -11,6 +10,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.images import ImageFile
 from django.db.transaction import atomic
 from django.utils.timezone import now
+from requests import get
 
 from .emails import AccountActivationEmail, AccountConnectionEmail, UserEmailUpdateEmail
 from .models import Connection
@@ -48,19 +48,20 @@ def fetch_default_user_avatar(user_id: str):
 
     email_hash = hashlib.md5(user.email.encode()).hexdigest()
     avatar_url = urljoin(settings.GRAVATAR_BASE_URL, f"avatar/{email_hash}")
-    response = httpx.get(f"{avatar_url}?d=404&s=256")
+    response = get(f"{avatar_url}?d=404&s=256")
 
-    if response.is_error:
+    if not response.ok:
         return
 
-    data = response.read()
-    mime = magic.from_buffer(data, mime=True)
+    mime = magic.from_buffer(response.content, mime=True)
 
     if mime not in settings.VALID_IMAGE_MIMES:
         return
 
     user.avatar.delete(save=False)
-    user.avatar = ImageFile(io.BytesIO(data), name=f"{user_id}.{mime.split('/')[-1]}")
+    user.avatar = ImageFile(
+        io.BytesIO(response.content), name=f"{user_id}.{mime.split('/')[-1]}"
+    )
     user.save()
 
 

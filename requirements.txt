@@ -4,17 +4,15 @@
 #
 #    pip-compile
 #
-amqp==5.1.0
+amqp==5.1.1
     # via kombu
-anyio==3.5.0
-    # via httpcore
 appnope==0.1.3
     # via ipython
 argon2-cffi==21.3.0
     # via django
 argon2-cffi-bindings==21.2.0
     # via argon2-cffi
-asgiref==3.5.0
+asgiref==3.5.1
     # via django
 asttokens==2.0.5
     # via stack-data
@@ -28,9 +26,9 @@ billiard==3.6.4.0
     # via celery
 black==22.3.0
     # via -r requirements.in
-boto3==1.21.34
+boto3==1.23.0
     # via django-storages
-botocore==1.24.34
+botocore==1.26.0
     # via
     #   boto3
     #   s3transfer
@@ -39,17 +37,12 @@ celery[redis]==5.2.6
     #   -r requirements.in
     #   django-celery-beat
 certifi==2021.10.8
-    # via
-    #   httpcore
-    #   httpx
-    #   requests
+    # via requests
 cffi==1.15.0
     # via argon2-cffi-bindings
 charset-normalizer==2.0.12
-    # via
-    #   httpx
-    #   requests
-click==8.1.2
+    # via requests
+click==8.1.3
     # via
     #   black
     #   celery
@@ -66,7 +59,7 @@ decorator==5.1.1
     # via ipython
 deprecated==1.2.13
     # via redis
-django[argon2]==3.2.12
+django[argon2]==3.2.13
     # via
     #   -r requirements.in
     #   django-anymail
@@ -95,36 +88,28 @@ django-timezone-field==4.2.3
     # via django-celery-beat
 dnspython==2.2.1
     # via email-validator
-email-validator==1.1.3
+email-validator==1.2.1
     # via -r requirements.in
 execnet==1.9.0
     # via pytest-xdist
 executing==0.8.3
     # via stack-data
-grpc-interceptor==0.13.1
+grpc-interceptor==0.14.1
     # via -r requirements.in
-grpcio==1.44.0
+grpcio==1.46.1
     # via
     #   -r requirements.in
     #   grpc-interceptor
     #   grpcio-tools
-grpcio-tools==1.44.0
-    # via -r requirements.in
-h11==0.12.0
-    # via httpcore
-httpcore==0.14.7
-    # via httpx
-httpx==0.22.0
+grpcio-tools==1.46.1
     # via -r requirements.in
 idna==3.3
     # via
-    #   anyio
     #   email-validator
     #   requests
-    #   rfc3986
 iniconfig==1.1.1
     # via pytest
-ipython==8.2.0
+ipython==8.3.0
     # via -r requirements.in
 isort==5.10.1
     # via -r requirements.in
@@ -162,7 +147,7 @@ pickleshare==0.7.5
     # via ipython
 pillow==9.1.0
     # via -r requirements.in
-platformdirs==2.5.1
+platformdirs==2.5.2
     # via black
 pluggy==1.0.0
     # via pytest
@@ -170,7 +155,7 @@ prompt-toolkit==3.0.29
     # via
     #   click-repl
     #   ipython
-protobuf==3.20.0
+protobuf==3.20.1
     # via
     #   grpcio-tools
     #   mypy-protobuf
@@ -188,13 +173,13 @@ py==1.11.0
     #   pytest-forked
 pycparser==2.21
     # via cffi
-pygments==2.11.2
+pygments==2.12.0
     # via ipython
-pyjwt==2.3.0
+pyjwt==2.4.0
     # via -r requirements.in
-pyparsing==3.0.7
+pyparsing==3.0.9
     # via packaging
-pytest==7.1.1
+pytest==7.1.2
     # via
     #   pytest-django
     #   pytest-forked
@@ -220,14 +205,13 @@ pytz==2022.1
     #   celery
     #   django
     #   django-timezone-field
-redis==4.2.2
+redis==4.3.1
     # via celery
 requests==2.27.1
     # via
+    #   -r requirements.in
     #   django-anymail
     #   rollbar
-rfc3986[idna2008]==1.5.0
-    # via httpx
 rollbar==0.16.2
     # via -r requirements.in
 s3transfer==0.5.2
@@ -239,11 +223,6 @@ six==1.16.0
     #   grpcio
     #   python-dateutil
     #   rollbar
-sniffio==1.2.0
-    # via
-    #   anyio
-    #   httpcore
-    #   httpx
 sqlparse==0.4.2
     # via django
 stack-data==0.2.0
@@ -256,17 +235,17 @@ tomli==2.0.1
     #   pytest
 tqdm==4.64.0
     # via -r requirements.in
-traitlets==5.1.1
+traitlets==5.2.0
     # via
     #   ipython
     #   matplotlib-inline
-types-protobuf==3.19.15
+types-protobuf==3.19.20
     # via mypy-protobuf
-types-pytz==2021.3.6
+types-pytz==2021.3.8
     # via django-stubs
-types-pyyaml==6.0.5
+types-pyyaml==6.0.7
     # via django-stubs
-typing-extensions==4.1.1
+typing-extensions==4.2.0
     # via
     #   django-stubs
     #   django-stubs-ext
@@ -282,7 +261,7 @@ vine==5.0.0
     #   kombu
 wcwidth==0.2.5
     # via prompt-toolkit
-wrapt==1.14.0
+wrapt==1.14.1
     # via deprecated
 
 # The following packages are considered to be unsafe in a requirements file:

@@ -11,7 +11,7 @@ from .models import Connection
 
 
 def make_email(username: str) -> str:
-    return f"{username}@example.com"
+    return f"{username}@fyreplace.app"
 
 
 class UserContext(FakeContext):
