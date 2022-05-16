@@ -9,7 +9,7 @@ from uuid import UUID
 import grpc
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db.transaction import atomic
 from email_validator import EmailNotValidError, validate_email
 from google.protobuf import empty_pb2
@@ -150,10 +150,17 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
     def SendConnectionEmail(
         self, request: user_pb2.Email, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        check_email(request.email)
-
         with atomic():
-            user = get_user_model().objects.select_for_update().get(email=request.email)
+            try:
+                user = (
+                    get_user_model()
+                    .objects.select_for_update()
+                    .get(email=request.email)
+                )
+            except ObjectDoesNotExist:
+                check_email(request.email)
+                raise
+
             check_user(user)
 
             if user.has_usable_password():
@@ -162,6 +169,7 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
             user.connection_token = uuid.uuid4()
             user.save()
 
+        check_email(request.email)
         send_account_connection_email.delay(user_id=str(user.id))
         return empty_pb2.Empty()
 
