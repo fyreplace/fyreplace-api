@@ -264,11 +264,11 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
         self,
         request_iterator: Iterator[image_pb2.ImageChunk],
         context: grpc.ServicerContext,
-    ) -> empty_pb2.Empty:
+    ) -> image_pb2.Image:
         image = self.get_image(request_iterator)
         user = get_user_model().objects.select_for_update().get(id=context.caller.id)
         self.set_image(user, "avatar", image)
-        return empty_pb2.Empty()
+        return user.to_message(message_class=user_pb2.Profile).avatar
 
     def SendEmailUpdateEmail(
         self, request: user_pb2.Email, context: grpc.ServicerContext

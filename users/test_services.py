@@ -581,9 +581,13 @@ class UserService_UpdateBio(UserServiceTestCase):
 class UserService_UpdateAvatar(ImageTestCaseMixin, UserServiceTestCase):
     def test(self):
         for extension in ("jpeg", "png"):
-            self.service.UpdateAvatar(self.make_request(extension), self.grpc_context)
+            avatar = self.service.UpdateAvatar(
+                self.make_request(extension), self.grpc_context
+            )
             self.main_user.refresh_from_db()
-            self.assertRegex(str(self.main_user.avatar), r".*\." + extension)
+            regex = r".*\." + extension
+            self.assertRegex(str(self.main_user.avatar), regex)
+            self.assertRegex(avatar.url, regex)
 
     def test_empty(self):
         self.service.UpdateAvatar(self.make_request("jpeg"), self.grpc_context)
