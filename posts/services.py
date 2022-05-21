@@ -1,3 +1,4 @@
+from email.mime import image
 from typing import Iterator, List
 from uuid import UUID
 
@@ -16,6 +17,7 @@ from protos import (
     comment_pb2,
     comment_pb2_grpc,
     id_pb2,
+    image_pb2,
     pagination_pb2,
     post_pb2,
     post_pb2_grpc,
@@ -294,7 +296,7 @@ class ChapterService(ImageUploadMixin, post_pb2_grpc.ChapterServiceServicer):
         self,
         request_iterator: Iterator[post_pb2.ChapterImageUpdate],
         context: grpc.ServicerContext,
-    ) -> empty_pb2.Empty:
+    ) -> image_pb2.Image:
         try:
             location = next(request_iterator).location
         except:
@@ -307,7 +309,7 @@ class ChapterService(ImageUploadMixin, post_pb2_grpc.ChapterServiceServicer):
         chapter = post.get_chapter_at(location.position, for_update=True)
         chapter.clear(save=False)
         self.set_image(chapter, "image", image)
-        return empty_pb2.Empty()
+        return chapter.to_message().image
 
     @atomic
     def Delete(

@@ -238,6 +238,8 @@ class Chapter(ValidatableModel):
         unique_together = ["post", "position"]
         ordering = unique_together
 
+    default_message_class = post_pb2.Chapter
+
     post = models.ForeignKey(
         to=Post, on_delete=models.CASCADE, related_name="%(class)ss"
     )

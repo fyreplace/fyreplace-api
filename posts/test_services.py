@@ -941,9 +941,17 @@ class ChapterService_UpdateImage(ImageTestCaseMixin, ChapterServiceTestCase):
         )
 
     def test(self):
-        self.service.UpdateImage(self.make_update_request("jpeg"), self.grpc_context)
+        image = self.service.UpdateImage(
+            self.make_update_request("jpeg"), self.grpc_context
+        )
         self.chapter.refresh_from_db()
-        self.assertRegex(str(self.chapter.image), r".*\." + "jpeg")
+        regex = r".*\." + "jpeg"
+        self.assertRegex(str(self.chapter.image), regex)
+        self.assertEqual(self.chapter.width, 256)
+        self.assertEqual(self.chapter.height, 256)
+        self.assertRegex(image.url, regex)
+        self.assertEqual(image.width, 256)
+        self.assertEqual(image.height, 256)
 
     def test_empty(self):
         location = post_pb2.ChapterLocation(post_id=self.post.id.bytes, position=0)
