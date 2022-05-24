@@ -272,7 +272,12 @@ class ChapterService(ImageUploadMixin, post_pb2_grpc.ChapterServiceServicer):
             context.caller, id__bytes=request.post_id
         )
         chapter = post.get_chapter_at(request.from_position, for_update=True)
-        chapter.position = post.chapter_position(request.to_position)
+        new_position = request.to_position
+
+        if new_position > request.from_position:
+            new_position += 1
+
+        chapter.position = post.chapter_position(new_position)
         chapter.save()
         return empty_pb2.Empty()
 

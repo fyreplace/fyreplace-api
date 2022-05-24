@@ -71,9 +71,11 @@ class PostPaginationTestCase(PostServiceTestCase, PaginationTestCase):
         raise NotImplementedError
 
     def check(self, item: post_pb2.Post, position: int):
-        self.assertEqual(item.id, self.posts[position].id.bytes)
+        post = self.posts[position]
+        self.assertEqual(item.id, post.id.bytes)
         self.assertTrue(item.is_preview)
         self.assertEqual(len(item.chapters), 1)
+        self.assertEqual(item.chapter_count, post.chapters.count())
 
     def run_test_deleted_posts(self):
         for post in self.posts[-6:]:
@@ -830,7 +832,7 @@ class ChapterService_Move(ChapterServiceTestCase):
         self.assertChapters([2, 0, 1, 3])
 
     def test_to_end(self):
-        self.request.to_position = 4
+        self.request.to_position = 3
         self.service.Move(self.request, self.grpc_context)
         self.assertChapters([0, 1, 3, 2])
 
