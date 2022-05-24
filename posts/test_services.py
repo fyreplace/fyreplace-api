@@ -832,7 +832,7 @@ class ChapterService_Move(ChapterServiceTestCase):
         self.assertChapters([2, 0, 1, 3])
 
     def test_to_end(self):
-        self.request.to_position = 4
+        self.request.to_position = 3
         self.service.Move(self.request, self.grpc_context)
         self.assertChapters([0, 1, 3, 2])
 
