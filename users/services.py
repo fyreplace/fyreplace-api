@@ -274,6 +274,10 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
         self, request: user_pb2.Email, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         check_email(request.email)
+
+        if get_user_model().objects.filter(email=request.email).exists():
+            raise AlreadyExists("email_taken")
+
         send_user_email_update_email.delay(
             user_id=str(context.caller.id), email=request.email
         )
