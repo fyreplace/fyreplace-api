@@ -617,6 +617,12 @@ class UserService_SendEmailUpdateEmail(UserServiceTestCase):
         with self.assertRaises(InvalidArgument):
             self.service.SendEmailUpdateEmail(self.request, self.grpc_context)
 
+    def test_email_already_taken(self):
+        self.request.email = self.other_user.email
+
+        with self.assertRaises(AlreadyExists):
+            self.service.SendEmailUpdateEmail(self.request, self.grpc_context)
+
 
 class UserService_ConfirmEmailUpdate(UserServiceTestCase):
     def setUp(self):
