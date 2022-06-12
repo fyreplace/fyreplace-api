@@ -5,7 +5,7 @@ metadata:
   namespace: {{ include "fyreplace.name" . }}
 spec:
   concurrencyPolicy: Forbid
-  schedule: @weekly
+  schedule: "@weekly"
   jobTemplate:
     spec:
       backoffLimit: 3
