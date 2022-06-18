@@ -25,6 +25,7 @@ from core.authentication import no_auth
 from core.grpc import get_info_from_token, get_token, serialize_message
 from core.pagination import PaginatorMixin
 from core.services import ImageUploadMixin
+from core.utils import make_uuid
 from notifications.models import delete_notifications_for
 from notifications.tasks import report_content
 from protos import id_pb2, image_pb2, pagination_pb2, user_pb2, user_pb2_grpc
@@ -339,7 +340,7 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
 
         report_content.delay(
             content_type_id=ContentType.objects.get_for_model(get_user_model()).id,
-            target_id=str(UUID(bytes=request.id)),
+            target_id=str(make_uuid(data=request.id)),
             reporter_id=str(context.caller.id),
         )
         return empty_pb2.Empty()
