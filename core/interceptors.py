@@ -1,5 +1,6 @@
 from importlib import import_module
 from inspect import getmembers
+from types import GeneratorType
 from typing import Any, Callable, List, Type
 
 import grpc
@@ -17,10 +18,6 @@ def make_method_name(package_name: str, service_name: str, method_name: str) -> 
     return f"/{package_name}.{service_name}/{method_name}"
 
 
-def get_scope(full_method_name: str) -> str:
-    return full_method_name.split("/")[:-1]
-
-
 class ExceptionInterceptor(ServerInterceptor):
     def intercept(
         self,
@@ -29,8 +26,42 @@ class ExceptionInterceptor(ServerInterceptor):
         context: grpc.ServicerContext,
         method_name: str,
     ) -> Any:
+        super_intercept = super().intercept
+
+        def action():
+            return super_intercept(method, request, context, method_name)
+
+        result = self._catch_errors(action, request, context, method_name)
+        return (
+            self._wrap_generator(result, request, context, method_name)
+            if isinstance(result, GeneratorType)
+            else result
+        )
+
+    def _wrap_generator(
+        self,
+        generator: GeneratorType,
+        request: Message,
+        context: grpc.ServicerContext,
+        method_name: str,
+    ) -> GeneratorType:
+        def action():
+            return next(generator)
+
+        while item := self._catch_errors(action, request, context, method_name):
+            yield item
+
+    def _catch_errors(
+        self,
+        action: Callable,
+        request: Message,
+        context: grpc.ServicerContext,
+        method_name: str,
+    ) -> Any:
         try:
-            return super().intercept(method, request, context, method_name)
+            return action()
+        except StopIteration as e:
+            return None
         except PermissionDenied as e:
             context.set_code(grpc.StatusCode.PERMISSION_DENIED)
             context.set_details(str(e))

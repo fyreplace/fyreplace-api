@@ -1,4 +1,3 @@
-from email.mime import image
 from typing import Iterator, List
 from uuid import UUID
 
@@ -11,6 +10,7 @@ from grpc_interceptor.exceptions import InvalidArgument, PermissionDenied
 from core.authentication import no_auth
 from core.pagination import PaginatorMixin
 from core.services import ImageUploadMixin
+from core.utils import make_uuid
 from notifications.models import delete_notifications_for
 from notifications.tasks import report_content
 from protos import (
@@ -398,7 +398,7 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
 
         report_content.delay(
             content_type_id=ContentType.objects.get_for_model(Comment).id,
-            target_id=str(UUID(bytes=request.id)),
+            target_id=str(make_uuid(data=request.id)),
             reporter_id=str(context.caller.id),
         )
         return empty_pb2.Empty()

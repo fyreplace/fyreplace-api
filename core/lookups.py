@@ -1,7 +1,8 @@
 from typing import Any
-from uuid import UUID
 
 from django.db.models.lookups import Exact
+
+from .utils import make_uuid
 
 
 class BytesLookup(Exact):
@@ -9,7 +10,7 @@ class BytesLookup(Exact):
 
     def __init__(self, lhs: Any, rhs: Any):
         if isinstance(rhs, bytes):
-            rhs = UUID(bytes=rhs) if len(rhs) > 0 else ""
+            rhs = make_uuid(data=rhs) if len(rhs) > 0 else ""
 
         super().__init__(lhs, rhs)
 

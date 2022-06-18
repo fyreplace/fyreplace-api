@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: fyreplace-restart
+  namespace: {{ include "fyreplace.name" . }}
+spec:
+  concurrencyPolicy: Forbid
+  schedule: "@weekly"
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      activeDeadlineSeconds: 600
+      template:
+        spec:
+          serviceAccountName: fyreplace-restart
+          restartPolicy: Never
+          containers:
+            - name: kubectl
+              image: bitnami/kubectl
+              command:
+                - "kubectl"
+                - "rollout"
+                - "restart"
+                - "deployment/fyreplace"

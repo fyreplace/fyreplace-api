@@ -108,10 +108,8 @@ jobs:
           if [ "${{ github.ref }}" = "refs/heads/develop" ]
           then
             echo "::set-output name=environment::dev"
-            echo "::set-output name=rollbar_environment::development"
           else
             echo "::set-output name=environment::main"
-            echo "::set-output name=rollbar_environment::production"
           fi
 
   deployment:
@@ -153,12 +151,12 @@ jobs:
           echo "SERVER_EMAIL=${{ secrets.SERVER_EMAIL }}" >> configuration.properties
           echo "ADMINS=${{ secrets.ADMINS }}" >> configuration.properties
           echo "EMAIL_LINKS_DOMAIN=${{ secrets.EMAIL_LINKS_DOMAIN }}" >> configuration.properties
+          echo "ROLLBAR_DEVELOPMENT=${{ secrets.ROLLBAR_DEVELOPMENT }}" >> configuration.properties
           kubectl create configmap configuration --from-env-file=configuration.properties -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml --namespace=fyreplace apply -f -
 
       - name: Create secrets
         working-directory: kubernetes
         run: |
-          echo "ROLLBAR_TOKEN=${{ secrets.ROLLBAR_TOKEN }}" >> secrets.properties
           echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> secrets.properties
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> secrets.properties
           echo "CELERY_BROKER_URL=${{ secrets.CELERY_BROKER_URL }}" >> secrets.properties
@@ -167,6 +165,7 @@ jobs:
           echo "MAILGUN_WEBHOOK_SIGNING_KEY=${{ secrets.MAILGUN_WEBHOOK_SIGNING_KEY }}" >> secrets.properties
           echo "MAILJET_API_KEY=${{ secrets.MAILJET_API_KEY }}" >> secrets.properties
           echo "MAILJET_SECRET_KEY=${{ secrets.MAILJET_SECRET_KEY }}" >> secrets.properties
+          echo "ROLLBAR_TOKEN=${{ secrets.ROLLBAR_TOKEN }}" >> secrets.properties
           kubectl create secret generic secrets --from-env-file=secrets.properties -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml --namespace=fyreplace apply -f -
 
       - name: Create DigitalOcean token

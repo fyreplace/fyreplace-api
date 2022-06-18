@@ -1,8 +1,5 @@
 from typing import Iterable
 
-import grpc
-from django.db.models import QuerySet
-
 from core.pagination import PaginationAdapter
 from protos import pagination_pb2, post_pb2
 
