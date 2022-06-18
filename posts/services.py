@@ -1,4 +1,3 @@
-from email.mime import image
 from typing import Iterator, List
 from uuid import UUID
 

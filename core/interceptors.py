@@ -17,10 +17,6 @@ def make_method_name(package_name: str, service_name: str, method_name: str) -> 
     return f"/{package_name}.{service_name}/{method_name}"
 
 
-def get_scope(full_method_name: str) -> str:
-    return full_method_name.split("/")[:-1]
-
-
 class ExceptionInterceptor(ServerInterceptor):
     def intercept(
         self,
