@@ -60,7 +60,7 @@ class ExceptionInterceptor(ServerInterceptor):
     ) -> Any:
         try:
             return action()
-        except StopIteration as e:
+        except (StopIteration, grpc.RpcError):
             return None
         except PermissionDenied as e:
             context.set_code(grpc.StatusCode.PERMISSION_DENIED)
