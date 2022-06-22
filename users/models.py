@@ -207,8 +207,8 @@ class Connection(UUIDModel, TimestampModel):
             ),
         ]
         ordering = [
-            "date_last_used",
-            "date_created",
+            "-date_last_used",
+            "-date_created",
             "hardware",
             "software",
             "id",
