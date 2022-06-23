@@ -1,0 +1,6 @@
+<mj-head>
+  <mj-attributes>
+    <mj-class name="text" font-family="sans-serif" font-size="16px" align="center"></mj-class>
+    <mj-button border-radius="8px" background-color="#FF8243" color="white"></mj-button>
+  </mj-attributes>
+</mj-head>

@@ -1,16 +1,10 @@
 <mjml>
-  <mj-head>
-    <mj-attributes>
-      <mj-class name="text" font-family="sans-serif" font-size="16px" align="center"></mj-class>
-      <mj-button border-radius="8px" background-color="#FF8243" color="white"></mj-button>
-    </mj-attributes>
-  </mj-head>
+  <mj-include path="./attributes.mjml" />
   <mj-body>
     <!-- {% load static %} -->
     <mj-section padding="0">
       <mj-column padding="0">
-        <mj-divider border-color="#FF8243" padding="0 0 40px 0"></mj-divider>
-        <mj-image src="{% static 'logo.png' %}" width="80px" padding-bottom="40px"></mj-image>
+        <mj-include path="./logo.mjml" />
         <mj-text mj-class="text" font-size="24px" padding-bottom="20px">Welcome to {{ app_name }}!</mj-text>
         <mj-text mj-class="text" padding-bottom="20px">You can confirm your email address and validate your account by clicking on the button below:</mj-text>
         <mj-button mj-class="text" href="{{ link }}" rel="noopener noreferrer" padding-bottom="20px">Activate account</mj-button>
