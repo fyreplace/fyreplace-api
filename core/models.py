@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from importlib import import_module
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Optional
 
 import grpc
 from django.db import models
@@ -17,11 +17,11 @@ from .signals import post_soft_delete, pre_soft_delete
 
 class MessageConvertible:
     default_message_class = empty_pb2.Empty
-    _message_class: Optional[Type[Message]] = None
-    _field_message_classes: Dict[str, Type[Message]] = {}
+    _message_class: Optional[type[Message]] = None
+    _field_message_classes: dict[str, type[Message]] = {}
     _context: Optional[grpc.ServicerContext] = None
 
-    def get_message_fields(self, **overrides) -> List[str]:
+    def get_message_fields(self, **overrides) -> list[str]:
         return self._message_class.DESCRIPTOR.fields_by_name.keys()
 
     def get_message_field_values(self, **overrides) -> dict:
@@ -39,7 +39,7 @@ class MessageConvertible:
 
     def to_message(
         self,
-        message_class: Optional[Type[Message]] = None,
+        message_class: Optional[type[Message]] = None,
         context: Optional[grpc.ServicerContext] = None,
         **overrides,
     ) -> Message:
@@ -67,7 +67,7 @@ class MessageConvertible:
         else:
             return value
 
-    def _retrieve_message_class(self, field: str) -> Type[Message]:
+    def _retrieve_message_class(self, field: str) -> type[Message]:
         if message_class := self.__class__._field_message_classes.get(field):
             return message_class
 
@@ -106,7 +106,7 @@ class SoftDeleteModel(models.Model, MessageConvertible):
 
     is_deleted = models.BooleanField(default=False)
 
-    def soft_delete(self) -> Tuple[int, Dict[str, int]]:
+    def soft_delete(self) -> tuple[int, dict[str, int]]:
         pre_soft_delete.send(sender=self.__class__, instance=self)
         self.perform_soft_delete()
         post_soft_delete.send(sender=self.__class__, instance=self)

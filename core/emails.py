@@ -1,5 +1,4 @@
 import re
-from typing import List
 
 from django.conf import settings
 from django.core.mail import send_mail
@@ -21,7 +20,7 @@ class Email:
         raise NotImplementedError
 
     @property
-    def recipients(self) -> List[str]:
+    def recipients(self) -> list[str]:
         raise NotImplementedError
 
     def send(self):

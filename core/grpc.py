@@ -2,7 +2,7 @@ from concurrent import futures
 from datetime import timedelta
 from importlib import import_module
 from inspect import getmembers
-from typing import Any, Iterator, Optional, Tuple, Type
+from typing import Any, Iterator, Optional
 
 import grpc
 from django.apps import apps
@@ -68,7 +68,7 @@ def get_token(context: grpc.ServicerContext) -> Optional[str]:
 
 def get_info_from_token(
     token: str, for_update: bool = False
-) -> Tuple[User, Optional[Connection]]:
+) -> tuple[User, Optional[Connection]]:
     try:
         claims = jwt.decode(token)
         user_objects = User.objects.select_for_update() if for_update else User.objects
@@ -104,7 +104,7 @@ def serialize_message(message: Message) -> dict:
     return data
 
 
-def all_servicers() -> Iterator[Type[Any]]:
+def all_servicers() -> Iterator[type[Any]]:
     for app in apps.get_app_configs():
         try:
             services_module = import_module(app.module.__name__ + ".services")
@@ -116,7 +116,7 @@ def all_servicers() -> Iterator[Type[Any]]:
                 yield entity
 
 
-def _add_services_to_server(services: Iterator[Type[Any]], server: grpc.Server):
+def _add_services_to_server(services: Iterator[type[Any]], server: grpc.Server):
     for service in services:
         servicers = get_servicer_interfaces(service)
 

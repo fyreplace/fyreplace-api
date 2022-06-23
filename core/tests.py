@@ -1,5 +1,5 @@
 from os import path
-from typing import Any, Callable, Iterable, Iterator, List, Optional
+from typing import Any, Callable, Iterable, Iterator, Optional
 
 import grpc
 import pytest
@@ -55,7 +55,7 @@ class BaseTestCase(TestCase):
     def tearDown(self):
         pass
 
-    def assertEmails(self, emails: List[Email]):
+    def assertEmails(self, emails: list[Email]):
         self.assertEqual(len(mail.outbox), len(emails))
 
         for i in range(0, len(emails)):
@@ -82,7 +82,7 @@ class PaginationTestCase(BaseTestCase):
 
     def get_initial_requests(
         self, forward: bool, size: Optional[int] = None
-    ) -> List[pagination_pb2.Page]:
+    ) -> list[pagination_pb2.Page]:
         return [
             pagination_pb2.Page(
                 header=pagination_pb2.Header(
@@ -325,7 +325,7 @@ class FakeContext(grpc.ServicerContext):
     def peer(self) -> str:
         return "fake"
 
-    def peer_identities(self) -> Optional[List[bytes]]:
+    def peer_identities(self) -> Optional[list[bytes]]:
         return None
 
     def peer_identity_key(self) -> Optional[str]:

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timedelta
-from typing import Iterator, List
+from typing import Iterator
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
@@ -49,7 +49,7 @@ class UserServiceTestCase(AuthenticatedTestCase, BaseNotificationTestCase):
         super().setUp()
         self.service = UserService()
 
-    def _create_users(self, count: int) -> List[AbstractUser]:
+    def _create_users(self, count: int) -> list[AbstractUser]:
         return [
             get_user_model().objects.create_user(
                 username=f"user {i}", email=make_email(f"user-{i}")
@@ -697,7 +697,7 @@ class UserService_ListBlocked(UserServiceTestCase, PaginationTestCase):
     def test_out_of_bounds(self):
         self.run_test_out_of_bounds(self.out_of_bounds_cursor)
 
-    def _create_test_users(self) -> List[AbstractUser]:
+    def _create_test_users(self) -> list[AbstractUser]:
         return sorted(self._create_users(count=24), key=lambda u: u.username)
 
 

@@ -1,7 +1,7 @@
 import io
 import uuid
 from inspect import isclass
-from typing import Any, Callable, Iterator, List, Optional, Type, Union
+from typing import Any, Callable, Iterator, Optional, Union
 
 import magic
 from django.conf import settings
@@ -14,7 +14,7 @@ from protos import image_pb2
 MaybeImageChunk = Union[image_pb2.ImageChunk, Any]
 
 
-def get_servicer_interfaces(cls: type) -> List[type]:
+def get_servicer_interfaces(cls: type) -> list[type]:
     return (
         [s for s in cls.mro() if s != cls and s.__name__.endswith("Servicer")]
         if isclass(cls)
@@ -61,7 +61,7 @@ class ImageUploadMixin:
         )
 
     def set_image(
-        self, model: Type[models.Model], field: str, image: Optional[ImageFile]
+        self, model: type[models.Model], field: str, image: Optional[ImageFile]
     ):
         getattr(model, field).delete()
         setattr(model, field, image)

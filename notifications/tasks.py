@@ -1,5 +1,3 @@
-from typing import List
-
 from celery import shared_task
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
@@ -33,7 +31,7 @@ def send_notifications(comment_id: str):
 
 
 @shared_task
-def remove_comments_from_notifications(user_id: str, comment_ids: List[str]):
+def remove_comments_from_notifications(user_id: str, comment_ids: list[str]):
     CountUnit.objects.filter(
         notification__recipient_id=user_id,
         count_item_type=ContentType.objects.get_for_model(Comment),

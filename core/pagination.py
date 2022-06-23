@@ -1,6 +1,6 @@
 import re
 from abc import ABC, abstractmethod
-from typing import Callable, Iterable, Iterator, List, Optional, Type
+from typing import Callable, Iterable, Iterator, Optional
 
 import grpc
 from django.conf import settings
@@ -52,7 +52,7 @@ class PaginationAdapter(ABC):
 
         return filters
 
-    def make_cursor_data(self, item: Model) -> List[pagination_pb2.KeyValuePair]:
+    def make_cursor_data(self, item: Model) -> list[pagination_pb2.KeyValuePair]:
         return [
             pagination_pb2.KeyValuePair(key=field, value=str(getattr(item, field)))
             for field in self.get_cursor_fields()
@@ -69,7 +69,7 @@ class PaginatorMixin:
     def paginate(
         self,
         request_iterator: Iterator[pagination_pb2.Page],
-        bundle_class: Type,
+        bundle_class: type,
         adapter: PaginationAdapter,
         message_overrides: dict = {},
         on_items: Optional[Callable[[list], None]] = None,
@@ -120,7 +120,7 @@ class PaginatorMixin:
     def _paginate_cursor(
         self,
         page: pagination_pb2.Page,
-        bundle_class: Type,
+        bundle_class: type,
         bundle_field: str,
         adapter: PaginationAdapter,
         message_overrides: dict,
@@ -187,7 +187,7 @@ class PaginatorMixin:
     def _paginate_offset(
         self,
         page: pagination_pb2.Page,
-        bundle_class: Type,
+        bundle_class: type,
         bundle_field: str,
         adapter: PaginationAdapter,
         message_overrides: dict,

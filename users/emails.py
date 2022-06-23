@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Callable, List, Optional
+from typing import Callable
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -16,7 +16,7 @@ def deep_link(method: Callable) -> str:
 
 class BaseUserEmail(Email):
     @property
-    def recipients(self) -> List[str]:
+    def recipients(self) -> list[str]:
         return [self.user.email]
 
     @property
@@ -78,7 +78,7 @@ class UserEmailUpdateEmail(BaseUserEmail):
         return _(f"{settings.PRETTY_APP_NAME} account email confirmation")
 
     @property
-    def recipients(self) -> List[str]:
+    def recipients(self) -> list[str]:
         return [self.email]
 
     @property

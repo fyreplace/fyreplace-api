@@ -1,4 +1,4 @@
-from typing import Iterator, List
+from typing import Iterator
 from uuid import UUID
 
 import grpc
@@ -330,7 +330,7 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
         request_iterator: Iterator[pagination_pb2.Page],
         context: grpc.ServicerContext,
     ) -> Iterator[comment_pb2.Comments]:
-        def on_items(comments: List[Comment]):
+        def on_items(comments: list[Comment]):
             comments = sorted(comments, key=lambda c: c.date_created)
 
             if len(comments) > 0:
