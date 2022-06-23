@@ -1,0 +1,1 @@
+Due to your recent activity, you have been banned {% if date_ban_end %}until this date: {{ date_ban_end | date:"SHORT_DATE_FORMAT" }}{% else %}indefinitely.{% endif %}

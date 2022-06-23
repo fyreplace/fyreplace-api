@@ -3,6 +3,7 @@ from datetime import timedelta
 from django.db import IntegrityError
 from django.utils.timezone import now
 
+from .emails import UserBannedEmail
 from .models import Block, Connection
 from .tests import BaseUserTestCase
 
@@ -18,6 +19,7 @@ class User_ban(BaseUserTestCase):
             self.main_user.date_ban_end, (before + duration), delta=timedelta(seconds=1)
         )
         self.assertEqual(Connection.objects.filter(user=self.main_user).count(), 0)
+        self.assertEmails([UserBannedEmail(self.main_user.id)])
 
     def test_forever(self):
         Connection.objects.create(user=self.main_user)
@@ -25,6 +27,7 @@ class User_ban(BaseUserTestCase):
         self.assertTrue(self.main_user.is_banned)
         self.assertIsNone(self.main_user.date_ban_end)
         self.assertEqual(Connection.objects.filter(user=self.main_user).count(), 0)
+        self.assertEmails([UserBannedEmail(self.main_user.id)])
 
 
 class User_block(BaseUserTestCase):

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Callable, List
+from typing import Callable, List, Optional
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -48,10 +48,6 @@ class BaseUserEmail(Email):
 
 class AccountActivationEmail(BaseUserEmail):
     @property
-    def template(self) -> str:
-        return "account_activation"
-
-    @property
     def subject(self) -> str:
         return _(f"{settings.PRETTY_APP_NAME} account activation")
 
@@ -61,10 +57,6 @@ class AccountActivationEmail(BaseUserEmail):
 
 
 class AccountConnectionEmail(BaseUserEmail):
-    @property
-    def template(self) -> str:
-        return "account_connection"
-
     @property
     def subject(self) -> str:
         return _(f"{settings.PRETTY_APP_NAME} account connection")
@@ -81,10 +73,6 @@ class AccountConnectionEmail(BaseUserEmail):
 
 
 class UserEmailUpdateEmail(BaseUserEmail):
-    @property
-    def template(self) -> str:
-        return "user_email_update"
-
     @property
     def subject(self) -> str:
         return _(f"{settings.PRETTY_APP_NAME} account email confirmation")
@@ -104,3 +92,13 @@ class UserEmailUpdateEmail(BaseUserEmail):
     def __init__(self, user_id: str, email: str):
         super().__init__(user_id)
         self.email = email
+
+
+class UserBannedEmail(BaseUserEmail):
+    @property
+    def subject(self) -> str:
+        return _(f"{settings.PRETTY_APP_NAME} ban notice")
+
+    @property
+    def context(self) -> dict:
+        return {"date_ban_end": self.user.date_ban_end}

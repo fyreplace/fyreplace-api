@@ -24,7 +24,12 @@ from notifications.models import CountUnit, Notification
 from notifications.tests import BaseNotificationTestCase
 from protos import id_pb2, pagination_pb2, user_pb2
 
-from .emails import AccountActivationEmail, AccountConnectionEmail, UserEmailUpdateEmail
+from .emails import (
+    AccountActivationEmail,
+    AccountConnectionEmail,
+    UserBannedEmail,
+    UserEmailUpdateEmail,
+)
 from .models import Connection, Hardware, Software
 from .services import AccountService, UserService
 from .tests import AuthenticatedTestCase, BaseUserTestCase, make_email
@@ -322,7 +327,7 @@ class AccountService_SendConnectionEmail(AccountServiceTestCase):
         with self.assertRaises(PermissionDenied):
             self.service.SendConnectionEmail(self.request, self.grpc_context)
 
-        self.assertEmails([])
+        self.assertEmails([UserBannedEmail(self.main_user.id)])
 
     def test_password(self):
         self.main_user.set_password("Random password")

@@ -1,3 +1,4 @@
+import re
 from typing import List
 
 from django.conf import settings
@@ -8,7 +9,8 @@ from django.template.loader import render_to_string
 class Email:
     @property
     def template(self) -> str:
-        raise NotImplementedError
+        email_name = re.sub("Email$", "", self.__class__.__name__)
+        return re.sub("(?<!^)([A-Z])", "_\\1", email_name).lower()
 
     @property
     def context(self) -> dict:

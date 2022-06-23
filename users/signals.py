@@ -5,6 +5,7 @@ from django.dispatch import receiver
 
 from core.signals import post_soft_delete
 
+from .emails import UserBannedEmail
 from .tasks import remove_user_data
 
 pre_ban = ModelSignal(use_caching=True)
@@ -21,6 +22,7 @@ def on_user_post_save(instance: AbstractUser, created: bool, **kwargs):
 @receiver(post_ban, sender=get_user_model())
 def on_user_post_ban(instance: AbstractUser, **kwargs):
     remove_user_data.delay(user_id=str(instance.id))
+    UserBannedEmail(instance.id).send()
 
 
 @receiver(post_delete, sender=get_user_model())
