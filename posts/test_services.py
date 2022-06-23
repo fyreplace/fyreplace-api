@@ -530,12 +530,6 @@ class PostService_Publish(PostServiceTestCase):
         with self.assertRaises(ObjectDoesNotExist):
             self.service.Publish(self.request, self.grpc_context)
 
-    def test_user_banned(self):
-        self.main_user.ban(timedelta(days=3))
-
-        with self.assertRaises(PermissionDenied):
-            self.service.Publish(self.request, self.grpc_context)
-
     def test_other(self):
         self.post.author = self.other_user
         self.post.save()
@@ -1198,12 +1192,6 @@ class CommentService_Create(CommentServiceTestCase):
 
     def test_blocked(self):
         self.other_user.blocked_users.add(self.main_user)
-
-        with self.assertRaises(PermissionDenied):
-            self.service.Create(self.request, self.grpc_context)
-
-    def test_banned(self):
-        self.main_user.ban(timedelta(days=3))
 
         with self.assertRaises(PermissionDenied):
             self.service.Create(self.request, self.grpc_context)

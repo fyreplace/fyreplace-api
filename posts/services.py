@@ -174,9 +174,6 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
             context.caller, id__bytes=request.id
         )
 
-        if context.caller.is_banned:
-            raise PermissionDenied("caller_banned")
-
         post.publish(anonymous=request.anonymous)
         return empty_pb2.Empty()
 
@@ -360,14 +357,8 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
             context.caller, id__bytes=request.post_id
         )
 
-        if (
-            context.caller.is_banned
-            or context.caller.id
-            in post.author.blocked_users.values_list("id", flat=True)
-        ):
-            raise PermissionDenied(
-                "caller_banned" if context.caller.is_banned else "caller_blocked"
-            )
+        if context.caller.id in post.author.blocked_users.values_list("id", flat=True):
+            raise PermissionDenied("caller_blocked")
 
         comment = Comment.objects.create(
             post=post, author=context.caller, text=request.text
