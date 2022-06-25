@@ -14,7 +14,6 @@ from google.protobuf.message import Message
 from grpc_interceptor.exceptions import Unauthenticated
 
 from users.models import Connection
-from users.tasks import use_connection
 
 from . import jwt
 from .interceptors import AuthorizationInterceptor, ExceptionInterceptor
@@ -78,9 +77,7 @@ def get_info_from_token(
         if connection_id := claims.get("connection_id"):
             connection = Connection.objects.get(id=connection_id)
 
-            if connection.user_id == user.id:
-                use_connection.delay(connection_id=connection_id)
-            else:
+            if connection.user_id != user.id:
                 raise Unauthenticated("user_id_connection_id_mismatch")
         elif timestamp := claims.get("timestamp"):
             deadline = now() - timedelta(days=1)

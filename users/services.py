@@ -36,6 +36,7 @@ from .tasks import (
     send_account_activation_email,
     send_account_connection_email,
     send_user_email_update_email,
+    use_connection,
 )
 from .validators import validate_unicode_username
 
@@ -245,6 +246,7 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
     def RetrieveMe(
         self, request: empty_pb2.Empty, context: grpc.ServicerContext
     ) -> user_pb2.User:
+        use_connection.delay(connection_id=str(context.caller_connection.id))
         return context.caller.to_message(context=context)
 
     @atomic
