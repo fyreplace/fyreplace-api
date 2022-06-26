@@ -1,5 +1,7 @@
 from . import *
 
+IS_TESTING = True
+
 AWS_ACCESS_KEY_ID = None
 
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"

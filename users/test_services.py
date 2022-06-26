@@ -252,7 +252,7 @@ class AccountService_ConfirmActivation(AccountServiceTestCase):
         self.assertEqual(Connection.objects.count(), self.connection_count)
 
     def test_banned_user(self):
-        self.user.ban(timedelta(days=3))
+        self.user.ban()
 
         with self.assertRaises(PermissionDenied):
             self.service.ConfirmActivation(self.request, self.grpc_context)
@@ -322,7 +322,7 @@ class AccountService_SendConnectionEmail(AccountServiceTestCase):
         self.assertEmails([])
 
     def test_banned_user(self):
-        self.main_user.ban(timedelta(days=3))
+        self.main_user.ban()
 
         with self.assertRaises(PermissionDenied):
             self.service.SendConnectionEmail(self.request, self.grpc_context)
@@ -391,7 +391,7 @@ class AccountService_ConfirmConnection(AccountServiceTestCase):
         self.assertEqual(Connection.objects.count(), self.connection_count)
 
     def test_banned_user(self):
-        self.main_user.ban(timedelta(days=3))
+        self.main_user.ban()
 
         with self.assertRaises(PermissionDenied):
             self.service.ConfirmConnection(self.request, self.grpc_context)
