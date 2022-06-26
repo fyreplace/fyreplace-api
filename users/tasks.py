@@ -12,7 +12,12 @@ from django.db.transaction import atomic
 from django.utils.timezone import now
 from requests import get
 
-from .emails import AccountActivationEmail, AccountConnectionEmail, UserEmailUpdateEmail
+from .emails import (
+    AccountActivationEmail,
+    AccountConnectionEmail,
+    UserBannedEmail,
+    UserEmailUpdateEmail,
+)
 from .models import Connection
 
 
@@ -78,6 +83,11 @@ def send_account_connection_email(user_id: str):
 @shared_task
 def send_user_email_update_email(user_id: str, email: str):
     UserEmailUpdateEmail(user_id, email).send()
+
+
+@shared_task
+def send_user_banned_email(user_id: str):
+    UserBannedEmail(user_id).send()
 
 
 @shared_task
