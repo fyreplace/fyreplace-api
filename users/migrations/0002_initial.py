@@ -183,8 +183,8 @@ class Migration(migrations.Migration):
             ],
             options={
                 "ordering": [
-                    "-date_last_used",
-                    "-date_created",
+                    "date_last_used",
+                    "date_created",
                     "hardware",
                     "software",
                     "id",
