@@ -1,0 +1,2 @@
+<mj-divider border-color="#FF8243" padding="0 0 40px 0"></mj-divider>
+<mj-image src="{% static 'logo.png' %}" width="80px" padding-bottom="40px"></mj-image>

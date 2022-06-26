@@ -4,7 +4,6 @@ import uuid
 from datetime import timedelta
 from os import path
 from typing import Iterator
-from uuid import UUID
 
 import grpc
 from django.contrib.auth import get_user_model
@@ -22,7 +21,7 @@ from grpc_interceptor.exceptions import (
 
 from core import jwt
 from core.authentication import no_auth
-from core.grpc import get_info_from_token, get_token, serialize_message
+from core.grpc import get_info_from_token, serialize_message
 from core.pagination import PaginatorMixin
 from core.services import ImageUploadMixin
 from core.utils import make_uuid
@@ -37,6 +36,7 @@ from .tasks import (
     send_account_activation_email,
     send_account_connection_email,
     send_user_email_update_email,
+    use_connection,
 )
 from .validators import validate_unicode_username
 
@@ -221,10 +221,8 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
     def Disconnect(
         self, request: id_pb2.Id, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        token = get_token(context)
-        user, connection = get_info_from_token(token)
         Connection.objects.get(
-            id__bytes=request.id or connection.id, user=user
+            id__bytes=request.id or context.caller_connection.id, user=context.caller
         ).delete()
         return empty_pb2.Empty()
 
@@ -248,6 +246,7 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
     def RetrieveMe(
         self, request: empty_pb2.Empty, context: grpc.ServicerContext
     ) -> user_pb2.User:
+        use_connection.delay(connection_id=str(context.caller_connection.id))
         return context.caller.to_message(context=context)
 
     @atomic

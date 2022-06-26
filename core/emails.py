@@ -1,4 +1,4 @@
-from typing import List
+import re
 
 from django.conf import settings
 from django.core.mail import send_mail
@@ -8,7 +8,8 @@ from django.template.loader import render_to_string
 class Email:
     @property
     def template(self) -> str:
-        raise NotImplementedError
+        email_name = re.sub("Email$", "", self.__class__.__name__)
+        return re.sub("(?<!^)([A-Z])", "_\\1", email_name).lower()
 
     @property
     def context(self) -> dict:
@@ -19,7 +20,7 @@ class Email:
         raise NotImplementedError
 
     @property
-    def recipients(self) -> List[str]:
+    def recipients(self) -> list[str]:
         raise NotImplementedError
 
     def send(self):

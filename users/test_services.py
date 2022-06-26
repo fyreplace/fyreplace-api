@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timedelta
-from typing import Iterator, List
+from typing import Iterator
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
@@ -24,7 +24,12 @@ from notifications.models import CountUnit, Notification
 from notifications.tests import BaseNotificationTestCase
 from protos import id_pb2, pagination_pb2, user_pb2
 
-from .emails import AccountActivationEmail, AccountConnectionEmail, UserEmailUpdateEmail
+from .emails import (
+    AccountActivationEmail,
+    AccountConnectionEmail,
+    UserBannedEmail,
+    UserEmailUpdateEmail,
+)
 from .models import Connection, Hardware, Software
 from .services import AccountService, UserService
 from .tests import AuthenticatedTestCase, BaseUserTestCase, make_email
@@ -44,7 +49,7 @@ class UserServiceTestCase(AuthenticatedTestCase, BaseNotificationTestCase):
         super().setUp()
         self.service = UserService()
 
-    def _create_users(self, count: int) -> List[AbstractUser]:
+    def _create_users(self, count: int) -> list[AbstractUser]:
         return [
             get_user_model().objects.create_user(
                 username=f"user {i}", email=make_email(f"user-{i}")
@@ -247,7 +252,7 @@ class AccountService_ConfirmActivation(AccountServiceTestCase):
         self.assertEqual(Connection.objects.count(), self.connection_count)
 
     def test_banned_user(self):
-        self.user.ban(timedelta(days=3))
+        self.user.ban()
 
         with self.assertRaises(PermissionDenied):
             self.service.ConfirmActivation(self.request, self.grpc_context)
@@ -317,12 +322,12 @@ class AccountService_SendConnectionEmail(AccountServiceTestCase):
         self.assertEmails([])
 
     def test_banned_user(self):
-        self.main_user.ban(timedelta(days=3))
+        self.main_user.ban()
 
         with self.assertRaises(PermissionDenied):
             self.service.SendConnectionEmail(self.request, self.grpc_context)
 
-        self.assertEmails([])
+        self.assertEmails([UserBannedEmail(self.main_user.id)])
 
     def test_password(self):
         self.main_user.set_password("Random password")
@@ -386,7 +391,7 @@ class AccountService_ConfirmConnection(AccountServiceTestCase):
         self.assertEqual(Connection.objects.count(), self.connection_count)
 
     def test_banned_user(self):
-        self.main_user.ban(timedelta(days=3))
+        self.main_user.ban()
 
         with self.assertRaises(PermissionDenied):
             self.service.ConfirmConnection(self.request, self.grpc_context)
@@ -692,7 +697,7 @@ class UserService_ListBlocked(UserServiceTestCase, PaginationTestCase):
     def test_out_of_bounds(self):
         self.run_test_out_of_bounds(self.out_of_bounds_cursor)
 
-    def _create_test_users(self) -> List[AbstractUser]:
+    def _create_test_users(self) -> list[AbstractUser]:
         return sorted(self._create_users(count=24), key=lambda u: u.username)
 
 

@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 from django.conf import settings
 from django.contrib.auth.hashers import (
@@ -115,7 +115,7 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
         else:
             return super().__str__()
 
-    def get_message_fields(self, **overrides) -> List[str]:
+    def get_message_fields(self, **overrides) -> list[str]:
         if overrides.get("is_banned", self.is_banned) and not self.date_ban_end:
             if self._message_class == user_pb2.User:
                 return ["profile", "date_joined"]
@@ -154,7 +154,7 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
 
         return values
 
-    def delete(self, *args, **kwargs) -> Tuple[int, Dict[str, int]]:
+    def delete(self, *args, **kwargs) -> tuple[int, dict[str, int]]:
         return self.soft_delete()
 
     def perform_soft_delete(self):

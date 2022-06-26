@@ -1,7 +1,7 @@
 from importlib import import_module
 from inspect import getmembers
 from types import GeneratorType
-from typing import Any, Callable, List, Type
+from typing import Any, Callable
 
 import grpc
 import rollbar
@@ -109,7 +109,7 @@ class ExceptionInterceptor(ServerInterceptor):
 
 
 class AuthorizationInterceptor(ServerInterceptor):
-    def __init__(self, services: List[Type[Any]]):
+    def __init__(self, services: list[type[Any]]):
         self.no_auth_method_names = []
 
         for service in services:

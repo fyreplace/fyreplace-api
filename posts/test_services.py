@@ -1,6 +1,6 @@
 import io
 from datetime import timedelta
-from typing import Iterator, List, Optional
+from typing import Iterator, Optional
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
@@ -31,7 +31,7 @@ class PostServiceTestCase(AuthenticatedTestCase, BaseNotificationTestCase):
         count: int,
         published: bool,
         anonymous: bool = False,
-    ) -> List[Post]:
+    ) -> list[Post]:
         posts = []
 
         for _ in range(count):
@@ -98,7 +98,7 @@ class PostPaginationTestCase(PostServiceTestCase, PaginationTestCase):
         for i, post in enumerate(posts.posts):
             self.assertEqual(post.id, self.posts[i + self.page_size].id.bytes)
 
-    def _create_test_posts(self) -> List[Post]:
+    def _create_test_posts(self) -> list[Post]:
         raise NotImplementedError
 
 
@@ -123,7 +123,7 @@ class CommentServiceTestCase(AuthenticatedTestCase, BaseNotificationTestCase):
         self,
         author: get_user_model(),
         count: int,
-    ) -> List[Post]:
+    ) -> list[Post]:
         return [
             Comment.objects.create(post=self.post, author=author, text="Text")
             for _ in range(count)
@@ -246,7 +246,7 @@ class PostService_ListFeed(PostServiceTestCase):
         )
         self.assertEqual(len(list(feed)), 0)
 
-    def _create_some_posts(self, include_main_user: bool = False) -> List[Post]:
+    def _create_some_posts(self, include_main_user: bool = False) -> list[Post]:
         posts = self._create_posts(author=self.other_user, count=15, published=True)
         main_posts = self._create_posts(author=self.main_user, count=5, published=True)
 
@@ -257,7 +257,7 @@ class PostService_ListFeed(PostServiceTestCase):
             author=self.other_user, count=10, published=True
         )
 
-    def _create_requests(self, posts: List[Post]) -> List[post_pb2.Vote]:
+    def _create_requests(self, posts: list[Post]) -> list[post_pb2.Vote]:
         return [
             post_pb2.Vote(post_id=p.id.bytes, spread=i % 2 == 0)
             for i, p in enumerate(posts)
@@ -267,7 +267,7 @@ class PostService_ListFeed(PostServiceTestCase):
 class PostService_ListArchive(PostPaginationTestCase):
     main_pagination_field = "date_published"
 
-    def _create_test_posts(self) -> List[Post]:
+    def _create_test_posts(self) -> list[Post]:
         posts = self._create_posts(author=self.other_user, count=10, published=True)
         posts += self._create_posts(author=self.main_user, count=8, published=True)
         posts += self._create_posts(author=self.other_user, count=10, published=True)
@@ -318,7 +318,7 @@ class PostService_ListArchive(PostPaginationTestCase):
 class PostService_ListOwnPosts(PostPaginationTestCase):
     main_pagination_field = "date_published"
 
-    def _create_test_posts(self) -> List[Post]:
+    def _create_test_posts(self) -> list[Post]:
         the_posts = self._create_posts(author=self.main_user, count=14, published=True)
         self._create_posts(author=self.other_user, count=8, published=True)
         the_posts += self._create_posts(author=self.main_user, count=10, published=True)
@@ -359,7 +359,7 @@ class PostService_ListOwnPosts(PostPaginationTestCase):
 
 
 class PostService_ListDrafts(PostPaginationTestCase):
-    def _create_test_posts(self) -> List[Post]:
+    def _create_test_posts(self) -> list[Post]:
         the_posts = self._create_posts(author=self.main_user, count=14, published=False)
         self._create_posts(author=self.other_user, count=8, published=False)
         the_posts += self._create_posts(
@@ -528,12 +528,6 @@ class PostService_Publish(PostServiceTestCase):
         self.post.delete()
 
         with self.assertRaises(ObjectDoesNotExist):
-            self.service.Publish(self.request, self.grpc_context)
-
-    def test_user_banned(self):
-        self.main_user.ban(timedelta(days=3))
-
-        with self.assertRaises(PermissionDenied):
             self.service.Publish(self.request, self.grpc_context)
 
     def test_other(self):
@@ -865,7 +859,7 @@ class ChapterService_Move(ChapterServiceTestCase):
         with self.assertRaises(ObjectDoesNotExist):
             self.service.Move(self.request, self.grpc_context)
 
-    def assertChapters(self, order: List[int]):
+    def assertChapters(self, order: list[int]):
         for i, position in enumerate(order):
             self.assertEqual(self.post.chapters.all()[i].id, self.chapters[position].id)
 
@@ -1070,7 +1064,7 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
 
     def get_initial_requests(
         self, forward: bool, size: Optional[int] = None
-    ) -> List[pagination_pb2.Page]:
+    ) -> list[pagination_pb2.Page]:
         return [
             pagination_pb2.Page(
                 header=pagination_pb2.Header(
@@ -1158,7 +1152,7 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
     def test_other_deleted(self):
         self.other_user.delete()
 
-    def _create_test_comments(self) -> List[Comment]:
+    def _create_test_comments(self) -> list[Comment]:
         comments = self._create_comments(author=self.main_user, count=10)
         comments += self._create_comments(author=self.other_user, count=4)
         comments += self._create_comments(author=self.main_user, count=10)
@@ -1198,12 +1192,6 @@ class CommentService_Create(CommentServiceTestCase):
 
     def test_blocked(self):
         self.other_user.blocked_users.add(self.main_user)
-
-        with self.assertRaises(PermissionDenied):
-            self.service.Create(self.request, self.grpc_context)
-
-    def test_banned(self):
-        self.main_user.ban(timedelta(days=3))
 
         with self.assertRaises(PermissionDenied):
             self.service.Create(self.request, self.grpc_context)

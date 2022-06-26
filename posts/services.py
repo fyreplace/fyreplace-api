@@ -1,4 +1,4 @@
-from typing import Iterator, List
+from typing import Iterator
 from uuid import UUID
 
 import grpc
@@ -174,9 +174,6 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
             context.caller, id__bytes=request.id
         )
 
-        if context.caller.is_banned:
-            raise PermissionDenied("caller_banned")
-
         post.publish(anonymous=request.anonymous)
         return empty_pb2.Empty()
 
@@ -333,7 +330,7 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
         request_iterator: Iterator[pagination_pb2.Page],
         context: grpc.ServicerContext,
     ) -> Iterator[comment_pb2.Comments]:
-        def on_items(comments: List[Comment]):
+        def on_items(comments: list[Comment]):
             comments = sorted(comments, key=lambda c: c.date_created)
 
             if len(comments) > 0:
@@ -360,14 +357,8 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
             context.caller, id__bytes=request.post_id
         )
 
-        if (
-            context.caller.is_banned
-            or context.caller.id
-            in post.author.blocked_users.values_list("id", flat=True)
-        ):
-            raise PermissionDenied(
-                "caller_banned" if context.caller.is_banned else "caller_blocked"
-            )
+        if context.caller.id in post.author.blocked_users.values_list("id", flat=True):
+            raise PermissionDenied("caller_blocked")
 
         comment = Comment.objects.create(
             post=post, author=context.caller, text=request.text
