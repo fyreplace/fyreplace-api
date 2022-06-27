@@ -5,7 +5,7 @@
     <mj-section padding="0">
       <mj-column padding="0">
         <mj-include path="./_logo.mjml" />
-        <mj-text mj-class="text" padding-bottom="20px">You can connect to your account by clicking on the button below:</mj-text>
+        <mj-text mj-class="text" padding-bottom="20px">You can connect to your account by clicking on the button below, or by scanning the QR code:</mj-text>
         <mj-button mj-class="text" href="{{ link }}" rel="noopener noreferrer" padding-bottom="20px">Connect</mj-button>
         <mj-include path="./_qr_code.mjml" />
         <mj-include path="./_link_end_notice.mjml" />
