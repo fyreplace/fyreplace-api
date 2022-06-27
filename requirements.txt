@@ -673,6 +673,9 @@ pytz==2022.1 \
     # via
     #   celery
     #   django-timezone-field
+qrcode==7.3.1 \
+    --hash=sha256:375a6ff240ca9bd41adc070428b5dfc1dcfbb0f2507f1ac848f6cded38956578
+    # via -r requirements.in
 redis==4.3.3 \
     --hash=sha256:2f7a57cf4af15cd543c4394bcbe2b9148db2606a37edba755368836e3a1d053e \
     --hash=sha256:f57f8df5d238a8ecf92f499b6b21467bfee6c13d89953c27edf1e2bc673622e7

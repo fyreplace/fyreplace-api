@@ -1,0 +1,1 @@
+<mj-image width="300px" src="data:image/png;base64,{{ link_qr_data }}" padding-bottom="20px" />

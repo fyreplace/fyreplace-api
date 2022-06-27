@@ -26,6 +26,7 @@ pyjwt
 python-magic
 email-validator
 requests
+qrcode
 
 # Configuration injection
 python-dotenv

@@ -1,10 +1,10 @@
 <mjml>
-  <mj-include path="./attributes.mjml" />
+  <mj-include path="./_attributes.mjml" />
   <mj-body>
     <!-- {% load static %} -->
     <mj-section padding="0">
       <mj-column padding="0">
-        <mj-include path="./logo.mjml" />
+        <mj-include path="./_logo.mjml" />
         <mj-text mj-class="text" padding-bottom="40px">Due to your recent activity, you have been banned {% if date_ban_end %}until this date: {{ date_ban_end | date:"SHORT_DATE_FORMAT" }}{% else %}indefinitely.{% endif %}</mj-text>
       </mj-column>
     </mj-section>
