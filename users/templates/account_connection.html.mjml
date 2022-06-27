@@ -1,13 +1,14 @@
 <mjml>
-  <mj-include path="./attributes.mjml" />
+  <mj-include path="./_attributes.mjml" />
   <mj-body>
     <!-- {% load static %} -->
     <mj-section padding="0">
       <mj-column padding="0">
-        <mj-include path="./logo.mjml" />
+        <mj-include path="./_logo.mjml" />
         <mj-text mj-class="text" padding-bottom="20px">You can connect to your account by clicking on the button below:</mj-text>
         <mj-button mj-class="text" href="{{ link }}" rel="noopener noreferrer" padding-bottom="20px">Connect</mj-button>
-        <mj-text mj-class="text" padding-bottom="40px">This link will expire in 24 hours.</mj-text>
+        <mj-include path="./_qr_code.mjml" />
+        <mj-include path="./_link_end_notice.mjml" />
       </mj-column>
     </mj-section>
   </mj-body>

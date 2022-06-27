@@ -13,7 +13,6 @@ class Command(BaseCommand):
         management_dir = dirname(dirname(__file__))
         project_dir = dirname(dirname(management_dir))
         os.chdir(project_dir)
-        requirements = join(project_dir, "requirements.in")
         args = [
             "python",
             "-m",
@@ -21,7 +20,6 @@ class Command(BaseCommand):
             "compile",
             "--generate-hashes",
             "--quiet",
-            requirements,
         ]
 
         if kwargs["upgrade"]:

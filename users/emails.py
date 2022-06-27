@@ -1,6 +1,9 @@
+import io
+from base64 import b64encode
 from datetime import datetime
 from typing import Callable
 
+import qrcode
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
@@ -14,6 +17,14 @@ def deep_link(method: Callable) -> str:
     return f"https://{settings.EMAIL_LINKS_DOMAIN}/{method.__qualname__}"
 
 
+def qr_data(link: str) -> str:
+    code = qrcode.make(link)
+    data = io.BytesIO()
+    code.save(data)
+    data.seek(0)
+    return b64encode(data.read()).decode("ascii")
+
+
 class BaseUserEmail(Email):
     @property
     def recipients(self) -> list[str]:
@@ -22,7 +33,11 @@ class BaseUserEmail(Email):
     @property
     def context(self) -> dict:
         link = f"{deep_link(self.method)}#{self.token}"
-        return {"app_name": settings.PRETTY_APP_NAME, "link": link}
+        return {
+            "app_name": settings.PRETTY_APP_NAME,
+            "link": link,
+            "link_qr_data": qr_data(link),
+        }
 
     @property
     def payload_extras(self) -> dict:
