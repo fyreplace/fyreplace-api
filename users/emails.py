@@ -13,8 +13,10 @@ from core.emails import Email
 from protos import user_pb2_grpc
 
 
-def deep_link(method: Callable) -> str:
-    return f"https://{settings.EMAIL_LINKS_DOMAIN}/{method.__qualname__}"
+def deep_link(method: Callable, http: bool = True) -> str:
+    scheme = "https" if http else settings.APP_NAME
+    host = settings.EMAIL_LINKS_DOMAIN if http else ""
+    return f"{scheme}://{host}/{method.__qualname__}"
 
 
 def qr_data(link: str) -> str:
@@ -32,11 +34,12 @@ class BaseUserEmail(Email):
 
     @property
     def context(self) -> dict:
-        link = f"{deep_link(self.method)}#{self.token}"
+        http_link = f"{deep_link(self.method)}#{self.token}"
+        app_link = f"{deep_link(self.method, http=False)}#{self.token}"
         return {
             "app_name": settings.PRETTY_APP_NAME,
-            "link": link,
-            "link_qr_data": qr_data(link),
+            "link": http_link,
+            "link_qr_data": qr_data(app_link),
         }
 
     @property
