@@ -15,7 +15,8 @@ from protos import user_pb2_grpc
 
 def deep_link(method: Callable, http: bool = True) -> str:
     scheme = "https" if http else settings.APP_NAME
-    return f"{scheme}://{settings.EMAIL_LINKS_DOMAIN}/{method.__qualname__}"
+    host = settings.EMAIL_LINKS_DOMAIN if http else ""
+    return f"{scheme}://{host}/{method.__qualname__}"
 
 
 def qr_data(link: str) -> str:
