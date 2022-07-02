@@ -234,14 +234,10 @@ ANYMAIL = {
     "MAILGUN_API_URL": os.getenv("MAILGUN_API_URL"),
     "MAILGUN_API_KEY": os.getenv("MAILGUN_API_KEY"),
     "MAILGUN_WEBHOOK_SIGNING_KEY": os.getenv("MAILGUN_WEBHOOK_SIGNING_KEY"),
-    "MAILJET_API_KEY": os.getenv("MAILJET_API_KEY"),
-    "MAILJET_SECRET_KEY": os.getenv("MAILJET_SECRET_KEY"),
 }
 
 if ANYMAIL["MAILGUN_API_KEY"]:
     EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
-elif ANYMAIL["MAILJET_API_KEY"]:
-    EMAIL_BACKEND = "anymail.backends.mailjet.EmailBackend"
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 

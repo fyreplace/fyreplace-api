@@ -3,7 +3,7 @@ django[argon2]
 django-stubs
 django-celery-beat
 django-storages[boto3]
-django-anymail[mailgun,mailjet]
+django-anymail[mailgun]
 django-health-check
 django-extensions
 pillow
