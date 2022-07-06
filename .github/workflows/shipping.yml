@@ -163,8 +163,6 @@ jobs:
           echo "S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY }}" >> secrets.properties
           echo "MAILGUN_API_KEY=${{ secrets.MAILGUN_API_KEY }}" >> secrets.properties
           echo "MAILGUN_WEBHOOK_SIGNING_KEY=${{ secrets.MAILGUN_WEBHOOK_SIGNING_KEY }}" >> secrets.properties
-          echo "MAILJET_API_KEY=${{ secrets.MAILJET_API_KEY }}" >> secrets.properties
-          echo "MAILJET_SECRET_KEY=${{ secrets.MAILJET_SECRET_KEY }}" >> secrets.properties
           echo "ROLLBAR_TOKEN=${{ secrets.ROLLBAR_TOKEN }}" >> secrets.properties
           kubectl create secret generic secrets --from-env-file=secrets.properties -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml --namespace=fyreplace apply -f -
 
