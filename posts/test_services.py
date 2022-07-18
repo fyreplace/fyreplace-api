@@ -1175,6 +1175,12 @@ class CommentService_Create(CommentServiceTestCase):
         self.assertEqual(comment.text, self.request.text)
         self.assertIn(self.main_user, self.post.subscribers.all())
 
+    def test_empty(self):
+        self.request.text = ""
+
+        with self.assertRaises(InvalidArgument):
+            self.service.Create(self.request, self.grpc_context)
+
     def test_draft(self):
         self.post.author = self.main_user
         self.post.date_published = None

@@ -359,6 +359,8 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
 
         if context.caller.id in post.author.blocked_users.values_list("id", flat=True):
             raise PermissionDenied("caller_blocked")
+        elif len(request.text) == 0:
+            raise InvalidArgument("comment_empty")
 
         comment = Comment.objects.create(
             post=post, author=context.caller, text=request.text
