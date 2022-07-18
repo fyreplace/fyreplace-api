@@ -88,13 +88,13 @@ black==22.6.0 \
     --hash=sha256:f586c26118bc6e714ec58c09df0157fe2d9ee195c764f630eb0d8e7ccce72e69 \
     --hash=sha256:f6fe02afde060bbeef044af7996f335fbe90b039ccf3f5eb8f16df8b20f77666
     # via -r requirements.in
-boto3==1.24.23 \
-    --hash=sha256:25d0e3bce0d8bb79d15ff5018af5867bbaef25e0aa20d21a1d616e8c754127c7 \
-    --hash=sha256:5d3b8c5b84f38f9c24dd4330f36a796a2dedc8289c427e830e939ba6e7a41ccc
+boto3==1.24.31 \
+    --hash=sha256:d4685e2fe2c436e558a94c7f68f1a6d4a6c7519d2b25a88fdf855d9a928889ad \
+    --hash=sha256:de067346942c6d1730b513783385620519b8b2935f5b0ee2e66d565ffb57ce12
     # via django-storages
-botocore==1.27.23 \
-    --hash=sha256:2536f1c416b7a3e27cb012b9fad052cd991eb7d17bbaa4ca1702a4ee0d964014 \
-    --hash=sha256:4581f80de78147cb32333aae1bd8d0842360a85138221dd5c79b48eab72d5f99
+botocore==1.27.31 \
+    --hash=sha256:b0cc79fb5a37a0e2b6befe86efd027b92101d819f1fdc56cfff39f2eb239f232 \
+    --hash=sha256:cbe87fa791aa4e8c3da64b1ccbaca7f809f6d1fba8d0b1855de2989815ef8736
     # via
     #   boto3
     #   s3transfer
@@ -227,9 +227,9 @@ django-celery-beat==2.3.0 \
     --hash=sha256:ba24f86ed956ba0ee2b43237a49303ebf5aa7e0fb0ccb7e0542b7e31a463dcba \
     --hash=sha256:ff694e1d30f84de3d2b78822c90005c6c7c1462768e845ae162af71a6a46f1eb
     # via -r requirements.in
-django-extensions==3.1.5 \
-    --hash=sha256:28e1e1bf49f0e00307ba574d645b0af3564c981a6dfc87209d48cb98f77d0b1a \
-    --hash=sha256:9238b9e016bb0009d621e05cf56ea8ce5cce9b32e91ad2026996a7377ca28069
+django-extensions==3.2.0 \
+    --hash=sha256:4c234a7236e9e41c17d9036f6dae7a3a9b212527105b8a0d24b2459b267825f0 \
+    --hash=sha256:7dc7cd1da50d83b76447a58f5d7e5c8e6cd83f21e9b7e5f97e6b644f4d4e21a6
     # via -r requirements.in
 django-health-check==3.16.5 \
     --hash=sha256:1edfd49293ccebbce29f9da609c407f307aee240ab799ab4201031341ae78c0f \
@@ -758,9 +758,9 @@ types-pytz==2022.1.1 \
     --hash=sha256:4e7add70886dc2ee6ee7535c8184a26eeb0ac9dbafae9962cb882d74b9f67330 \
     --hash=sha256:581467742f32f15fff1098698b11fd511057a2a8a7568d33b604083f2b03c24f
     # via django-stubs
-types-pyyaml==6.0.9 \
-    --hash=sha256:33ae75c84b8f61fddf0c63e9c7e557db9db1694ad3c2ee8628ec5efebb5a5e9b \
-    --hash=sha256:b738e9ef120da0af8c235ba49d3b72510f56ef9bcc308fc8e7357100ff122284
+types-pyyaml==6.0.10 \
+    --hash=sha256:18985a382c93fb12187daae6f57ce7787e3651cd590291c907d3e757919689ff \
+    --hash=sha256:a1676caeb098096833fe2f1472e7ea8debf7663222964fa90545cfaafebf3385
     # via django-stubs
 typing-extensions==4.3.0 \
     --hash=sha256:25642c956049920a5aa49edcdd6ab1e06d7e5d467fc00e0506c44ac86fbfca02 \
@@ -773,9 +773,9 @@ tzdata==2022.1 \
     --hash=sha256:238e70234214138ed7b4e8a0fab0e5e13872edab3be586ab8198c407620e2ab9 \
     --hash=sha256:8b536a8ec63dc0751342b3984193a3118f8fca2afe25752bb9b7fffd398552d3
     # via django-celery-beat
-urllib3==1.26.9 \
-    --hash=sha256:44ece4d53fb1706f667c9bd1c648f5469a2ec925fcf3a776667042d645472c14 \
-    --hash=sha256:aabaf16477806a5e1dd19aa41f8c2b7950dd3c746362d7e3223dbe6de6ac448e
+urllib3==1.26.10 \
+    --hash=sha256:8298d6d56d39be0e3bc13c1c97d133f9b45d797169a0e11cdd0e0489d786f7ec \
+    --hash=sha256:879ba4d1e89654d9769ce13121e0f94310ea32e8d2f8cf587b77c08bbcdb30d6
     # via
     #   botocore
     #   requests
