@@ -9,10 +9,7 @@ class BytesLookup(Exact):
     lookup_name = "bytes"
 
     def __init__(self, lhs: Any, rhs: Any):
-        if isinstance(rhs, bytes):
-            rhs = make_uuid(data=rhs) if len(rhs) > 0 else ""
-
-        super().__init__(lhs, rhs)
+        super().__init__(lhs, make_uuid(data=rhs) if isinstance(rhs, bytes) else rhs)
 
     def get_rhs_op(self, connection: Any, rhs: Any) -> Any:
         self.lookup_name = super().lookup_name
