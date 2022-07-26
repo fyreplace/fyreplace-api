@@ -268,6 +268,7 @@ class PostService_ListArchive(PostPaginationTestCase):
     main_pagination_field = "date_published"
 
     def _create_test_posts(self) -> list[Post]:
+        self._create_posts(author=self.main_user, count=5, published=False)
         posts = self._create_posts(author=self.other_user, count=10, published=True)
         posts += self._create_posts(author=self.main_user, count=8, published=True)
         posts += self._create_posts(author=self.other_user, count=10, published=True)
@@ -319,6 +320,7 @@ class PostService_ListOwnPosts(PostPaginationTestCase):
     main_pagination_field = "date_published"
 
     def _create_test_posts(self) -> list[Post]:
+        self._create_posts(author=self.main_user, count=5, published=False)
         the_posts = self._create_posts(author=self.main_user, count=14, published=True)
         self._create_posts(author=self.other_user, count=8, published=True)
         the_posts += self._create_posts(author=self.main_user, count=10, published=True)
@@ -360,6 +362,7 @@ class PostService_ListOwnPosts(PostPaginationTestCase):
 
 class PostService_ListDrafts(PostPaginationTestCase):
     def _create_test_posts(self) -> list[Post]:
+        self._create_posts(author=self.main_user, count=5, published=True)
         the_posts = self._create_posts(author=self.main_user, count=14, published=False)
         self._create_posts(author=self.other_user, count=8, published=False)
         the_posts += self._create_posts(
