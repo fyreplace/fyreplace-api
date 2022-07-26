@@ -117,7 +117,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         request_iterator: Iterator[pagination_pb2.Page],
         context: grpc.ServicerContext,
     ):
-        posts = Post.existing_objects.filter(author=context.caller)
+        posts = Post.published_objects.filter(author=context.caller)
         return self.paginate(
             request_iterator,
             bundle_class=post_pb2.Posts,
