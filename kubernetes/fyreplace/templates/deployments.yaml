@@ -6,9 +6,6 @@ metadata:
   labels:
     {{- include "fyreplace.labels" . | nindent 4 }}
     app: {{ include "fyreplace.fullname" . }}
-  annotations:
-    configmap.reloader.stakater.com/reload: "configuration"
-    secret.reloader.stakater.com/reload: "secrets,api-fyreplace-app-tls"
 spec:
   selector:
     matchLabels:
