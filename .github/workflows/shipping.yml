@@ -166,11 +166,11 @@ jobs:
           echo "ROLLBAR_TOKEN=${{ secrets.ROLLBAR_TOKEN }}" >> secrets.properties
           kubectl create secret generic secrets --from-env-file=secrets.properties -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml --namespace=fyreplace apply -f -
 
-      - name: Create DigitalOcean token
+      - name: Create Cloudflare token
         working-directory: kubernetes
         run: |
-          echo "token=${{ secrets.DO_API_TOKEN }}" >> digitalocean.properties
-          kubectl create secret generic digitalocean --from-env-file=digitalocean.properties -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml --namespace=fyreplace apply -f -
+          echo "token=${{ secrets.CLOUDFLARE_API_TOKEN }}" >> cloudflare.properties
+          kubectl create secret generic cloudflare --from-env-file=cloudflare.properties -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml --namespace=fyreplace apply -f -
 
       - name: Deploy
         working-directory: kubernetes
