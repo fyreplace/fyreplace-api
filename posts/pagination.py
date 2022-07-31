@@ -8,19 +8,15 @@ from .models import Post
 
 class PostsPaginationAdapter(PaginationAdapter):
     def make_message(self, item: Post, **overrides) -> post_pb2.Post:
+        if item.is_anonymous:
+            overrides["author"] = None
+
         message: post_pb2.Post = super().make_message(item, **overrides)
         message.is_subscribed = item.subscribers.filter(
             id=self.context.caller.id
         ).exists()
+
         return message
-
-
-class AnonymousPostsPaginationAdapter(PostsPaginationAdapter):
-    def make_message(self, item: Post, **overrides) -> post_pb2.Post:
-        if item.is_anonymous:
-            overrides["author"] = None
-
-        return super().make_message(item, **overrides)
 
 
 class CreationDatePaginationAdapter(PaginationAdapter):
@@ -34,7 +30,7 @@ class PublicationDatePaginationAdapter(PaginationAdapter):
 
 
 class ArchivePaginationAdapter(
-    AnonymousPostsPaginationAdapter, PublicationDatePaginationAdapter
+    PostsPaginationAdapter, PublicationDatePaginationAdapter
 ):
     pass
 
