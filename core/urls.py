@@ -1,9 +1,10 @@
-import health_check.urls
 from django.conf import settings
 from django.conf.urls.static import static
-from django.urls import include, path
+from django.urls import path
 
-urlpatterns = [path("health/", include(health_check.urls))]
+from .views import health
+
+urlpatterns = [path("health/", health)]
 
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
