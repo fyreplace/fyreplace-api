@@ -622,8 +622,14 @@ class PostService_UpdateSubscription(PostServiceTestCase):
 
     def test(self):
         self.request.subscribed = True
+        comment = Comment.objects.create(
+            post=self.post, author=self.other_user, text="Text"
+        )
         self.service.UpdateSubscription(self.request, self.grpc_context)
+        Comment.objects.create(post=self.post, author=self.other_user, text="Text")
         self.assertIn(self.main_user, self.post.subscribers.all())
+        subscription = Subscription.objects.get(user=self.main_user, post=self.post)
+        self.assertEqual(subscription.last_comment_seen, comment)
 
     def test_unsubscribe(self):
         self.request.subscribed = False

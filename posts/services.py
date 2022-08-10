@@ -206,7 +206,11 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
             raise PermissionDenied("post_not_published")
 
         if request.subscribed:
-            post.subscribers.add(context.caller)
+            Subscription.objects.get_or_create(
+                user=context.caller,
+                post=post,
+                defaults={"last_comment_seen": post.comments.last()},
+            )
         else:
             post.subscribers.remove(context.caller)
 
