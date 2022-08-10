@@ -383,7 +383,7 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
         comment.delete()
         return empty_pb2.Empty()
 
-    def Aknowledge(
+    def Acknowledge(
         self, request: id_pb2.Id, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         comment = Comment.objects.get(id__bytes=request.id)

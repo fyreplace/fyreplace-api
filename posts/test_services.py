@@ -1242,7 +1242,7 @@ class CommentService_Delete(CommentServiceTestCase):
             self.service.Delete(self.request, self.grpc_context)
 
 
-class CommentService_Aknowledge(CommentServiceTestCase):
+class CommentService_Acknowledge(CommentServiceTestCase):
     def setUp(self):
         super().setUp()
         self.post.subscribers.add(self.main_user)
@@ -1251,7 +1251,7 @@ class CommentService_Aknowledge(CommentServiceTestCase):
         self.request = id_pb2.Id(id=self.comment.id.bytes)
 
     def test(self):
-        self.service.Aknowledge(self.request, self.grpc_context)
+        self.service.Acknowledge(self.request, self.grpc_context)
         self.assertEqual(
             Subscription.objects.get(
                 user=self.main_user, post=self.post
@@ -1260,9 +1260,9 @@ class CommentService_Aknowledge(CommentServiceTestCase):
         )
 
     def test_regress(self):
-        self.service.Aknowledge(self.request, self.grpc_context)
+        self.service.Acknowledge(self.request, self.grpc_context)
         self.request.id = self.comments[3].id.bytes
-        self.service.Aknowledge(self.request, self.grpc_context)
+        self.service.Acknowledge(self.request, self.grpc_context)
         self.assertEqual(
             Subscription.objects.get(
                 user=self.main_user, post=self.post
