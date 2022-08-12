@@ -16,7 +16,7 @@ from notifications.tests import BaseNotificationTestCase
 from protos import comment_pb2, id_pb2, pagination_pb2, post_pb2
 from users.tests import AuthenticatedTestCase
 
-from .models import Chapter, Comment, Post
+from .models import Chapter, Comment, Post, Subscription
 from .services import ChapterService, CommentService, PostService
 
 
@@ -622,8 +622,14 @@ class PostService_UpdateSubscription(PostServiceTestCase):
 
     def test(self):
         self.request.subscribed = True
+        comment = Comment.objects.create(
+            post=self.post, author=self.other_user, text="Text"
+        )
         self.service.UpdateSubscription(self.request, self.grpc_context)
+        Comment.objects.create(post=self.post, author=self.other_user, text="Text")
         self.assertIn(self.main_user, self.post.subscribers.all())
+        subscription = Subscription.objects.get(user=self.main_user, post=self.post)
+        self.assertEqual(subscription.last_comment_seen, comment)
 
     def test_unsubscribe(self):
         self.request.subscribed = False
@@ -1091,10 +1097,6 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
 
     def test(self):
         self.run_test(self.check, offset=True)
-        subscription = self.post.subscriptions.get(user=self.main_user)
-        self.assertEqual(
-            subscription.last_comment_seen, self.post.comments.latest("date_created")
-        )
 
     def test_previous(self):
         self.run_test_previous(self.check, offset=True)
@@ -1177,6 +1179,8 @@ class CommentService_Create(CommentServiceTestCase):
         self.assertEqual(comment_id.id, comment.id.bytes)
         self.assertEqual(comment.text, self.request.text)
         self.assertIn(self.main_user, self.post.subscribers.all())
+        subscription = Subscription.objects.get(user=self.main_user, post=self.post)
+        self.assertEqual(subscription.last_comment_seen, comment)
 
     def test_empty(self):
         self.request.text = ""
@@ -1236,6 +1240,35 @@ class CommentService_Delete(CommentServiceTestCase):
 
         with self.assertRaises(PermissionDenied):
             self.service.Delete(self.request, self.grpc_context)
+
+
+class CommentService_Acknowledge(CommentServiceTestCase):
+    def setUp(self):
+        super().setUp()
+        self.post.subscribers.add(self.main_user)
+        self.comments = self._create_comments(author=self.other_user, count=10)
+        self.comment = self.comments[5]
+        self.request = id_pb2.Id(id=self.comment.id.bytes)
+
+    def test(self):
+        self.service.Acknowledge(self.request, self.grpc_context)
+        self.assertEqual(
+            Subscription.objects.get(
+                user=self.main_user, post=self.post
+            ).last_comment_seen,
+            self.comment,
+        )
+
+    def test_regress(self):
+        self.service.Acknowledge(self.request, self.grpc_context)
+        self.request.id = self.comments[3].id.bytes
+        self.service.Acknowledge(self.request, self.grpc_context)
+        self.assertEqual(
+            Subscription.objects.get(
+                user=self.main_user, post=self.post
+            ).last_comment_seen,
+            self.comment,
+        )
 
 
 class CommentService_Report(CommentServiceTestCase):

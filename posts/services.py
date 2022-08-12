@@ -4,7 +4,7 @@ from uuid import UUID
 import grpc
 from django.contrib.contenttypes.models import ContentType
 from django.db.transaction import atomic
-from google.protobuf import empty_pb2, timestamp_pb2
+from google.protobuf import empty_pb2
 from grpc_interceptor.exceptions import InvalidArgument, PermissionDenied
 
 from core.authentication import no_auth
@@ -153,10 +153,14 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
             overrides["is_subscribed"] = True
 
         if subscription := post.subscriptions.filter(user=context.caller).first():
-            date_container = subscription.last_comment_seen or post
-            overrides["date_seen"] = timestamp_pb2.Timestamp(
-                seconds=round(date_container.date_created.timestamp())
-            )
+            if comment := subscription.last_comment_seen:
+                overrides["comments_read"] = (
+                    Comment.objects.filter(
+                        post=post, date_created__lte=comment.date_created
+                    )
+                    .exclude(date_created=comment.date_created, id__gt=comment.id)
+                    .count()
+                )
 
         return post.to_message(context=context, **overrides)
 
@@ -202,7 +206,11 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
             raise PermissionDenied("post_not_published")
 
         if request.subscribed:
-            post.subscribers.add(context.caller)
+            Subscription.objects.get_or_create(
+                user=context.caller,
+                post=post,
+                defaults={"last_comment_seen": post.comments.last()},
+            )
         else:
             post.subscribers.remove(context.caller)
 
@@ -332,13 +340,6 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
     ) -> Iterator[comment_pb2.Comments]:
         def on_items(comments: list[Comment]):
             comments = sorted(comments, key=lambda c: c.date_created)
-
-            if len(comments) > 0:
-                last_comment = comments[-1]
-                Subscription.objects.filter(
-                    user=context.caller, post_id=last_comment.post_id
-                ).update(last_comment_seen=last_comment)
-
             pk_set = set(c.id for c in comments)
             fetched.send(sender=Comment, user=context.caller, pk_set=pk_set)
 
@@ -365,6 +366,9 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
         comment = Comment.objects.create(
             post=post, author=context.caller, text=request.text
         )
+        Subscription.objects.filter(user=context.caller, post=post).update(
+            last_comment_seen=comment
+        )
         return id_pb2.Id(id=comment.id.bytes)
 
     @atomic
@@ -377,6 +381,21 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
             raise PermissionDenied("invalid_comment_author")
 
         comment.delete()
+        return empty_pb2.Empty()
+
+    def Acknowledge(
+        self, request: id_pb2.Id, context: grpc.ServicerContext
+    ) -> empty_pb2.Empty:
+        comment = Comment.objects.get(id__bytes=request.id)
+        Subscription.objects.filter(
+            user=context.caller,
+            post_id=comment.post_id,
+        ).exclude(last_comment_seen__date_created__gt=comment.date_created,).exclude(
+            last_comment_seen__date_created=comment.date_created,
+            last_comment_seen_id__lt=comment.id,
+        ).update(
+            last_comment_seen=comment
+        )
         return empty_pb2.Empty()
 
     def Report(
