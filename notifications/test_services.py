@@ -9,7 +9,7 @@ from posts.models import Comment
 from posts.test_services import CommentServiceTestCase, PostServiceTestCase
 from protos import notification_pb2, pagination_pb2
 
-from .models import CountUnit, Notification
+from .models import Flag, Notification
 from .services import NotificationService
 
 
@@ -53,21 +53,14 @@ class NotificationService_Count(NotificationServiceTestCase):
         self.main_user.save()
 
         for post in self.other_posts:
-            notification = Notification.objects.create(target=post)
-            CountUnit.objects.create(
-                notification=notification, count_item=self.other_user
-            )
+            Flag.objects.create(issuer=self.main_user, target=post)
 
         count = self.service.Count(self.request, self.grpc_context)
         self.assertEqual(count.count, len(self.other_posts))
 
     def test_flags_not_staff(self):
-
         for post in self.other_posts:
-            notification = Notification.objects.create(target=post)
-            CountUnit.objects.create(
-                notification=notification, count_item=self.other_user
-            )
+            Flag.objects.create(issuer=self.main_user, target=post)
 
         count = self.service.Count(self.request, self.grpc_context)
         self.assertEqual(count.count, 0)
@@ -127,17 +120,16 @@ class NotificationService_List(NotificationServiceTestCase, PaginationTestCase):
     def _create_test_notifications(self) -> List[Notification]:
         self._create_comments(author=self.other_user, count=14)
         self._create_comments(author=self.main_user, count=4)
-        self._create_comments(author=self.other_user, count=10)
 
         posts = self._create_posts(author=self.main_user, count=14, published=True)
         posts += self._create_posts(author=self.other_user, count=4, published=True)
         posts += self._create_posts(author=self.main_user, count=10, published=True)
 
         for i, post in enumerate(posts):
-            for _ in range(i):
+            for _ in range(i + 1):
                 Comment.objects.create(post=post, author=self.other_user, text="Text")
 
-        notifications = Notification.objects.filter(recipient=self.main_user)
+        notifications = Notification.objects.filter(subscription__user=self.main_user)
         adapter = NotificationPaginationAdapter(self.grpc_context, notifications)
         return list(notifications.order_by(*adapter.get_cursor_fields()))
 
@@ -152,6 +144,6 @@ class NotificationService_Clear(NotificationServiceTestCase):
 
         self.service.Clear(self.request, self.grpc_context)
         self.assertEqual(
-            Notification.objects.filter(recipient=self.main_user).count(),
+            Notification.objects.filter(subscription__user=self.main_user).count(),
             0,
         )

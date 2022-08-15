@@ -1,10 +1,11 @@
 from typing import Iterator
 
 import grpc
-from django.db.models import Sum
+from django.db.models import F, OuterRef, Sum
 from google.protobuf import empty_pb2
 
 from core.pagination import PaginatorMixin
+from posts.models import Comment, Subscription
 from protos import notification_pb2, notification_pb2_grpc, pagination_pb2
 
 from .models import Notification
@@ -40,5 +41,16 @@ class NotificationService(
     def Clear(
         self, request: empty_pb2.Empty, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
-        Notification.objects.filter(recipient=context.caller).delete()
+        Subscription.objects.filter(user=context.caller).annotate(
+            last_comment_id=(
+                Comment.objects.filter(post_id=OuterRef("post_id"))
+                .order_by("-date_created", "-id")
+                .values("id")[:1]
+            )
+        ).update(last_comment_seen_id=F("last_comment_id"))
+
+        Notification.objects.filter(
+            subscription__in=Subscription.objects.filter(user=context.caller)
+        ).delete()
+
         return empty_pb2.Empty()

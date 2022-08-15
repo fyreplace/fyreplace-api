@@ -214,3 +214,35 @@ class Vote_create(PublishedPostTestCase):
 
         with self.assertRaises(IntegrityError):
             Vote.objects.create(user=self.other_user, post=self.post, spread=True)
+
+
+class Comment_count(PublishedPostTestCase):
+    def setUp(self):
+        super().setUp()
+        self.total = 10
+
+    def test_before(self):
+        comments = []
+
+        for i in range(self.total):
+            comments.append(
+                Comment.objects.create(
+                    post=self.post, author=self.other_user, text="Text"
+                )
+            )
+
+        for i in range(self.total):
+            self.assertEqual(comments[i].count(after=False), i)
+
+    def test_after(self):
+        comments = []
+
+        for i in range(self.total):
+            comments.append(
+                Comment.objects.create(
+                    post=self.post, author=self.other_user, text="Text"
+                )
+            )
+
+        for i in range(self.total):
+            self.assertEqual(comments[i].count(after=True), self.total - 1 - i)

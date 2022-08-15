@@ -11,7 +11,7 @@ from google.protobuf.message import Message
 from grpc_interceptor.exceptions import InvalidArgument, PermissionDenied
 
 from core.tests import ImageTestCaseMixin, PaginationTestCase, get_asset
-from notifications.models import CountUnit, Notification
+from notifications.models import Flag, Notification
 from notifications.tests import BaseNotificationTestCase
 from protos import comment_pb2, id_pb2, pagination_pb2, post_pb2
 from users.tests import AuthenticatedTestCase
@@ -747,8 +747,7 @@ class PostService_Absolve(PostServiceTestCase):
         super().setUp()
         posts = self._create_posts(author=self.other_user, count=1, published=True)
         self.post = posts[0]
-        flag = Notification.flag_objects.create(target=self.post)
-        CountUnit.objects.create(notification=flag, count_item=self.main_user)
+        Flag.objects.create(issuer=self.main_user, target=self.post)
         self.main_user.is_staff = True
         self.main_user.save()
         self.request = id_pb2.Id(id=self.post.id.bytes)
@@ -1138,6 +1137,7 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
 
     def check(self, item: comment_pb2.Comment, position: int):
         self.assertEqual(item.id, self.comments[position].id.bytes)
+        self.assertEqual(item.position, 0)
         self.assertEqual(item.text, self.comments[position].text)
         self.assertEqual(item.author.id, self.comments[position].author.id.bytes)
 
@@ -1298,23 +1298,19 @@ class CommentService_Acknowledge(CommentServiceTestCase):
 
     def test(self):
         self.service.Acknowledge(self.request, self.grpc_context)
-        self.assertEqual(
-            Subscription.objects.get(
-                user=self.main_user, post=self.post
-            ).last_comment_seen,
-            self.comment,
-        )
+        subscription = Subscription.objects.get(user=self.main_user, post=self.post)
+        self.assertEqual(subscription.last_comment_seen, self.comment)
+        notification = Notification.objects.get(subscription=subscription)
+        self.assertEqual(notification.count, 4)
 
     def test_regress(self):
         self.service.Acknowledge(self.request, self.grpc_context)
         self.request.id = self.comments[3].id.bytes
         self.service.Acknowledge(self.request, self.grpc_context)
-        self.assertEqual(
-            Subscription.objects.get(
-                user=self.main_user, post=self.post
-            ).last_comment_seen,
-            self.comment,
-        )
+        subscription = Subscription.objects.get(user=self.main_user, post=self.post)
+        self.assertEqual(subscription.last_comment_seen, self.comment)
+        notification = Notification.objects.get(subscription=subscription)
+        self.assertEqual(notification.count, 4)
 
 
 class CommentService_Report(CommentServiceTestCase):
@@ -1351,8 +1347,7 @@ class CommentService_Absolve(CommentServiceTestCase):
         super().setUp()
         comments = self._create_comments(author=self.other_user, count=1)
         self.comment = comments[0]
-        flag = Notification.flag_objects.create(target=self.comment)
-        CountUnit.objects.create(notification=flag, count_item=self.main_user)
+        Flag.objects.create(issuer=self.main_user, target=self.comment)
         self.main_user.is_staff = True
         self.main_user.save()
         self.request = id_pb2.Id(id=self.comment.id.bytes)
