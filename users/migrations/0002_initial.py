@@ -107,7 +107,9 @@ class Migration(migrations.Migration):
                         blank=True,
                         null=True,
                         upload_to="avatars",
-                        validators=[core.validators.FileSizeValidator(max_megabytes=1)],
+                        validators=[
+                            core.validators.FileSizeValidator(max_bytes=1024 * 1024)
+                        ],
                     ),
                 ),
                 (

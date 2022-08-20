@@ -67,7 +67,7 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
     connection_token = models.UUIDField(null=True, blank=True)
     avatar = models.ImageField(
         upload_to="avatars",
-        validators=[FileSizeValidator(max_megabytes=1)],
+        validators=[FileSizeValidator(max_bytes=1024 * 1024)],
         null=True,
         blank=True,
     )

@@ -306,7 +306,7 @@ class Migration(migrations.Migration):
                         null=True,
                         upload_to="chapters",
                         validators=[
-                            core.validators.FileSizeValidator(max_megabytes=0.5)
+                            core.validators.FileSizeValidator(max_bytes=512 * 1024)
                         ],
                         width_field="width",
                     ),
