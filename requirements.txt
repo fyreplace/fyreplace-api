@@ -214,7 +214,6 @@ django[argon2]==4.0.7 \
     #   -r requirements.in
     #   django-anymail
     #   django-celery-beat
-    #   django-extensions
     #   django-storages
     #   django-stubs
     #   django-stubs-ext
@@ -225,10 +224,6 @@ django-anymail[mailgun]==8.6 \
 django-celery-beat==2.3.0 \
     --hash=sha256:ba24f86ed956ba0ee2b43237a49303ebf5aa7e0fb0ccb7e0542b7e31a463dcba \
     --hash=sha256:ff694e1d30f84de3d2b78822c90005c6c7c1462768e845ae162af71a6a46f1eb
-    # via -r requirements.in
-django-extensions==3.2.0 \
-    --hash=sha256:4c234a7236e9e41c17d9036f6dae7a3a9b212527105b8a0d24b2459b267825f0 \
-    --hash=sha256:7dc7cd1da50d83b76447a58f5d7e5c8e6cd83f21e9b7e5f97e6b644f4d4e21a6
     # via -r requirements.in
 django-storages[boto3]==1.13.1 \
     --hash=sha256:3540b45618b04be2c867c0982e8d2bd8e34f84dae922267fcebe4691fb93daf0 \
