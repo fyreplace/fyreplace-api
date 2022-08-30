@@ -408,10 +408,10 @@ class PostService_Retrieve(PostServiceTestCase):
     def test(self):
         request = self._get_request(author=self.main_user, published=True)
         post = self.service.Retrieve(request, self.grpc_context)
-        self.assertEqual(post.id, request.id)
+        self.assertEqual(post.id, self.post.id.bytes)
         self.assertFalse(post.is_preview)
         self.assertEqual(post.author.id, self.main_user.id.bytes)
-        chapters = Post.objects.get(id__bytes=request.id).chapters.all()
+        chapters = self.post.chapters.all()
 
         for i, chapter in enumerate(post.chapters):
             self.assertEqual(chapter.text, chapters[i].text)
@@ -421,18 +421,17 @@ class PostService_Retrieve(PostServiceTestCase):
             author=self.main_user, published=True, anonymous=True
         )
         post = self.service.Retrieve(request, self.grpc_context)
-        self.assertEqual(post.id, request.id)
+        self.assertEqual(post.id, self.post.id.bytes)
         self.assertEqual(post.author.id, self.main_user.id.bytes)
 
     def test_draft(self):
         request = self._get_request(author=self.main_user, published=False)
         post = self.service.Retrieve(request, self.grpc_context)
-        self.assertEqual(post.id, request.id)
+        self.assertEqual(post.id, self.post.id.bytes)
 
     def test_deleted(self):
         request = self._get_request(author=self.main_user, published=True)
-        post = Post.objects.get(id__bytes=request.id)
-        post.delete()
+        self.post.delete()
 
         with self.assertRaises(ObjectDoesNotExist):
             self.service.Retrieve(request, self.grpc_context)
@@ -440,10 +439,10 @@ class PostService_Retrieve(PostServiceTestCase):
     def test_other(self):
         request = self._get_request(author=self.other_user, published=True)
         post = self.service.Retrieve(request, self.grpc_context)
-        self.assertEqual(post.id, request.id)
+        self.assertEqual(post.id, self.post.id.bytes)
         self.assertFalse(post.is_preview)
         self.assertEqual(post.author.id, self.other_user.id.bytes)
-        chapters = Post.objects.get(id__bytes=request.id).chapters.all()
+        chapters = self.post.chapters.all()
 
         for i, chapter in enumerate(post.chapters):
             self.assertEqual(chapter.text, chapters[i].text)
@@ -453,7 +452,7 @@ class PostService_Retrieve(PostServiceTestCase):
             author=self.other_user, published=True, anonymous=True
         )
         post = self.service.Retrieve(request, self.grpc_context)
-        self.assertEqual(post.id, request.id)
+        self.assertEqual(post.id, self.post.id.bytes)
         self.assertEqual(post.author.id, b"")
 
     def test_other_draft(self):
@@ -462,13 +461,60 @@ class PostService_Retrieve(PostServiceTestCase):
         with self.assertRaises(ObjectDoesNotExist):
             self.service.Retrieve(request, self.grpc_context)
 
+    def test_comment(self):
+        request = self._get_comment_request(author=self.main_user, published=True)
+        post = self.service.Retrieve(request, self.grpc_context)
+        self.assertEqual(post.id, self.post.id.bytes)
+        self.assertFalse(post.is_preview)
+        self.assertEqual(post.author.id, self.main_user.id.bytes)
+
+    def test_comment_anonymous(self):
+        request = self._get_comment_request(
+            author=self.main_user, published=True, anonymous=True
+        )
+        post = self.service.Retrieve(request, self.grpc_context)
+        self.assertEqual(post.id, self.post.id.bytes)
+        self.assertEqual(post.author.id, self.main_user.id.bytes)
+
+    def test_comment_deleted(self):
+        request = self._get_comment_request(author=self.main_user, published=True)
+        self.post.delete()
+
+        with self.assertRaises(ObjectDoesNotExist):
+            self.service.Retrieve(request, self.grpc_context)
+
+    def test_comment_other(self):
+        request = self._get_request(author=self.other_user, published=True)
+        post = self.service.Retrieve(request, self.grpc_context)
+        self.assertEqual(post.id, self.post.id.bytes)
+        self.assertFalse(post.is_preview)
+        self.assertEqual(post.author.id, self.other_user.id.bytes)
+
+    def test_comment_other_anonymous(self):
+        request = self._get_request(
+            author=self.other_user, published=True, anonymous=True
+        )
+        post = self.service.Retrieve(request, self.grpc_context)
+        self.assertEqual(post.id, self.post.id.bytes)
+        self.assertEqual(post.author.id, b"")
+
     def _get_request(
         self, author: get_user_model(), published: bool, anonymous: bool = False
     ) -> id_pb2.Id:
         posts = self._create_posts(
             author=author, count=1, published=published, anonymous=anonymous
         )
-        return id_pb2.Id(id=posts[0].id.bytes)
+        self.post = posts[0]
+        return id_pb2.Id(id=self.post.id.bytes)
+
+    def _get_comment_request(
+        self, author: get_user_model(), published: bool, anonymous: bool = False
+    ):
+        self._get_request(author=author, published=published, anonymous=anonymous)
+        self.comment = Comment.objects.create(
+            post=self.post, author=self.other_user, text="Text"
+        )
+        return id_pb2.Id(id=self.comment.id.bytes)
 
 
 class PostService_Create(PostServiceTestCase):

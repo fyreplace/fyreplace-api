@@ -3,6 +3,7 @@ from uuid import UUID
 
 import grpc
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.transaction import atomic
 from google.protobuf import empty_pb2
 from grpc_interceptor.exceptions import InvalidArgument, PermissionDenied
@@ -141,9 +142,16 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
     def Retrieve(
         self, request: id_pb2.Id, context: grpc.ServicerContext
     ) -> post_pb2.Post:
-        post = Post.existing_objects.select_related().get_readable_by(
-            context.caller, id__bytes=request.id
-        )
+        try:
+            post = Post.existing_objects.select_related().get_readable_by(
+                context.caller, id__bytes=request.id
+            )
+        except ObjectDoesNotExist:
+            comment = Comment.objects.get(id__bytes=request.id)
+            post = Post.existing_objects.select_related().get_readable_by(
+                context.caller, id__bytes=comment.post_id
+            )
+
         overrides = {}
 
         if post.is_anonymous and context.caller.id != post.author_id:
