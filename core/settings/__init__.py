@@ -22,7 +22,9 @@ TEST_RUNNER = "core.tests.PytestTestRunner"
 
 IS_TESTING = False
 
-if ROLLBAR_TOKEN := os.getenv("ROLLBAR_TOKEN"):
+ROLLBAR_TOKEN = os.getenv("ROLLBAR_TOKEN")
+
+if ROLLBAR_TOKEN:
     is_dev = str_to_bool(os.getenv("ROLLBAR_DEVELOPMENT", "False"))
     rollbar.init(ROLLBAR_TOKEN, "development" if is_dev else "production")
 
@@ -58,7 +60,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_celery_beat",
-    "django_extensions",
     "anymail",
     "tooling",
     "core",
@@ -177,8 +178,6 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 
 USE_I18N = True
-
-USE_L10N = True
 
 USE_TZ = True
 

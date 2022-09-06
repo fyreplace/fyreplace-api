@@ -5,6 +5,7 @@ from typing import Any, Callable
 
 import grpc
 import rollbar
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
 from django.db.utils import DataError, IntegrityError
 from google.protobuf.message import Message
@@ -105,7 +106,11 @@ class ExceptionInterceptor(ServerInterceptor):
             "context_metadata": context.invocation_metadata(),
             "user_id": str(context.caller.id) if context.caller else None,
         }
-        rollbar.report_exc_info(extra_data=extras, level=level)
+
+        if settings.ROLLBAR_TOKEN:
+            rollbar.report_exc_info(extra_data=extras, level=level)
+        else:
+            print(context.details())
 
 
 class AuthorizationInterceptor(ServerInterceptor):

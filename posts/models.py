@@ -256,7 +256,7 @@ class Chapter(ValidatableModel):
         width_field="width",
         height_field="height",
         upload_to="chapters",
-        validators=[FileSizeValidator(max_megabytes=0.5)],
+        validators=[FileSizeValidator(max_bytes=512 * 1024)],
         null=True,
         blank=True,
     )

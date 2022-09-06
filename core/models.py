@@ -56,7 +56,9 @@ class MessageConvertible:
         return self.convert_value(field, getattr(self, field))
 
     def convert_value(self, field: str, value: Any) -> Any:
-        if isinstance(value, datetime):
+        if isinstance(value, uuid.UUID):
+            return value.bytes
+        elif isinstance(value, datetime):
             return timestamp_pb2.Timestamp(seconds=round(value.timestamp()))
         elif isinstance(value, MessageConvertible):
             return value.to_message(
@@ -83,14 +85,6 @@ class UUIDModel(models.Model, MessageConvertible):
         abstract = True
 
     id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4)
-
-    def get_message_field_values(self, **overrides) -> dict:
-        data = super().get_message_field_values(**overrides)
-
-        if data_id := data.get("id"):
-            data["id"] = data_id.bytes
-
-        return data
 
 
 class TimestampModel(models.Model, MessageConvertible):
