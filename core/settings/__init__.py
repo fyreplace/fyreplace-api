@@ -22,7 +22,9 @@ TEST_RUNNER = "core.tests.PytestTestRunner"
 
 IS_TESTING = False
 
-if ROLLBAR_TOKEN := os.getenv("ROLLBAR_TOKEN"):
+ROLLBAR_TOKEN = os.getenv("ROLLBAR_TOKEN")
+
+if ROLLBAR_TOKEN:
     is_dev = str_to_bool(os.getenv("ROLLBAR_DEVELOPMENT", "False"))
     rollbar.init(ROLLBAR_TOKEN, "development" if is_dev else "production")
 
