@@ -236,7 +236,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
 
         report_content.delay(
             content_type_id=ContentType.objects.get_for_model(Post).id,
-            target_id=post.id,
+            target_id=str(post.id),
             reporter_id=str(context.caller.id),
         )
         return empty_pb2.Empty()
