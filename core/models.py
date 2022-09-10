@@ -62,14 +62,14 @@ class MessageConvertible:
             return timestamp_pb2.Timestamp(seconds=round(value.timestamp()))
         elif isinstance(value, MessageConvertible):
             return value.to_message(
-                message_class=self._retrieve_message_class(field), context=self._context
+                message_class=self.retrieve_message_class(field), context=self._context
             )
         elif isinstance(value, ImageFieldFile):
             return image_pb2.Image(url=get_image_url(value)) if value else None
         else:
             return value
 
-    def _retrieve_message_class(self, field: str) -> type[Message]:
+    def retrieve_message_class(self, field: str) -> type[Message]:
         if message_class := self.__class__._field_message_classes.get(field):
             return message_class
 

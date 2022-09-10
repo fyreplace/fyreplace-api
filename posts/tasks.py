@@ -22,7 +22,7 @@ def cleanup_stacks():
 
 
 @shared_task
-def remove_user_data(user_id: str):
+def remove_post_data_for_user(user_id: str):
     while post_ids := Post.objects.filter(author_id=user_id, is_deleted=False).values(
         "id"
     ):

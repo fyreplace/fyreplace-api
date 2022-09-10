@@ -375,16 +375,38 @@ class Comment(UUIDModel, TimestampModel, SoftDeleteModel):
     )
     text = models.TextField(max_length=500, validators=[MaxLengthValidator(500)])
 
+    @property
+    def position(self) -> int:
+        return self.count(after=False)
+
+    def count(self, after: bool) -> int:
+        date_created_mod = "gte" if after else "lte"
+        id_mod = "lte" if after else "gte"
+        return (
+            Comment.objects.filter(
+                post_id=self.post_id,
+                **{"date_created__" + date_created_mod: self.date_created},
+            )
+            .exclude(
+                date_created=self.date_created,
+                **{"id__" + id_mod: self.id},
+            )
+            .count()
+        )
+
     def __str__(self) -> str:
         return f"{self.author}, {self.post} ({self.date_created})"
 
-    def get_message_field_values(self, **overrides) -> dict:
-        values = super().get_message_field_values(**overrides)
+    def get_message_fields(self, **overrides) -> list[str]:
+        fields = super().get_message_fields(**overrides)
 
         if self.is_deleted:
-            del values["text"]
+            fields.remove("text")
 
-        return values
+        if not overrides.get("is_preview"):
+            fields.remove("position")
+
+        return fields
 
     def delete(self, *args, **kwargs) -> Tuple[int, Dict[str, int]]:
         return self.soft_delete()

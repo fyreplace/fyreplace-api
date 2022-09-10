@@ -20,7 +20,7 @@ from grpc_interceptor.exceptions import (
 from core import jwt
 from core.storages import get_image_url
 from core.tests import ImageTestCaseMixin, PaginationTestCase, get_asset
-from notifications.models import CountUnit, Notification
+from notifications.models import Flag, Notification
 from notifications.tests import BaseNotificationTestCase
 from protos import id_pb2, pagination_pb2, user_pb2
 
@@ -872,8 +872,7 @@ class UserService_Report(UserServiceTestCase):
 class UserService_Absolve(UserServiceTestCase):
     def setUp(self):
         super().setUp()
-        flag = Notification.flag_objects.create(target=self.other_user)
-        CountUnit.objects.create(notification=flag, count_item=self.main_user)
+        Flag.objects.create(issuer=self.main_user, target=self.other_user)
         self.request = id_pb2.Id(id=self.other_user.id.bytes)
 
     def test_citizen_absolves_citizen(self):
