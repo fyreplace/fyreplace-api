@@ -2,7 +2,7 @@
 
 [![Shipping](https://github.com/fyreplace/fyreplace-server/actions/workflows/shipping.yml/badge.svg)](https://github.com/fyreplace/fyreplace-server/actions/workflows/shipping.yml)
 
-The server for [Fyreplace](https://fyreplace.app).
+The server for [Fyreplace](https://fyreplace.net).
 
 ## License
 

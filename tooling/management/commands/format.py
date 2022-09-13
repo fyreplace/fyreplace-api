@@ -3,7 +3,9 @@ from os.path import dirname, join
 from pathlib import Path
 
 import isort
-from black import FileMode, Report, WriteBack, reformat_many
+from black import FileMode, WriteBack
+from black.concurrency import reformat_many
+from black.report import Report
 from django.core.management.base import BaseCommand
 from isort.wrap_modes import WrapModes
 from tqdm import tqdm
