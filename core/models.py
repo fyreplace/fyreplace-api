@@ -32,7 +32,7 @@ class MessageConvertible:
         }
 
         for field in overrides:
-            if hasattr(self._message_class, field):
+            if field in self._message_class.DESCRIPTOR.fields_by_name:
                 values[field] = overrides[field]
 
         return values
@@ -73,7 +73,7 @@ class MessageConvertible:
         if message_class := self.__class__._field_message_classes.get(field):
             return message_class
 
-        field_type = getattr(self._message_class, field).DESCRIPTOR.message_type
+        field_type = self._message_class.DESCRIPTOR.fields_by_name[field].message_type
         module_name = field_type.file.name.replace(".proto", "_pb2").replace("/", ".")
         message_class = getattr(import_module(module_name), field_type.name)
         self.__class__._field_message_classes[field] = message_class
