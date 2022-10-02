@@ -10,7 +10,6 @@ pillow
 grpcio
 grpcio-tools
 grpc-interceptor
-mypy-protobuf
 
 # Celery
 celery[redis]

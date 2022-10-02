@@ -426,10 +426,6 @@ mypy-extensions==0.4.3 \
     # via
     #   black
     #   mypy
-mypy-protobuf==3.3.0 \
-    --hash=sha256:15604f6943b16c05db646903261e3b3e775cf7f7990b7c37b03d043a907b650d \
-    --hash=sha256:24f3b0aecb06656e983f58e07c732a90577b9d7af3e1066fc2b663bbf0370248
-    # via -r requirements.in
 mysqlclient==2.1.1 \
     --hash=sha256:0d1cd3a5a4d28c222fa199002810e8146cffd821410b67851af4cc80aeccd97c \
     --hash=sha256:828757e419fb11dd6c5ed2576ec92c3efaa93a0f7c39e263586d1ee779c3d782 \
@@ -550,9 +546,7 @@ protobuf==4.21.7 \
     --hash=sha256:d3f89ccf7182293feba2de2739c8bf34fed1ed7c65a5cf987be00311acac57c1 \
     --hash=sha256:db9056b6a11cb5131036d734bcbf91ef3ef9235d6b681b2fc431cbfe5a7f2e56 \
     --hash=sha256:f370c0a71712f8965023dd5b13277444d3cdfecc96b2c778b0e19acbfd60df6e
-    # via
-    #   grpcio-tools
-    #   mypy-protobuf
+    # via grpcio-tools
 psutil==5.9.2 \
     --hash=sha256:14b29f581b5edab1f133563272a6011925401804d52d603c5c606936b49c8b97 \
     --hash=sha256:256098b4f6ffea6441eb54ab3eb64db9ecef18f6a80d7ba91549195d55420f84 \
@@ -729,10 +723,6 @@ traitlets==5.4.0 \
     # via
     #   ipython
     #   matplotlib-inline
-types-protobuf==3.20.4 \
-    --hash=sha256:0dad3a5009895c985a56e2837f61902bad9594151265ac0ee907bb16d0b01eb7 \
-    --hash=sha256:5082437afe64ce3b31c8db109eae86e02fda11e4d5f9ac59cb8578a8a138aa70
-    # via mypy-protobuf
 types-pytz==2022.2.1.0 \
     --hash=sha256:47cfb19c52b9f75896440541db392fd312a35b279c6307a531db71152ea63e2b \
     --hash=sha256:50ead2254b524a3d4153bc65d00289b66898060d2938e586170dce918dbaf3b3

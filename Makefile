@@ -9,7 +9,7 @@ protos:
 		--proto_path=. \
 		--python_out=. \
 		--grpc_python_out=. \
-		--mypy_out=quiet:. \
+		--pyi_out=. \
 		protos/*.proto
 
 protos/__init__.py:
