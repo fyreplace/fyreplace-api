@@ -29,7 +29,7 @@ class Command(BaseCommand):
                 "--proto_path=.",
                 "--python_out=.",
                 "--grpc_python_out=.",
-                "--mypy_out=quiet:.",
+                "--pyi_out=.",
                 file,
             ]
         )
