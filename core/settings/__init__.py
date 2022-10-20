@@ -143,6 +143,10 @@ DATABASES = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
+CONN_MAX_AGE = None
+
+CONN_HEALTH_CHECKS = True
+
 # Authentication
 
 AUTH_USER_MODEL = "users.User"
