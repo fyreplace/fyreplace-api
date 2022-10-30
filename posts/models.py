@@ -3,7 +3,7 @@ from math import ceil
 from typing import Any, Dict, Optional, Tuple
 
 from django.conf import settings
-from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxLengthValidator, MinValueValidator
 from django.db import IntegrityError, models
 from django.db.models.functions import Replace
@@ -51,14 +51,14 @@ class ValidatableModel(UUIDModel, MessageConvertible):
 
 
 class PostQuerySet(models.QuerySet):
-    def get_readable_by(self, author: AbstractBaseUser, *args, **kwargs) -> "Post":
+    def get_readable_by(self, author: AbstractUser, *args, **kwargs) -> "Post":
         return self.get(
             models.Q(author=author) | models.Q(date_published__isnull=False),
             *args,
             **kwargs,
         )
 
-    def get_writable_by(self, author: AbstractBaseUser, *args, **kwargs) -> "Post":
+    def get_writable_by(self, author: AbstractUser, *args, **kwargs) -> "Post":
         post = self.get_readable_by(author, *args, **kwargs)
 
         if author.id != post.author_id or post.date_published:
@@ -69,7 +69,7 @@ class PostQuerySet(models.QuerySet):
         return post
 
     def get_published_readable_by(
-        self, author: AbstractBaseUser, *args, **kwargs
+        self, author: AbstractUser, *args, **kwargs
     ) -> "Post":
         post = self.get_readable_by(author, *args, **kwargs)
 

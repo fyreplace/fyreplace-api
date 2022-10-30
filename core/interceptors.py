@@ -111,7 +111,9 @@ class ExceptionInterceptor(ServerInterceptor):
             rollbar.report_exc_info(extra_data=extras, level=level)
         else:
             details = context.details()
-            print(details.decode('utf8') if type(details) == bytes else str(details))
+            print(
+                details.decode("utf8") if isinstance(details, bytes) else str(details)
+            )
 
 
 class AuthorizationInterceptor(ServerInterceptor):

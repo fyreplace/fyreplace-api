@@ -1,7 +1,7 @@
 from typing import Optional
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.models import AbstractUser
 from django.db import DatabaseError
 
 from core import jwt
@@ -15,7 +15,7 @@ def make_email(username: str) -> str:
 
 
 class UserContext(FakeContext):
-    def set_user(self, user: Optional[AbstractBaseUser]):
+    def set_user(self, user: Optional[AbstractUser]):
         if user:
             payload = {"user_id": str(user.id)}
 
