@@ -152,6 +152,9 @@ jobs:
           echo "SERVER_EMAIL=${{ secrets.SERVER_EMAIL }}" >> configuration.properties
           echo "ADMINS=${{ secrets.ADMINS }}" >> configuration.properties
           echo "EMAIL_LINKS_DOMAIN=${{ secrets.EMAIL_LINKS_DOMAIN }}" >> configuration.properties
+          echo "APPLE_TEAM_ID=${{ secrets.APPLE_TEAM_ID }}" >> configuration.properties
+          echo "APNS_URL=${{ secrets.APNS_URL }}" >> configuration.properties
+          echo "APNS_PRIVATE_KEY_ID=${{ secrets.APNS_PRIVATE_KEY_ID }}" >> configuration.properties
           echo "ROLLBAR_DEVELOPMENT=${{ secrets.ROLLBAR_DEVELOPMENT }}" >> configuration.properties
           kubectl create configmap configuration --from-env-file=configuration.properties -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml --namespace=fyreplace apply -f -
 
@@ -172,6 +175,18 @@ jobs:
         run: |
           echo "token=${{ secrets.CLOUDFLARE_API_TOKEN }}" >> cloudflare.properties
           kubectl create secret generic cloudflare --from-env-file=cloudflare.properties -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml --namespace=fyreplace apply -f -
+
+      - name: Create APNS key
+        working-directory: kubernetes
+        run: |
+          echo "${{ secrets.APNS_PRIVATE_KEY_B64 }}" | base64 -d >> apns-key
+          kubectl create secret generic apns --from-file=apns-key -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml --namespace=fyreplace apply -f -
+
+      - name: Create Firebase service account
+        working-directory: kubernetes
+        run: |
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_B64 }}" | base64 -d >> firebase-service-account
+          kubectl create secret generic firebase --from-file=firebase-service-account -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml --namespace=fyreplace apply -f -
 
       - name: Deploy
         working-directory: kubernetes

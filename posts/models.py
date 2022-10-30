@@ -379,20 +379,21 @@ class Comment(UUIDModel, TimestampModel, SoftDeleteModel):
     def position(self) -> int:
         return self.count(after=False)
 
-    def count(self, after: bool) -> int:
+    def count(self, after: bool, count_deleted: bool = True) -> int:
         date_created_mod = "gte" if after else "lte"
         id_mod = "lte" if after else "gte"
-        return (
-            Comment.objects.filter(
-                post_id=self.post_id,
-                **{"date_created__" + date_created_mod: self.date_created},
-            )
-            .exclude(
-                date_created=self.date_created,
-                **{"id__" + id_mod: self.id},
-            )
-            .count()
+        comments = Comment.objects.filter(
+            post_id=self.post_id,
+            **{"date_created__" + date_created_mod: self.date_created},
+        ).exclude(
+            date_created=self.date_created,
+            **{"id__" + id_mod: self.id},
         )
+
+        if not count_deleted:
+            comments = comments.exclude(is_deleted=True)
+
+        return comments.count()
 
     def __str__(self) -> str:
         return f"{self.author}, {self.post} ({self.date_created})"

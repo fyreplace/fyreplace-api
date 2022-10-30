@@ -11,9 +11,11 @@ from grpc_interceptor.exceptions import InvalidArgument, PermissionDenied
 from core.authentication import no_auth
 from core.pagination import PaginatorMixin
 from core.services import ImageUploadMixin
-from core.utils import make_uuid
-from notifications.models import remove_notifications_for
-from notifications.tasks import report_content, send_notifications
+from notifications.models import Flag, remove_notifications_for
+from notifications.tasks import (
+    send_notifications,
+    send_remote_notifications_comment_acknowledgement,
+)
 from protos import (
     comment_pb2,
     comment_pb2_grpc,
@@ -227,10 +229,10 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         if post.author == context.caller:
             raise PermissionDenied("invalid_post")
 
-        report_content.delay(
-            content_type_id=ContentType.objects.get_for_model(Post).id,
+        Flag.objects.get_or_create(
+            issuer=context.caller,
+            target_type=ContentType.objects.get_for_model(Post),
             target_id=str(post.id),
-            reporter_id=str(context.caller.id),
         )
         return empty_pb2.Empty()
 
@@ -380,16 +382,29 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
         self, request: id_pb2.Id, context: grpc.ServicerContext
     ) -> empty_pb2.Empty:
         comment = Comment.objects.get(id__bytes=request.id)
-        Subscription.objects.filter(
-            user=context.caller,
-            post_id=comment.post_id,
-        ).exclude(last_comment_seen__date_created__gt=comment.date_created).exclude(
-            last_comment_seen__date_created=comment.date_created,
-            last_comment_seen_id__lt=comment.id,
-        ).update(
-            last_comment_seen=comment
+        updated_count = (
+            Subscription.objects.filter(
+                user=context.caller,
+                post_id=comment.post_id,
+            )
+            .exclude(last_comment_seen__date_created__gt=comment.date_created)
+            .exclude(
+                last_comment_seen__date_created=comment.date_created,
+                last_comment_seen_id__lt=comment.id,
+            )
+            .update(last_comment_seen=comment)
         )
-        send_notifications.delay(comment_id=str(comment.id), new_notifications=False)
+
+        if updated_count > 0:
+            (
+                send_notifications.si(
+                    comment_id=str(comment.id), new_notifications=False
+                )
+                | send_remote_notifications_comment_acknowledgement.si(
+                    comment_id=str(comment.id), user_id=str(context.caller.id)
+                )
+            ).delay()
+
         return empty_pb2.Empty()
 
     def Report(
@@ -402,10 +417,10 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
         elif comment.is_deleted:
             raise PermissionDenied("comment_deleted")
 
-        report_content.delay(
-            content_type_id=ContentType.objects.get_for_model(Comment).id,
-            target_id=str(make_uuid(data=request.id)),
-            reporter_id=str(context.caller.id),
+        Flag.objects.get_or_create(
+            issuer=context.caller,
+            target_type=ContentType.objects.get_for_model(Comment),
+            target_id=str(comment.id),
         )
         return empty_pb2.Empty()
 
