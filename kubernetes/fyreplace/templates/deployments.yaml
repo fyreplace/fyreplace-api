@@ -76,7 +76,6 @@ spec:
             - name: apns
               mountPath: "/etc/fyreplace/apns"
               readOnly: true
-          volumeMounts:
             - name: firebase
               mountPath: "/etc/fyreplace/firebase"
               readOnly: true
