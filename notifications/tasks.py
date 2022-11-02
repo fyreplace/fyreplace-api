@@ -39,9 +39,6 @@ def send_notifications(comment_id: str, new_notifications: bool):
 
 @shared_task(autoretry_for=[IntegrityError], retry_backoff=True)
 def send_remote_notifications_comment_change(comment_id: str):
-    if settings.IS_TESTING:
-        return
-
     comment = Comment.objects.get(id=comment_id)
 
     if comment.post.subscribers.exists():
@@ -51,9 +48,6 @@ def send_remote_notifications_comment_change(comment_id: str):
 
 @shared_task(autoretry_for=[IntegrityError], retry_backoff=True)
 def send_remote_notifications_comment_acknowledgement(comment_id: str, user_id: str):
-    if settings.IS_TESTING:
-        return
-
     comment = Comment.objects.get(id=comment_id)
     apns.send_remote_notifications_comment_acknowledgement(comment, user_id)
     fcm.send_remote_notifications_comment_acknowledgement(comment, user_id)

@@ -1,5 +1,6 @@
-from typing import List
+from typing import List, Optional
 
+from django.conf import settings
 from django.db.models import OuterRef
 from firebase_admin import messaging
 
@@ -36,7 +37,7 @@ def send_remote_notifications_comment_change(comment: Comment):
     ):
         for cursor in range(0, remote_messagings.count(), 500):
             chunk = remote_messagings[cursor : cursor + 500]
-            batch_response = messaging.send_multicast(
+            batch_response = send_multicast_message(
                 make_multicast_message(
                     list(chunk.values_list("token", flat=True)),
                     channel_id,
@@ -59,11 +60,17 @@ def send_remote_notifications_comment_acknowledgement(comment: Comment, user_id:
         connection__in=Connection.objects.filter(user_id=user_id),
     )
 
-    messaging.send_multicast(
+    send_multicast_message(
         make_multicast_message(
             list(remote_messagings.values_list("token", flat=True)), "", payload
         )
     )
+
+
+def send_multicast_message(
+    message: messaging.MulticastMessage,
+) -> Optional[messaging.BatchResponse]:
+    return messaging.send_multicast(message) if settings.FIREBASE_APP else None
 
 
 def make_payload(comment: Comment, command: str) -> dict:
@@ -78,7 +85,7 @@ def make_payload(comment: Comment, command: str) -> dict:
 
 def make_multicast_message(
     tokens: List[str], channel_id: str, payload: dict
-) -> messaging.Message:
+) -> messaging.MulticastMessage:
     return messaging.MulticastMessage(
         tokens=tokens,
         android=messaging.AndroidConfig(data={"_fcm.channel": channel_id, **payload}),

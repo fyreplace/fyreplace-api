@@ -42,6 +42,9 @@ def send_remote_notifications_comment_acknowledgement(comment: Comment, user_id:
 
 
 def send_message(comment: Comment, users: Iterable[AbstractUser], command: str):
+    if not settings.APNS_PRIVATE_KEY:
+        return
+
     payload = make_payload(comment, command)
 
     with Client(http2=True, headers=make_headers()) as client:
@@ -65,17 +68,21 @@ def send_message(comment: Comment, users: Iterable[AbstractUser], command: str):
 
 
 def make_jwt() -> str:
-    return jwt.encode(
-        headers={
-            "alg": "ES256",
-            "kid": settings.APNS_PRIVATE_KEY_ID,
-        },
-        payload={
-            "iat": floor(now().timestamp()),
-            "iss": settings.APPLE_TEAM_ID,
-        },
-        key=settings.APNS_PRIVATE_KEY,
-        algorithm="ES256",
+    return (
+        jwt.encode(
+            headers={
+                "alg": "ES256",
+                "kid": settings.APNS_PRIVATE_KEY_ID,
+            },
+            payload={
+                "iat": floor(now().timestamp()),
+                "iss": settings.APPLE_TEAM_ID,
+            },
+            key=settings.APNS_PRIVATE_KEY,
+            algorithm="ES256",
+        )
+        if settings.APNS_PRIVATE_KEY
+        else ""
     )
 
 
