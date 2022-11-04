@@ -79,18 +79,9 @@ class PostQuerySet(models.QuerySet):
         return post
 
 
-class ExistingPostManager(models.Manager):
+class ExistingPostManager(models.Manager.from_queryset(PostQuerySet)):
     def get_queryset(self) -> PostQuerySet:
         return PostQuerySet(self.model).filter(is_deleted=False)
-
-    def get_readable_by(self, *args, **kwargs):
-        return self.get_queryset().get_readable_by(*args, **kwargs)
-
-    def get_writable_by(self, *args, **kwargs):
-        return self.get_queryset().get_writable_by(*args, **kwargs)
-
-    def get_published_readable_by(self, *args, **kwargs):
-        return self.get_queryset().get_published_readable_by(*args, **kwargs)
 
 
 class PublishedPostManager(ExistingPostManager):
