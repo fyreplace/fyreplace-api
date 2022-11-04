@@ -153,6 +153,7 @@ jobs:
           echo "ADMINS=${{ secrets.ADMINS }}" >> configuration.properties
           echo "EMAIL_LINKS_DOMAIN=${{ secrets.EMAIL_LINKS_DOMAIN }}" >> configuration.properties
           echo "APPLE_TEAM_ID=${{ secrets.APPLE_TEAM_ID }}" >> configuration.properties
+          echo "APPLE_APP_ID=${{ secrets.APPLE_APP_ID }}" >> configuration.properties
           echo "APNS_URL=${{ secrets.APNS_URL }}" >> configuration.properties
           echo "APNS_PRIVATE_KEY_ID=${{ secrets.APNS_PRIVATE_KEY_ID }}" >> configuration.properties
           echo "ROLLBAR_DEVELOPMENT=${{ secrets.ROLLBAR_DEVELOPMENT }}" >> configuration.properties
