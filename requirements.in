@@ -4,6 +4,7 @@ django-stubs
 django-celery-beat
 django-storages[boto3]
 django-anymail[mailgun]
+django-extensions
 pillow
 
 # gRPC
