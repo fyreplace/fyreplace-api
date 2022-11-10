@@ -62,43 +62,50 @@ class ExceptionInterceptor(ServerInterceptor):
         try:
             return action()
         except (StopIteration, grpc.RpcError):
-            return None
+            pass
         except PermissionDenied as e:
             context.set_code(grpc.StatusCode.PERMISSION_DENIED)
             context.set_details(str(e))
+            self._report(request, context, method_name, level="warning")
         except (ValidationError, DataError, IntegrityError) as e:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
             context.set_details(str(e))
+            self._report(request, context, method_name, level="info")
         except ObjectDoesNotExist as e:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details(str(e))
+            self._report(request, context, method_name, level="info")
         except GrpcException as e:
             context.set_code(e.status_code)
             context.set_details(e.details)
 
-            if e.status_code in [
-                grpc.StatusCode.UNIMPLEMENTED,
-                grpc.StatusCode.INTERNAL,
-                grpc.StatusCode.UNAVAILABLE,
-                grpc.StatusCode.UNKNOWN,
-                grpc.StatusCode.RESOURCE_EXHAUSTED,
-                grpc.StatusCode.FAILED_PRECONDITION,
+            if e.status_code in (
+                grpc.StatusCode.OK,
+                grpc.StatusCode.CANCELLED,
+                grpc.StatusCode.INVALID_ARGUMENT,
+                grpc.StatusCode.NOT_FOUND,
+                grpc.StatusCode.ALREADY_EXISTS,
                 grpc.StatusCode.ABORTED,
-                grpc.StatusCode.OUT_OF_RANGE,
-                grpc.StatusCode.DATA_LOSS,
-            ]:
-                self._report_error(request, context, method_name)
+                grpc.StatusCode.UNAUTHENTICATED,
+            ):
+                level = "info"
+            elif e.status_code in (grpc.StatusCode.PERMISSION_DENIED,):
+                level = "warning"
+            else:
+                level = "error"
+
+            self._report(request, context, method_name, level=level)
         except Exception as e:
             context.set_code(grpc.StatusCode.UNKNOWN)
             context.set_details(str(e))
-            self._report_error(request, context, method_name, level="critical")
+            self._report(request, context, method_name, level="critical")
 
-    def _report_error(
+    def _report(
         self,
         request: Message,
         context: grpc.ServicerContext,
         method_name: str,
-        level: str = "error",
+        level: str,
     ):
         extras = {
             "method": method_name,
