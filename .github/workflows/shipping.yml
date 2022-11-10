@@ -211,7 +211,7 @@ jobs:
           helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace --set "$variables"
 
       - name: Notify Rollbar
-        uses: rollbar/github-deploy-action@2
+        uses: rollbar/github-deploy-action@2.1.1
         with:
           environment: ${{ secrets.ROLLBAR_ENVIRONMENT }}
           version: ${{ needs.container.outputs.version }}
