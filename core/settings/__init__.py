@@ -26,9 +26,10 @@ IS_TESTING = False
 
 ROLLBAR_TOKEN = os.getenv("ROLLBAR_TOKEN")
 
-if ROLLBAR_TOKEN:
-    is_dev = str_to_bool(os.getenv("ROLLBAR_DEVELOPMENT", "False"))
-    rollbar.init(ROLLBAR_TOKEN, "development" if is_dev else "production")
+ROLLBAR_ENVIRONMENT = os.getenv("ROLLBAR_ENVIRONMENT")
+
+if ROLLBAR_TOKEN and ROLLBAR_ENVIRONMENT:
+    rollbar.init(ROLLBAR_TOKEN, ROLLBAR_ENVIRONMENT)
 
 # Self-awareness
 

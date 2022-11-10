@@ -112,6 +112,16 @@ jobs:
             echo "environment=main" >> $GITHUB_OUTPUT
           fi
 
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.ref_type }}" = "branch" ]
+          then
+            echo "version=${{ github.sha }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+
   deployment:
     name: Deploy to Kubernetes
     needs:
@@ -156,7 +166,7 @@ jobs:
           echo "APPLE_APP_ID=${{ secrets.APPLE_APP_ID }}" >> configuration.properties
           echo "APNS_URL=${{ secrets.APNS_URL }}" >> configuration.properties
           echo "APNS_PRIVATE_KEY_ID=${{ secrets.APNS_PRIVATE_KEY_ID }}" >> configuration.properties
-          echo "ROLLBAR_DEVELOPMENT=${{ secrets.ROLLBAR_DEVELOPMENT }}" >> configuration.properties
+          echo "ROLLBAR_ENVIRONMENT=${{ secrets.ROLLBAR_ENVIRONMENT }}" >> configuration.properties
           kubectl create configmap configuration --from-env-file=configuration.properties -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml --namespace=fyreplace apply -f -
 
       - name: Create secrets
@@ -199,3 +209,11 @@ jobs:
             export variables="version=sha-${{ github.sha }}"
           fi
           helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace --set "$variables"
+
+      - name: Notify Rollbar
+        uses: rollbar/github-deploy-action@2
+        with:
+          environment: ${{ secrets.ROLLBAR_ENVIRONMENT }}
+          version: ${{ needs.container.outputs.version }}
+        env:
+          ROLLBAR_ACCESS_TOKEN: ${{ secrets.ROLLBAR_TOKEN }}
