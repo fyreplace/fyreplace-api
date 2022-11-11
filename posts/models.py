@@ -3,7 +3,7 @@ from math import ceil
 from typing import Any, Dict, Optional, Tuple
 
 from django.conf import settings
-from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxLengthValidator, MinValueValidator
 from django.db import IntegrityError, models
 from django.db.models.functions import Replace
@@ -51,14 +51,14 @@ class ValidatableModel(UUIDModel, MessageConvertible):
 
 
 class PostQuerySet(models.QuerySet):
-    def get_readable_by(self, author: AbstractBaseUser, *args, **kwargs) -> "Post":
+    def get_readable_by(self, author: AbstractUser, *args, **kwargs) -> "Post":
         return self.get(
             models.Q(author=author) | models.Q(date_published__isnull=False),
             *args,
             **kwargs,
         )
 
-    def get_writable_by(self, author: AbstractBaseUser, *args, **kwargs) -> "Post":
+    def get_writable_by(self, author: AbstractUser, *args, **kwargs) -> "Post":
         post = self.get_readable_by(author, *args, **kwargs)
 
         if author.id != post.author_id or post.date_published:
@@ -69,7 +69,7 @@ class PostQuerySet(models.QuerySet):
         return post
 
     def get_published_readable_by(
-        self, author: AbstractBaseUser, *args, **kwargs
+        self, author: AbstractUser, *args, **kwargs
     ) -> "Post":
         post = self.get_readable_by(author, *args, **kwargs)
 
@@ -79,18 +79,9 @@ class PostQuerySet(models.QuerySet):
         return post
 
 
-class ExistingPostManager(models.Manager):
+class ExistingPostManager(models.Manager.from_queryset(PostQuerySet)):
     def get_queryset(self) -> PostQuerySet:
         return PostQuerySet(self.model).filter(is_deleted=False)
-
-    def get_readable_by(self, *args, **kwargs):
-        return self.get_queryset().get_readable_by(*args, **kwargs)
-
-    def get_writable_by(self, *args, **kwargs):
-        return self.get_queryset().get_writable_by(*args, **kwargs)
-
-    def get_published_readable_by(self, *args, **kwargs):
-        return self.get_queryset().get_published_readable_by(*args, **kwargs)
 
 
 class PublishedPostManager(ExistingPostManager):
@@ -379,20 +370,21 @@ class Comment(UUIDModel, TimestampModel, SoftDeleteModel):
     def position(self) -> int:
         return self.count(after=False)
 
-    def count(self, after: bool) -> int:
+    def count(self, after: bool, count_deleted: bool = True) -> int:
         date_created_mod = "gte" if after else "lte"
         id_mod = "lte" if after else "gte"
-        return (
-            Comment.objects.filter(
-                post_id=self.post_id,
-                **{"date_created__" + date_created_mod: self.date_created},
-            )
-            .exclude(
-                date_created=self.date_created,
-                **{"id__" + id_mod: self.id},
-            )
-            .count()
+        comments = Comment.objects.filter(
+            post_id=self.post_id,
+            **{"date_created__" + date_created_mod: self.date_created},
+        ).exclude(
+            date_created=self.date_created,
+            **{"id__" + id_mod: self.id},
         )
+
+        if not count_deleted:
+            comments = comments.exclude(is_deleted=True)
+
+        return comments.count()
 
     def __str__(self) -> str:
         return f"{self.author}, {self.post} ({self.date_created})"

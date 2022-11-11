@@ -2,13 +2,14 @@ from typing import Iterator
 
 import grpc
 from django.db.models import F, OuterRef, Sum
+from django.db.transaction import atomic
 from google.protobuf import empty_pb2
 
 from core.pagination import PaginatorMixin
 from posts.models import Comment, Subscription
 from protos import notification_pb2, notification_pb2_grpc, pagination_pb2
 
-from .models import Notification
+from .models import Notification, RemoteMessaging, count_notifications_for
 from .pagination import NotificationPaginationAdapter
 
 
@@ -18,12 +19,9 @@ class NotificationService(
     def Count(
         self, request: empty_pb2.Empty, context: grpc.ServicerContext
     ) -> notification_pb2.NotificationCount:
-        count = (
-            Notification.objects.filter_readable_by(context.caller)
-            .aggregate(total_count=Sum("count"))
-            .get("total_count")
+        return notification_pb2.NotificationCount(
+            count=count_notifications_for(context.caller)
         )
-        return notification_pb2.NotificationCount(count=count)
 
     def List(
         self,
@@ -53,4 +51,18 @@ class NotificationService(
             subscription__in=Subscription.objects.filter(user=context.caller)
         ).delete()
 
+        return empty_pb2.Empty()
+
+    @atomic
+    def RegisterToken(
+        self, request: notification_pb2.MessagingToken, context: grpc.ServicerContext
+    ) -> empty_pb2.Empty:
+        messaging, _ = RemoteMessaging.objects.update_or_create(
+            connection=context.caller_connection,
+            defaults={
+                "service": request.service,
+                "token": request.token,
+            },
+        )
+        messaging.full_clean()
         return empty_pb2.Empty()

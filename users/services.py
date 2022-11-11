@@ -25,8 +25,7 @@ from core.grpc import get_info_from_token, serialize_message
 from core.pagination import PaginatorMixin
 from core.services import ImageUploadMixin
 from core.utils import make_uuid
-from notifications.models import remove_notifications_for
-from notifications.tasks import report_content
+from notifications.models import Flag, remove_notifications_for
 from protos import id_pb2, image_pb2, pagination_pb2, user_pb2, user_pb2_grpc
 
 from .models import Connection
@@ -337,10 +336,10 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
         elif user.rank > context.caller.rank:
             raise PermissionDenied("caller_rank_insufficient")
 
-        report_content.delay(
-            content_type_id=ContentType.objects.get_for_model(get_user_model()).id,
-            target_id=str(make_uuid(data=request.id)),
-            reporter_id=str(context.caller.id),
+        Flag.objects.get_or_create(
+            issuer=context.caller,
+            target_type=ContentType.objects.get_for_model(get_user_model()),
+            target_id=str(user.id),
         )
         return empty_pb2.Empty()
 

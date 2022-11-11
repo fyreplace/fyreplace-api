@@ -84,7 +84,7 @@ class AccountService_Create(AccountServiceTestCase):
     def test_username_too_long(self):
         self.request.username = "a" * (get_user_model().username.field.max_length + 1)
 
-        with self.assertRaises((ValidationError, DataError)):
+        with self.assertRaises(DataError):
             self.service.Create(self.request, self.grpc_context)
 
         self.assertEqual(get_user_model().objects.count(), self.user_count)

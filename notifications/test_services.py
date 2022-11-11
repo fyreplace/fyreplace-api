@@ -1,6 +1,7 @@
 from typing import Iterator, List
 from uuid import UUID
 
+from django.core.exceptions import ValidationError
 from django.utils.timezone import now
 
 from core.tests import PaginationTestCase
@@ -9,7 +10,7 @@ from posts.models import Comment
 from posts.test_services import CommentServiceTestCase, PostServiceTestCase
 from protos import notification_pb2, pagination_pb2
 
-from .models import Flag, Notification
+from .models import Flag, MessagingService, Notification, RemoteMessaging
 from .services import NotificationService
 
 
@@ -147,3 +148,35 @@ class NotificationService_Clear(NotificationServiceTestCase):
             Notification.objects.filter(subscription__user=self.main_user).count(),
             0,
         )
+
+
+class NotificationService_RegisterToken(NotificationServiceTestCase):
+    def setUp(self):
+        super().setUp()
+        self.request = notification_pb2.MessagingToken(
+            service=notification_pb2.MESSAGING_SERVICE_UNSPECIFIED, token="token"
+        )
+
+    def test_apns(self):
+        self.request.service = notification_pb2.MESSAGING_SERVICE_APNS
+        self.service.RegisterToken(self.request, self.grpc_context)
+        self.assertEqual(RemoteMessaging.objects.count(), 1)
+        messaging = RemoteMessaging.objects.first()
+        self.assertEqual(messaging.service, MessagingService.APNS)
+        self.assertEqual(messaging.token, self.request.token)
+
+    def test_fcm(self):
+        self.request.service = notification_pb2.MESSAGING_SERVICE_FCM
+        self.service.RegisterToken(self.request, self.grpc_context)
+        self.assertEqual(RemoteMessaging.objects.count(), 1)
+        messaging = RemoteMessaging.objects.first()
+        self.assertEqual(messaging.service, MessagingService.FCM)
+        self.assertEqual(messaging.token, self.request.token)
+
+    def test_invalid_service(self):
+        self.request.service = notification_pb2.MESSAGING_SERVICE_UNSPECIFIED
+
+        with self.assertRaises(ValidationError):
+            self.service.RegisterToken(self.request, self.grpc_context)
+
+        self.assertFalse(RemoteMessaging.objects.exists())

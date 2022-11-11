@@ -5,7 +5,10 @@ from django.db.transaction import atomic
 from django.dispatch import receiver
 
 from core.signals import post_soft_delete
-from notifications.tasks import send_notifications
+from notifications.tasks import (
+    send_notifications,
+    send_remote_notifications_comment_change,
+)
 
 from .models import Chapter, Comment, Post, Subscription, Vote
 from .tasks import remove_post_data
@@ -37,7 +40,19 @@ def on_comment_post_save(instance: Comment, created: bool, **kwargs):
             post=instance.post,
             defaults={"last_comment_seen": instance},
         )
-        send_notifications.delay(comment_id=str(instance.id), new_notifications=True)
+
+        (
+            send_notifications.si(comment_id=str(instance.id), new_notifications=True)
+            | send_remote_notifications_comment_change.si(comment_id=str(instance.id))
+        ).delay()
+
+
+@receiver(post_soft_delete, sender=Comment)
+def on_comment_post_soft_delete(instance: Comment, **kwargs):
+    (
+        send_notifications.si(comment_id=str(instance.id), new_notifications=False)
+        | send_remote_notifications_comment_change.si(comment_id=str(instance.id))
+    ).delay()
 
 
 @receiver(pre_save, sender=Vote)

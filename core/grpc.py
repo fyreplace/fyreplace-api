@@ -2,7 +2,7 @@ from concurrent import futures
 from datetime import timedelta
 from importlib import import_module
 from inspect import getmembers
-from typing import Any, Iterator, Optional
+from typing import Any, Iterable, Iterator, Optional
 
 import grpc
 from django.apps import apps
@@ -113,7 +113,7 @@ def all_servicers() -> Iterator[type[Any]]:
                 yield entity
 
 
-def _add_services_to_server(services: Iterator[type[Any]], server: grpc.Server):
+def _add_services_to_server(services: Iterable[type[Any]], server: grpc.Server):
     for service in services:
         servicers = get_servicer_interfaces(service)
 

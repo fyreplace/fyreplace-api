@@ -4,6 +4,7 @@ django-stubs
 django-celery-beat
 django-storages[boto3]
 django-anymail[mailgun]
+django-extensions
 pillow
 
 # gRPC
@@ -18,11 +19,15 @@ celery[redis]
 mysqlclient
 psycopg2
 
+# External services
+firebase-admin
+
 # Other utilities
-pyjwt
+pyjwt[crypto]
 python-magic
 email-validator
 requests
+httpx[http2]
 qrcode
 
 # Configuration injection

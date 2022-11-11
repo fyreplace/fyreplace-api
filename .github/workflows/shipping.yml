@@ -45,7 +45,7 @@ jobs:
           submodules: true
 
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: 3.x
 
@@ -78,7 +78,7 @@ jobs:
           submodules: recursive
 
       - name: Login to registry
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -86,7 +86,7 @@ jobs:
 
       - name: Extract metadata
         id: meta
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v4
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
@@ -95,7 +95,7 @@ jobs:
             type=sha,format=long
 
       - name: Build and push image
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: .
           push: true
@@ -107,9 +107,19 @@ jobs:
         run: |
           if [ "${{ github.ref }}" = "refs/heads/develop" ]
           then
-            echo "::set-output name=environment::dev"
+            echo "environment=dev" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=environment::main"
+            echo "environment=main" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.ref_type }}" = "branch" ]
+          then
+            echo "version=${{ github.sha }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           fi
 
   deployment:
@@ -152,7 +162,11 @@ jobs:
           echo "SERVER_EMAIL=${{ secrets.SERVER_EMAIL }}" >> configuration.properties
           echo "ADMINS=${{ secrets.ADMINS }}" >> configuration.properties
           echo "EMAIL_LINKS_DOMAIN=${{ secrets.EMAIL_LINKS_DOMAIN }}" >> configuration.properties
-          echo "ROLLBAR_DEVELOPMENT=${{ secrets.ROLLBAR_DEVELOPMENT }}" >> configuration.properties
+          echo "APPLE_TEAM_ID=${{ secrets.APPLE_TEAM_ID }}" >> configuration.properties
+          echo "APPLE_APP_ID=${{ secrets.APPLE_APP_ID }}" >> configuration.properties
+          echo "APNS_URL=${{ secrets.APNS_URL }}" >> configuration.properties
+          echo "APNS_PRIVATE_KEY_ID=${{ secrets.APNS_PRIVATE_KEY_ID }}" >> configuration.properties
+          echo "ROLLBAR_ENVIRONMENT=${{ secrets.ROLLBAR_ENVIRONMENT }}" >> configuration.properties
           kubectl create configmap configuration --from-env-file=configuration.properties -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml --namespace=fyreplace apply -f -
 
       - name: Create secrets
@@ -173,6 +187,18 @@ jobs:
           echo "token=${{ secrets.CLOUDFLARE_API_TOKEN }}" >> cloudflare.properties
           kubectl create secret generic cloudflare --from-env-file=cloudflare.properties -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml --namespace=fyreplace apply -f -
 
+      - name: Create APNS key
+        working-directory: kubernetes
+        run: |
+          echo "${{ secrets.APNS_PRIVATE_KEY_B64 }}" | base64 -d >> apns-key
+          kubectl create secret generic apns --from-file=apns-key -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml --namespace=fyreplace apply -f -
+
+      - name: Create Firebase service account
+        working-directory: kubernetes
+        run: |
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_B64 }}" | base64 -d >> firebase-service-account
+          kubectl create secret generic firebase --from-file=firebase-service-account -o yaml --dry-run=client | kubectl --kubeconfig=kube.yml --namespace=fyreplace apply -f -
+
       - name: Deploy
         working-directory: kubernetes
         run: |
@@ -183,3 +209,11 @@ jobs:
             export variables="version=sha-${{ github.sha }}"
           fi
           helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace --set "$variables"
+
+      - name: Notify Rollbar
+        uses: rollbar/github-deploy-action@2.1.1
+        with:
+          environment: ${{ secrets.ROLLBAR_ENVIRONMENT }}
+          version: ${{ needs.container.outputs.version }}
+        env:
+          ROLLBAR_ACCESS_TOKEN: ${{ secrets.ROLLBAR_TOKEN }}

@@ -3,9 +3,11 @@ import re
 from pathlib import Path
 from urllib.parse import urlparse
 
+import firebase_admin
 import rollbar
 from celery.schedules import crontab
 from dotenv import find_dotenv, load_dotenv
+from firebase_admin.credentials import Certificate as FirebaseCertificate
 
 from ..utils import str_to_bool
 
@@ -24,9 +26,10 @@ IS_TESTING = False
 
 ROLLBAR_TOKEN = os.getenv("ROLLBAR_TOKEN")
 
-if ROLLBAR_TOKEN:
-    is_dev = str_to_bool(os.getenv("ROLLBAR_DEVELOPMENT", "False"))
-    rollbar.init(ROLLBAR_TOKEN, "development" if is_dev else "production")
+ROLLBAR_ENVIRONMENT = os.getenv("ROLLBAR_ENVIRONMENT")
+
+if ROLLBAR_TOKEN and ROLLBAR_ENVIRONMENT:
+    rollbar.init(ROLLBAR_TOKEN, ROLLBAR_ENVIRONMENT)
 
 # Self-awareness
 
@@ -60,6 +63,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_celery_beat",
+    "django_extensions",
     "anymail",
     "tooling",
     "core",
@@ -142,6 +146,10 @@ DATABASES = {
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
+CONN_MAX_AGE = None
+
+CONN_HEALTH_CHECKS = True
 
 # Authentication
 
@@ -301,7 +309,37 @@ CELERY_BEAT_SCHEDULE = {
         "task": "posts.tasks.cleanup_stacks",
         "schedule": crontab(minute=0),
     },
+    "notifications.refresh_apns_token": {
+        "task": "notifications.tasks.refresh_apns_token",
+        "schedule": crontab(minute="0,30"),
+    },
 }
+
+# Apple Push Notification Serivce
+
+APPLE_TEAM_ID = os.getenv("APPLE_TEAM_ID")
+
+APPLE_APP_ID = os.getenv("APPLE_APP_ID")
+
+APNS_URL = os.getenv("APNS_URL")
+
+APNS_PRIVATE_KEY_ID = os.getenv("APNS_PRIVATE_KEY_ID")
+
+if path := os.getenv("APNS_PRIVATE_KEY_PATH"):
+    with open(path, "rb") as file:
+        APNS_PRIVATE_KEY = file.read()
+else:
+    APNS_PRIVATE_KEY = None
+
+# Firebase
+
+if path := os.getenv("FIREBASE_ACCOUNT_PATH"):
+    try:
+        FIREBASE_APP = firebase_admin.get_app()
+    except ValueError:
+        FIREBASE_APP = firebase_admin.initialize_app(FirebaseCertificate(path))
+else:
+    FIREBASE_APP = None
 
 # Other
 
