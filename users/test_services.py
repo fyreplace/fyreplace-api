@@ -505,6 +505,7 @@ class UserService_Retrieve(UserServiceTestCase):
             delta=timedelta(seconds=1),
         )
         self.assertEqual(user.profile.rank, user_pb2.RANK_CITIZEN)
+        self.assertFalse(user.profile.is_deleted)
         self.assertFalse(user.profile.is_banned)
         self.assertFalse(user.profile.is_blocked)
         self.assertEqual(user.profile.username, str(self.other_user.username))
@@ -523,6 +524,7 @@ class UserService_Retrieve(UserServiceTestCase):
             delta=timedelta(seconds=1),
         )
         self.assertEqual(user.profile.rank, user_pb2.RANK_UNSPECIFIED)
+        self.assertFalse(user.profile.is_deleted)
         self.assertTrue(user.profile.is_banned)
         self.assertEqual(user.profile.username, "")
         self.assertEqual(user.profile.avatar.url, "")

@@ -1200,9 +1200,6 @@ class CommentService_List(CommentServiceTestCase, PaginationTestCase):
         self.assertEqual(comment.author.username, "")
         self.assertTrue(comment.author.is_banned)
 
-    def test_other_deleted(self):
-        self.other_user.delete()
-
     def _create_test_comments(self) -> list[Comment]:
         comments = self._create_comments(author=self.main_user, count=10)
         comments += self._create_comments(author=self.other_user, count=4)
