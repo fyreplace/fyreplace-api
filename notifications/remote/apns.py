@@ -92,7 +92,6 @@ def make_headers() -> dict:
         "authorization": f"bearer {ApnsToken.objects.last().token}",
         "apns-push-type": "background",
         "apns-expiration": str(round(future.timestamp())),
-        "apns-priority": "5",
         "apns-topic": settings.APPLE_APP_ID,
     }
 
