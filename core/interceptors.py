@@ -7,7 +7,7 @@ import grpc
 import rollbar
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
-from django.db.utils import DataError, IntegrityError
+from django.db.utils import DataError
 from google.protobuf.message import Message
 from grpc_interceptor.exceptions import GrpcException, Unauthenticated
 from grpc_interceptor.server import ServerInterceptor
@@ -67,7 +67,7 @@ class ExceptionInterceptor(ServerInterceptor):
             context.set_code(grpc.StatusCode.PERMISSION_DENIED)
             context.set_details(str(e))
             self._report(request, context, method_name, level="warning")
-        except (ValidationError, DataError, IntegrityError) as e:
+        except (ValidationError, DataError) as e:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
             context.set_details(str(e))
             self._report(request, context, method_name, level="info")
