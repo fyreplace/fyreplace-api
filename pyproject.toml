@@ -39,8 +39,5 @@ black = "^22.10.0"
 tqdm = "^4.64.1"
 
 [build-system]
-requires = ["poetry-core", "poetry-dynamic-versioning"]
-build-backend = "poetry_dynamic_versioning.backend"
-
-[tool.poetry-dynamic-versioning]
-enable = true
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

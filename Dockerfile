@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY poetry.lock .
 RUN python -m pip install --no-cache-dir --upgrade pip wheel setuptools poetry
-RUN poetry self add "poetry-dynamic-versioning[plugin]"
+COPY pyproject.toml .
 RUN poetry install
 
 COPY . .
