@@ -28,15 +28,19 @@ jobs:
     steps:
       - name: Cache pip packages
         uses: actions/cache@v3
-        env:
-          cache-name: cache-pip-packages
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
           restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
+            ${{ runner.os }}-pip-
+
+      - name: Cache Poetry packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
 
       - name: Checkout code
         uses: actions/checkout@v3
@@ -50,16 +54,18 @@ jobs:
           python-version: 3.x
 
       - name: Install tools
-        run: python -m pip install --upgrade pip wheel
+        run: python -m pip install --upgrade pip wheel setuptools poetry
 
       - name: Install dependencies
-        run: python -m pip install --requirement requirements.txt
+        run: |
+          poetry self add "poetry-dynamic-versioning[plugin]"
+          poetry install
 
       - name: Compile protos
         run: make protobufs
 
       - name: Run tests
-        run: python manage.py test
+        run: poetry run python manage.py test
         env:
           SECRET_KEY: secret
           DATABASE_URL: postgres://postgres:postgres@localhost/postgres
