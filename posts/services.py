@@ -75,6 +75,10 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
             posts += new_posts
 
         refill_stack()
+
+        if len(posts) == 0:
+            return
+
         yield from (p.to_message(context=context) for p in posts[:3])
 
         for request in request_iterator:
