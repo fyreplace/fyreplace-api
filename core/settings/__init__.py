@@ -233,7 +233,7 @@ DEFAULT_FILE_STORAGE = (
     else "core.storages.FileSystemStorage"
 )
 
-VALID_IMAGE_MIMES = [f"image/{i}" for i in ("png", "jpeg")]
+VALID_IMAGE_MIMES = [f"image/{i}" for i in ("png", "jpeg", "webp")]
 
 # Emails
 
