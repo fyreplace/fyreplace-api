@@ -26,17 +26,15 @@ jobs:
           - 5432:5432
 
     steps:
-      - name: Cache pip packages
+      - name: Cache Poetry packages
         uses: actions/cache@v3
-        env:
-          cache-name: cache-pip-packages
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('requirements.txt') }}
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
           restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
+            ${{ runner.os }}-poetry-
 
       - name: Checkout code
         uses: actions/checkout@v3
@@ -50,16 +48,16 @@ jobs:
           python-version: 3.x
 
       - name: Install tools
-        run: python -m pip install --upgrade pip wheel
+        run: python -m pip install --upgrade pip wheel setuptools poetry
 
       - name: Install dependencies
-        run: python -m pip install --requirement requirements.txt
+        run: poetry install
 
       - name: Compile protos
         run: make protobufs
 
       - name: Run tests
-        run: python manage.py test
+        run: poetry run python manage.py test
         env:
           SECRET_KEY: secret
           DATABASE_URL: postgres://postgres:postgres@localhost/postgres
@@ -94,6 +92,9 @@ jobs:
             type=ref,event=branch
             type=sha,format=long
 
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v2
+
       - name: Build and push image
         uses: docker/build-push-action@v3
         with:
@@ -101,6 +102,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Set environment
         id: environment

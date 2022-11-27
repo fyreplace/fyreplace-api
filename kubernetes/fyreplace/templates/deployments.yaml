@@ -22,7 +22,7 @@ spec:
       containers:
         - name: server-grpc
           image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
-          command: ['python', 'manage.py', 'grpc']
+          command: ['poetry', 'run', 'python', 'manage.py', 'grpc']
           volumeMounts:
             - name: certificate
               mountPath: "/etc/fyreplace/certificate"
@@ -42,7 +42,7 @@ spec:
 
         - name: server-rest
           image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
-          command: ['python', 'manage.py', 'runserver', '0.0.0.0:80']
+          command: ['poetry', 'run', 'python', 'manage.py', 'runserver', '0.0.0.0:80']
           envFrom:
             - configMapRef:
                 name: configuration
@@ -53,7 +53,7 @@ spec:
 
         - name: celery-beat
           image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
-          command: ['celery', '--app=core', 'beat', '--loglevel=info']
+          command: ['poetry', 'run', 'celery', '--app=core', 'beat', '--loglevel=info']
           envFrom:
             - configMapRef:
                 name: configuration
@@ -62,7 +62,7 @@ spec:
 
         - name: celery-worker
           image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
-          command: ['celery', '--app=core', 'worker', '--loglevel=info']
+          command: ['poetry', 'run', 'celery', '--app=core', 'worker', '--loglevel=info']
           volumeMounts:
             - name: apns
               mountPath: "/etc/fyreplace/apns"
@@ -78,7 +78,7 @@ spec:
 
         - name: celery-worker-messaging
           image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
-          command: ['celery', '--app=core', 'worker', '--loglevel=info', '--queues=messaging']
+          command: ['poetry', 'run', 'celery', '--app=core', 'worker', '--loglevel=info', '--queues=messaging']
           volumeMounts:
             - name: apns
               mountPath: "/etc/fyreplace/apns"
@@ -99,7 +99,7 @@ spec:
 
         - name: celery-worker-trash
           image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
-          command: ['celery', '--app=core', 'worker', '--loglevel=info', '--queues=trash']
+          command: ['poetry', 'run', 'celery', '--app=core', 'worker', '--loglevel=info', '--queues=trash']
           envFrom:
             - configMapRef:
                 name: configuration
@@ -109,7 +109,7 @@ spec:
       initContainers:
         - name: migrations
           image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
-          command: ['python', 'manage.py', 'migrate']
+          command: ['poetry', 'run', 'python', 'manage.py', 'migrate']
           envFrom:
             - configMapRef:
                 name: configuration
@@ -118,7 +118,7 @@ spec:
 
         - name: static-files
           image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
-          command: ['python', 'manage.py', 'collectstatic', '--no-input']
+          command: ['poetry', 'run', 'python', 'manage.py', 'collectstatic', '--no-input']
           envFrom:
             - configMapRef:
                 name: configuration

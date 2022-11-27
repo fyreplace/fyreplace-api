@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Tuple
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxLengthValidator, MinValueValidator
-from django.db import IntegrityError, models
+from django.db import models
 from django.db.models.functions import Replace
 from django.db.transaction import atomic
 from django.utils.timezone import now
@@ -167,7 +167,7 @@ class Post(TimestampModel, SoftDeleteModel, ValidatableModel):
     @atomic
     def publish(self, anonymous: bool):
         if self.date_published is not None:
-            raise IntegrityError("already_published")
+            raise PermissionDenied("already_published")
 
         self.validate()
         self.is_anonymous = anonymous

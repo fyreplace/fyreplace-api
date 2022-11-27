@@ -23,6 +23,8 @@ class Command(BaseCommand):
     def generate_proto(self, file: str):
         subprocess.call(
             [
+                "poetry",
+                "run",
                 "python",
                 "-m",
                 "grpc_tools.protoc",

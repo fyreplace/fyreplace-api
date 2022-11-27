@@ -48,6 +48,7 @@ class ImageUploadMixin:
             if size >= 2048 and not type_checked:
                 validate_type()
                 type_checked = True
+
             if size > settings.FILE_UPLOAD_MAX_MEMORY_SIZE:
                 raise InvalidArgument("payload_too_large")
 

@@ -718,7 +718,7 @@ class UserService_UpdateBlock(UserServiceTestCase):
     def test_block_me(self):
         self.request.id = self.main_user.id.bytes
 
-        with self.assertRaises(IntegrityError):
+        with self.assertRaises(PermissionDenied):
             self.service.UpdateBlock(self.request, self.grpc_context)
 
     def test_block_already_blocked(self):

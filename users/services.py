@@ -315,7 +315,9 @@ class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceSer
     ) -> empty_pb2.Empty:
         user = get_user_model().existing_objects.get(id__bytes=request.id)
 
-        if request.blocked:
+        if user == context.caller:
+            raise PermissionDenied("user_is_caller")
+        elif request.blocked:
             context.caller.blocked_users.add(user)
         else:
             context.caller.blocked_users.remove(user)

@@ -5,7 +5,7 @@ build: protobufs chart
 protobufs: protos protos/__init__.py
 
 protos:
-	python -m grpc_tools.protoc \
+	poetry run python -m grpc_tools.protoc \
 		--proto_path=. \
 		--python_out=. \
 		--grpc_python_out=. \

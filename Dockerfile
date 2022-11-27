@@ -1,10 +1,11 @@
-FROM python:3
+FROM python:3.11
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN python -m pip install --no-cache-dir --upgrade pip wheel
-RUN python -m pip install --no-cache-dir --requirement requirements.txt
+COPY poetry.lock .
+RUN python -m pip install --no-cache-dir --upgrade pip wheel setuptools poetry
+COPY pyproject.toml .
+RUN poetry install
 
 COPY . .
 RUN make protobufs
