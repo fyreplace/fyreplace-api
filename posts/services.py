@@ -340,6 +340,7 @@ class ChapterService(ImageUploadMixin, post_pb2_grpc.ChapterServiceServicer):
 
 
 class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
+    @no_auth
     def List(
         self,
         request_iterator: Iterator[pagination_pb2.Page],
