@@ -79,7 +79,12 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         if len(posts) == 0:
             return
 
-        yield from (p.to_message(context=context) for p in posts[:3])
+        yield from (
+            p.to_message(
+                context=context, is_subscribed=p.is_user_subscribed(context.caller)
+            )
+            for p in posts[:3]
+        )
 
         for request in request_iterator:
             if len(posts) == 0:
@@ -97,10 +102,18 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
             should_refill = post_count < 3
 
             if not should_refill:
-                yield posts[2].to_message(context=context)
+                post = posts[2]
+                yield post.to_message(
+                    context=context,
+                    is_subscribed=post.is_user_subscribed(context.caller),
+                )
             elif not end_reached:
                 refill_stack()
-                yield posts[-1 if len(posts) < 3 else 2].to_message(context=context)
+                post = posts[-1 if len(posts) < 3 else 2]
+                yield post.to_message(
+                    context=context,
+                    is_subscribed=post.is_user_subscribed(context.caller),
+                )
 
                 if len(posts) < Stack.MAX_SIZE:
                     end_reached = True
@@ -162,7 +175,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         if post.is_anonymous and context.caller.id != post.author_id:
             overrides["author"] = None
 
-        if post.subscribers.filter(id=context.caller.id).exists():
+        if post.is_user_subscribed(context.caller):
             overrides["is_subscribed"] = True
 
         if subscription := post.subscriptions.filter(user=context.caller).first():
@@ -340,6 +353,7 @@ class ChapterService(ImageUploadMixin, post_pb2_grpc.ChapterServiceServicer):
 
 
 class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
+    @no_auth
     def List(
         self,
         request_iterator: Iterator[pagination_pb2.Page],

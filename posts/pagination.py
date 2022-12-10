@@ -12,9 +12,7 @@ class PostsPaginationAdapter(PaginationAdapter):
             overrides["author"] = None
 
         message: post_pb2.Post = super().make_message(item, **overrides)
-        message.is_subscribed = item.subscribers.filter(
-            id=self.context.caller.id
-        ).exists()
+        message.is_subscribed = item.is_user_subscribed(self.context.caller)
 
         return message
 
