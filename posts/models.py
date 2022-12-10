@@ -227,8 +227,20 @@ class Post(TimestampModel, SoftDeleteModel, ValidatableModel):
 
             chapter.save()
 
-    def is_user_subscribed(self, user: Optional[AbstractUser]) -> bool:
-        return self.subscribers.filter(id=user.id).exists() if user else False
+    def overrides_for_user(self, user: Optional[AbstractUser]) -> bool:
+        overrides = {}
+
+        if self.is_anonymous and (not user or user.id != self.author_id):
+            overrides["author"] = None
+
+        if self.subscribers.filter(id=user.id).exists() if user else False:
+            overrides["is_subscribed"] = True
+
+        if subscription := self.subscriptions.filter(user=user).first():
+            if comment := subscription.last_comment_seen:
+                overrides["comments_read"] = comment.count(after=False) + 1
+
+        return overrides
 
 
 class Chapter(ValidatableModel):
