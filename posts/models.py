@@ -227,6 +227,9 @@ class Post(TimestampModel, SoftDeleteModel, ValidatableModel):
 
             chapter.save()
 
+    def is_user_subscribed(self, user: Optional[AbstractUser]) -> bool:
+        return self.subscribers.filter(id=user.id).exists() if user else False
+
 
 class Chapter(ValidatableModel):
     class Meta:
