@@ -947,8 +947,8 @@ class ChapterService_UpdateText(ChapterServiceTestCase):
         self.assertEqual(self.chapter.text, self.request.text)
 
     def test_has_content(self):
-        data = open(get_asset("image.jpeg"), "rb").read()
-        self.chapter.image = ImageFile(io.BytesIO(data), name=f"image.jpeg")
+        asset = open(get_asset("image.jpeg"), "rb")
+        self.chapter.image = ImageFile(asset, name=f"image.jpeg")
         self.chapter.save()
         self.service.UpdateText(self.request, self.grpc_context)
         self.chapter.refresh_from_db()
@@ -1029,8 +1029,8 @@ class ChapterService_UpdateImage(ImageTestCaseMixin, ChapterServiceTestCase):
             self.service.UpdateImage(iter([]), self.grpc_context)
 
     def test_published(self):
-        data = open(get_asset("image.jpeg"), "rb").read()
-        self.chapter.image = ImageFile(io.BytesIO(data), name=f"image.jpeg")
+        asset = open(get_asset("image.jpeg"), "rb")
+        self.chapter.image = ImageFile(asset, name=f"image.jpeg")
         self.chapter.save()
         self.post.publish(anonymous=False)
 
