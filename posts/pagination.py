@@ -8,12 +8,9 @@ from .models import Post
 
 class PostsPaginationAdapter(PaginationAdapter):
     def make_message(self, item: Post, **overrides) -> post_pb2.Post:
-        if item.is_anonymous:
-            overrides["author"] = None
-
-        message: post_pb2.Post = super().make_message(item, **overrides)
-        message.is_subscribed = item.is_user_subscribed(self.context.caller)
-
+        message: post_pb2.Post = super().make_message(
+            item, **overrides, **item.overrides_for_user(self.context.caller)
+        )
         return message
 
 

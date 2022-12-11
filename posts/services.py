@@ -80,9 +80,7 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
             return
 
         yield from (
-            p.to_message(
-                context=context, is_subscribed=p.is_user_subscribed(context.caller)
-            )
+            p.to_message(context=context, **p.overrides_for_user(context.caller))
             for p in posts[:3]
         )
 
@@ -104,15 +102,13 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
             if not should_refill:
                 post = posts[2]
                 yield post.to_message(
-                    context=context,
-                    is_subscribed=post.is_user_subscribed(context.caller),
+                    context=context, **post.overrides_for_user(context.caller)
                 )
             elif not end_reached:
                 refill_stack()
                 post = posts[-1 if len(posts) < 3 else 2]
                 yield post.to_message(
-                    context=context,
-                    is_subscribed=post.is_user_subscribed(context.caller),
+                    context=context, **post.overrides_for_user(context.caller)
                 )
 
                 if len(posts) < Stack.MAX_SIZE:
@@ -170,19 +166,9 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
                 context.caller, id__bytes=comment.post_id
             )
 
-        overrides = {}
-
-        if post.is_anonymous and context.caller.id != post.author_id:
-            overrides["author"] = None
-
-        if post.is_user_subscribed(context.caller):
-            overrides["is_subscribed"] = True
-
-        if subscription := post.subscriptions.filter(user=context.caller).first():
-            if comment := subscription.last_comment_seen:
-                overrides["comments_read"] = comment.count(after=False) + 1
-
-        return post.to_message(context=context, **overrides)
+        return post.to_message(
+            context=context, **post.overrides_for_user(context.caller)
+        )
 
     def Create(
         self, request: empty_pb2.Empty, context: grpc.ServicerContext
