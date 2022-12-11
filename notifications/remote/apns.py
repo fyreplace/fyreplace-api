@@ -25,11 +25,15 @@ from . import b64encode
 
 
 def send_remote_notifications_comment_change(comment: Comment):
-    send_message(
-        comment,
-        comment.post.subscribers.exclude(id=comment.author_id).iterator(chunk_size=500),
-        "comment:" + ("deletion" if comment.is_deleted else "creation"),
-    )
+    users = comment.post.subscribers.exclude(id=comment.author_id)
+
+    for cursor in range(0, users.count(), 500):
+        chunk = users[cursor : cursor + 500]
+        send_message(
+            comment,
+            chunk,
+            "comment:" + ("deletion" if comment.is_deleted else "creation"),
+        )
 
 
 def send_remote_notifications_comment_acknowledgement(comment: Comment, user_id: str):
