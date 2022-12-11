@@ -104,10 +104,19 @@ class Notification(UUIDModel, MessageConvertible):
     def get_message_field_values(self, **overrides) -> dict:
         values = super().get_message_field_values(**overrides)
         target_field = self.target_type.model.lower()
+
+        if target_field == "post":
+            target_overrides = {
+                "is_preview": True,
+                **self.target.overrides_for_user(self._context.caller),
+            }
+        else:
+            target_overrides = {}
+
         values[target_field] = self.target.to_message(
             message_class=self.retrieve_message_class(target_field),
             context=self._context,
-            is_preview=True,
+            **target_overrides,
         )
         return values
 

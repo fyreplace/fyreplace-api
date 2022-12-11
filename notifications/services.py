@@ -1,7 +1,7 @@
 from typing import Iterator
 
 import grpc
-from django.db.models import F, OuterRef, Sum
+from django.db.models import F, OuterRef
 from django.db.transaction import atomic
 from google.protobuf import empty_pb2
 
