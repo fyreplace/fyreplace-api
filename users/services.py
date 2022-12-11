@@ -70,8 +70,9 @@ def check_user(user: get_user_model()):
 class AccountService(user_pb2_grpc.AccountServiceServicer):
     def __init__(self):
         super().__init__()
-        reserved = open(path.join(__package__, "reserved-usernames.txt"), "r")
-        self.reserved_usernames = [normalize(name) for name in reserved]
+
+        with open(path.join(__package__, "reserved-usernames.txt"), "r") as reserved:
+            self.reserved_usernames = [normalize(name) for name in reserved]
 
     @no_auth
     def Create(
