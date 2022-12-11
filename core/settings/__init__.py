@@ -151,8 +151,6 @@ CONN_MAX_AGE = None
 
 CONN_HEALTH_CHECKS = True
 
-DISABLE_SERVER_SIDE_CURSORS = True
-
 # Authentication
 
 AUTH_USER_MODEL = "users.User"
