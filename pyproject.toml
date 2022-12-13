@@ -23,7 +23,7 @@ grpcio-tools = "^1.51"
 grpc-interceptor = "^0.15"
 httpx = {extras = ["http2"], version = "^0.23"}
 ipython = "^8.7"
-isort = "^5.10"
+isort = "^5.11"
 mysqlclient = "^2.1"
 pillow = "^9.3"
 psycopg2 = "^2.9"

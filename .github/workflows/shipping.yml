@@ -108,7 +108,7 @@ jobs:
       - name: Set environment
         id: environment
         run: |
-          if [ "${{ github.ref }}" = "refs/heads/develop" ]
+          if [ "${{ github.ref_type }}" = "branch" ]
           then
             echo "environment=dev" >> $GITHUB_OUTPUT
           else
@@ -205,7 +205,7 @@ jobs:
       - name: Deploy
         working-directory: kubernetes
         run: |
-          if [ "${{ github.ref }}" = "refs/heads/develop" ]
+          if [ "${{ github.ref_type }}" = "branch" ]
           then
             export variables="version=sha-${{ github.sha }},domain=dev.api.fyreplace.app"
           else

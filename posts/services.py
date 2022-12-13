@@ -89,15 +89,17 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
                 return
 
             if context.caller:
-                Vote.objects.create(
+                _, created = Vote.objects.get_or_create(
                     user=context.caller,
                     post_id=UUID(bytes=request.post_id),
-                    spread=request.spread,
+                    defaults={"spread": request.spread},
                 )
 
+                if not created:
+                    raise PermissionDenied("post_already_voted")
+
             posts = [p for p in posts if p.id.bytes != request.post_id]
-            post_count = len(posts)
-            should_refill = post_count < 3
+            should_refill = len(posts) < 3
 
             if not should_refill:
                 post = posts[2]
@@ -106,12 +108,15 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
                 )
             elif not end_reached:
                 refill_stack()
-                post = posts[-1 if len(posts) < 3 else 2]
-                yield post.to_message(
-                    context=context, **post.overrides_for_user(context.caller)
-                )
+                post_count = len(posts)
 
-                if len(posts) < Stack.MAX_SIZE:
+                if post_count > 0:
+                    post = posts[-1 if len(posts) < 3 else 2]
+                    yield post.to_message(
+                        context=context, **post.overrides_for_user(context.caller)
+                    )
+
+                if post_count < Stack.MAX_SIZE:
                     end_reached = True
 
     def ListArchive(
