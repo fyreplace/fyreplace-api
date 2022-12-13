@@ -89,11 +89,14 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
                 return
 
             if context.caller:
-                Vote.objects.create(
+                _, created = Vote.objects.get_or_create(
                     user=context.caller,
                     post_id=UUID(bytes=request.post_id),
-                    spread=request.spread,
+                    defaults={"spread": request.spread},
                 )
+
+                if not created:
+                    raise PermissionDenied("post_already_voted")
 
             posts = [p for p in posts if p.id.bytes != request.post_id]
             should_refill = len(posts) < 3
