@@ -85,10 +85,10 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         )
 
         for request in request_iterator:
-            if len(posts) == 0:
-                return
-
             if context.caller:
+                if request.post_id not in (p.id.bytes for p in posts[:3]):
+                    raise InvalidArgument("post_not_in_feed")
+
                 _, created = Vote.objects.get_or_create(
                     user=context.caller,
                     post_id=UUID(bytes=request.post_id),
@@ -99,25 +99,17 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
                     raise PermissionDenied("post_already_voted")
 
             posts = [p for p in posts if p.id.bytes != request.post_id]
-            should_refill = len(posts) < 3
 
-            if not should_refill:
+            if len(posts) == 0:
+                return
+            elif len(posts) < 3:
+                refill_stack()
+
+            if len(posts) >= 3:
                 post = posts[2]
                 yield post.to_message(
                     context=context, **post.overrides_for_user(context.caller)
                 )
-            elif not end_reached:
-                refill_stack()
-                post_count = len(posts)
-
-                if post_count > 0:
-                    post = posts[-1 if len(posts) < 3 else 2]
-                    yield post.to_message(
-                        context=context, **post.overrides_for_user(context.caller)
-                    )
-
-                if post_count < Stack.MAX_SIZE:
-                    end_reached = True
 
     def ListArchive(
         self,
