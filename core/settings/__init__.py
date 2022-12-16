@@ -1,5 +1,6 @@
 import os
 import re
+from datetime import timedelta
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -340,6 +341,12 @@ if path := os.getenv("FIREBASE_ACCOUNT_PATH"):
         FIREBASE_APP = firebase_admin.initialize_app(FirebaseCertificate(path))
 else:
     FIREBASE_APP = None
+
+# Fyreplace
+
+FYREPLACE_POST_SPREAD_LIFE = 4
+
+FYREPLACE_POST_MAX_DURATION = timedelta(weeks=4)
 
 # Other
 

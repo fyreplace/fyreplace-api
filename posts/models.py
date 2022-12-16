@@ -96,7 +96,7 @@ class DraftPostManager(ExistingPostManager):
 
 class ActivePostManager(ExistingPostManager):
     def get_queryset(self) -> models.QuerySet:
-        deadline = now() - timedelta(weeks=4)
+        deadline = now() - settings.FYREPLACE_POST_MAX_DURATION
         return super().get_queryset().filter(date_published__gte=deadline, life__gt=0)
 
 

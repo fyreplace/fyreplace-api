@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import IntegrityError
 from django.db.models import F
 from django.db.models.signals import post_delete, post_save, pre_save
@@ -68,6 +69,8 @@ def on_vote_post_save(instance: Vote, created: bool, **kwargs):
         return
 
     if instance.spread:
-        Post.objects.filter(id=instance.post_id).update(life=F("life") + 4)
+        Post.objects.filter(id=instance.post_id).update(
+            life=F("life") + settings.FYREPLACE_POST_SPREAD_LIFE
+        )
 
     instance.user.stack.posts.remove(instance.post)
