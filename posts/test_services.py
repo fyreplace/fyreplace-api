@@ -1,7 +1,7 @@
-import io
 from datetime import timedelta
 from typing import Iterator, Optional
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
@@ -193,7 +193,7 @@ class PostService_ListFeed(PostServiceTestCase):
 
         for i, post in enumerate(posts):
             if i % 2:
-                post.date_published -= timedelta(weeks=4)
+                post.date_published -= settings.FYREPLACE_POST_MAX_DURATION
                 post.save()
             else:
                 active_posts.append(post)
