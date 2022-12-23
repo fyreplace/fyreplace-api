@@ -51,7 +51,7 @@ def send_message(comment: Comment, users: Iterable[AbstractUser], command: str):
 
     payload = make_payload(comment, command)
 
-    with Client(http2=True, headers=make_headers()) as client:
+    with Client(http2=True, headers=make_headers(comment, command)) as client:
         for user in users:
             if Block.objects.filter(issuer=user, target=comment.author).exists():
                 continue
@@ -90,13 +90,14 @@ def make_jwt() -> str:
     )
 
 
-def make_headers() -> dict:
+def make_headers(comment: Comment, command: str) -> dict:
     future = now() + timedelta(days=10)
     headers = {
         "authorization": f"bearer {ApnsToken.objects.last().token}",
-        "apns-push-type": "background",
+        "apns-push-type": "alert" if command == "comment:creation" else "background",
         "apns-expiration": str(round(future.timestamp())),
         "apns-topic": settings.APPLE_APP_ID,
+        "apns-id": str(comment.id),
     }
 
     return headers
@@ -115,9 +116,24 @@ def make_payload(comment: Comment, command: str) -> dict:
 
 
 def make_json(payload: dict, comment: Comment, user: AbstractUser) -> dict:
-    return {
-        "aps": {"content-available": 1},
-        "_aps.badge": count_notifications_for(user),
-        "_aps.relevance-score": float(user.id == comment.post.author_id),
+    is_silent = payload["_command"] != "comment:creation"
+    badge = count_notifications_for(user)
+    relevance_score = float(user.id == comment.post.author_id)
+    json = {
+        "aps": (
+            {"content-available": 1}
+            if is_silent
+            else {
+                "badge": badge,
+                "alert": {"title": comment.author.username, "body": comment.text},
+                "thread-id": b64encode(comment.post_id),
+                "relevance-score": relevance_score,
+            }
+        ),
         **payload,
     }
+
+    if is_silent:
+        json = {**json, "_aps.badge": badge, "_aps.relevance-score": relevance_score}
+
+    return json
