@@ -42,6 +42,7 @@ def send_remote_notifications_comment_change(comment: Comment):
                     list(chunk.values_list("token", flat=True)),
                     channel_id,
                     payload,
+                    comment,
                 )
             )
 
@@ -65,7 +66,10 @@ def send_remote_notifications_comment_acknowledgement(comment: Comment, user_id:
 
     send_multicast_message(
         make_multicast_message(
-            list(remote_messagings.values_list("token", flat=True)), "", payload
+            list(remote_messagings.values_list("token", flat=True)),
+            "",
+            payload,
+            comment,
         )
     )
 
@@ -87,9 +91,27 @@ def make_payload(comment: Comment, command: str) -> dict:
 
 
 def make_multicast_message(
-    tokens: List[str], channel_id: str, payload: dict
+    tokens: List[str], channel_id: str, payload: dict, comment: Comment
 ) -> messaging.MulticastMessage:
+    is_silent = payload["_command"] != "comment:creation"
     return messaging.MulticastMessage(
         tokens=tokens,
-        android=messaging.AndroidConfig(data={"_fcm.channel": channel_id, **payload}),
+        android=messaging.AndroidConfig(
+            notification=None
+            if is_silent
+            else messaging.AndroidNotification(
+                title=comment.author.username,
+                body=comment.text,
+                tag=make_notification_tag(comment),
+                channel_id=channel_id,
+                event_timestamp=comment.date_created,
+            ),
+            data={"_fcm.channel": channel_id, **payload}
+            if is_silent
+            else payload,
+        ),
     )
+
+
+def make_notification_tag(comment: Comment) -> str:
+    return f"{b64encode(comment.post_id)}:{b64encode(comment.id)}"
