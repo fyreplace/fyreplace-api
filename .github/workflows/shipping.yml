@@ -26,29 +26,20 @@ jobs:
           - 5432:5432
 
     steps:
-      - name: Cache Poetry packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.cache/pip
-          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
           submodules: true
 
+      - name: Install Poetry
+        run: python -m pipx install poetry
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.x
-
-      - name: Install tools
-        run: python -m pip install --upgrade pip wheel setuptools poetry
+          python-version: '3.x'
+          cache: poetry
 
       - name: Install dependencies
         run: poetry install
