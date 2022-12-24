@@ -106,9 +106,7 @@ def make_multicast_message(
                 channel_id=channel_id,
                 event_timestamp=comment.date_created,
             ),
-            data={"_fcm.channel": channel_id, **payload}
-            if is_silent
-            else payload,
+            data={"_fcm.channel": channel_id, **payload} if is_silent else payload,
         ),
     )
 
