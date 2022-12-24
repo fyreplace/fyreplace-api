@@ -1,5 +1,4 @@
 from celery import shared_task
-from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 from django.db.transaction import atomic
@@ -42,15 +41,14 @@ def send_remote_notifications_comment_change(comment_id: str):
     comment = Comment.objects.get(id=comment_id)
 
     if comment.post.subscribers.exists():
-        apns.send_remote_notifications_comment_change(comment)
-        fcm.send_remote_notifications_comment_change(comment)
+        apns.send_remote_notifications_comment_change.delay(comment_id=comment_id)
+        fcm.send_remote_notifications_comment_change.delay(comment_id=comment_id)
 
 
 @shared_task(autoretry_for=[IntegrityError], retry_backoff=True)
 def send_remote_notifications_comment_acknowledgement(comment_id: str, user_id: str):
-    comment = Comment.objects.get(id=comment_id)
-    apns.send_remote_notifications_comment_acknowledgement(comment, user_id)
-    fcm.send_remote_notifications_comment_acknowledgement(comment, user_id)
+    apns.send_remote_notifications_comment_acknowledgement.delay(comment_id=comment_id, user_id=user_id)
+    fcm.send_remote_notifications_comment_acknowledgement.delay(comment_id=comment_id, user_id=user_id)
 
 
 @shared_task(autoretry_for=[IntegrityError], retry_backoff=True)

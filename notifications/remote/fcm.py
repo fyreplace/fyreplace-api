@@ -1,5 +1,6 @@
 from typing import List, Optional
 
+from celery import shared_task
 from django.conf import settings
 from django.db.models import OuterRef
 from firebase_admin import messaging
@@ -11,7 +12,9 @@ from ..models import MessagingService, RemoteMessaging
 from . import b64encode
 
 
-def send_remote_notifications_comment_change(comment: Comment):
+@shared_task
+def send_remote_notifications_comment_change(comment_id: str):
+    comment = Comment.objects.get(id=comment_id)
     payload = make_payload(
         comment, "comment:" + ("deletion" if comment.is_deleted else "creation")
     )
@@ -54,7 +57,10 @@ def send_remote_notifications_comment_change(comment: Comment):
                     remote_messaging.delete()
 
 
-def send_remote_notifications_comment_acknowledgement(comment: Comment, user_id: str):
+@shared_task
+def send_remote_notifications_comment_acknowledgement(comment_id: str, user_id: str):
+    comment = Comment.objects.get(id=comment_id)
+
     if user_id == comment.author_id:
         return
 

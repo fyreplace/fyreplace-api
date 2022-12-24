@@ -78,7 +78,7 @@ spec:
 
         - name: celery-worker-messaging
           image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
-          command: ['poetry', 'run', 'celery', '--app=core', 'worker', '--loglevel=info', '--queues=messaging']
+          command: ['poetry', 'run', 'celery', '--app=core', 'worker', '--loglevel=info', '--queues=messaging', '--concurrency=4']
           volumeMounts:
             - name: apns
               mountPath: "/etc/fyreplace/apns"
