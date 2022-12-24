@@ -349,6 +349,7 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
             adapter=CommentsPaginationAdapter(context, comments),
         )
 
+    @atomic
     def Create(
         self, request: comment_pb2.CommentCreation, context: grpc.ServicerContext
     ) -> id_pb2.Id:
@@ -361,10 +362,9 @@ class CommentService(PaginatorMixin, comment_pb2_grpc.CommentServiceServicer):
         elif len(request.text) == 0:
             raise InvalidArgument("comment_empty")
 
-        comment = Comment.objects.create(
-            post=post, author=context.caller, text=request.text
-        )
-
+        comment = Comment(post=post, author=context.caller, text=request.text)
+        comment.full_clean()
+        comment.save()
         return id_pb2.Id(id=comment.id.bytes)
 
     @atomic

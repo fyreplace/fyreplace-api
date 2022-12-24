@@ -254,7 +254,7 @@ class Chapter(ValidatableModel):
         to=Post, on_delete=models.CASCADE, related_name="%(class)ss"
     )
     position = models.CharField(max_length=128)
-    text = models.TextField(
+    text = models.CharField(
         max_length=500, blank=True, validators=[MaxLengthValidator(500)]
     )
     is_title = models.BooleanField(default=False)
@@ -379,7 +379,7 @@ class Comment(UUIDModel, TimestampModel, SoftDeleteModel):
     author = models.ForeignKey(
         to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+"
     )
-    text = models.TextField(max_length=500, validators=[MaxLengthValidator(500)])
+    text = models.CharField(max_length=500, validators=[MaxLengthValidator(500)])
 
     @property
     def position(self) -> int:

@@ -1227,30 +1227,51 @@ class CommentService_Create(CommentServiceTestCase):
 
     def test_empty(self):
         self.request.text = ""
+        comment_count = self.post.comments.count()
 
         with self.assertRaises(InvalidArgument):
             self.service.Create(self.request, self.grpc_context)
+
+        self.assertEqual(self.post.comments.count(), comment_count)
+
+    def test_too_long(self):
+        self.request.text = "a" * (Comment.text.field.max_length + 1)
+        comment_count = self.post.comments.count()
+
+        with self.assertRaises(ValidationError):
+            self.service.Create(self.request, self.grpc_context)
+
+        self.assertEqual(self.post.comments.count(), comment_count)
 
     def test_draft(self):
         self.post.author = self.main_user
         self.post.date_published = None
         self.post.save()
+        comment_count = self.post.comments.count()
 
         with self.assertRaises(PermissionDenied):
             self.service.Create(self.request, self.grpc_context)
+
+        self.assertEqual(self.post.comments.count(), comment_count)
 
     def test_other_draft(self):
         self.post.date_published = None
         self.post.save()
+        comment_count = self.post.comments.count()
 
         with self.assertRaises(ObjectDoesNotExist):
             self.service.Create(self.request, self.grpc_context)
 
+        self.assertEqual(self.post.comments.count(), comment_count)
+
     def test_blocked(self):
         self.other_user.blocked_users.add(self.main_user)
+        comment_count = self.post.comments.count()
 
         with self.assertRaises(PermissionDenied):
             self.service.Create(self.request, self.grpc_context)
+
+        self.assertEqual(self.post.comments.count(), comment_count)
 
 
 class CommentService_Delete(CommentServiceTestCase):

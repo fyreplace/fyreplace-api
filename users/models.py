@@ -71,7 +71,7 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
         null=True,
         blank=True,
     )
-    bio = models.TextField(
+    bio = models.CharField(
         max_length=3000, blank=True, validators=[MaxLengthValidator(3000)]
     )
     blocked_users = models.ManyToManyField(
