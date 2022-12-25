@@ -5,6 +5,7 @@ from typing import Iterable
 from urllib.parse import urljoin
 
 import jwt
+from celery import shared_task
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
@@ -24,7 +25,9 @@ from ..models import (
 from . import b64encode
 
 
-def send_remote_notifications_comment_change(comment: Comment):
+@shared_task
+def send_remote_notifications_comment_change(comment_id: str):
+    comment = Comment.objects.get(id=comment_id)
     users = comment.post.subscribers.exclude(id=comment.author_id)
 
     for cursor in range(0, users.count(), 500):
@@ -36,7 +39,10 @@ def send_remote_notifications_comment_change(comment: Comment):
         )
 
 
-def send_remote_notifications_comment_acknowledgement(comment: Comment, user_id: str):
+@shared_task
+def send_remote_notifications_comment_acknowledgement(comment_id: str, user_id: str):
+    comment = Comment.objects.get(id=comment_id)
+
     if user_id == comment.author_id:
         return
 
