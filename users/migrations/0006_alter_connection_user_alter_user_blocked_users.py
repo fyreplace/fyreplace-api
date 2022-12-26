@@ -23,7 +23,9 @@ class Migration(migrations.Migration):
             model_name="user",
             name="blocked_users",
             field=models.ManyToManyField(
-                related_name="+", through="users.Block", to=settings.AUTH_USER_MODEL
+                related_name="blocking_%(class)ss",
+                through="users.Block",
+                to=settings.AUTH_USER_MODEL,
             ),
         ),
     ]

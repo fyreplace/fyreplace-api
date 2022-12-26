@@ -76,7 +76,7 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
     )
     blocked_users = models.ManyToManyField(
         to=settings.AUTH_USER_MODEL,
-        related_name="+",
+        related_name="blocking_%(class)ss",
         through=Block,
     )
     is_banned = models.BooleanField(default=False)
