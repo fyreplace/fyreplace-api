@@ -319,11 +319,10 @@ class Stack(UUIDModel):
 
         post_ids = (
             Post.active_objects.select_for_update()
-            .exclude(
-                models.Q(author=self.user)
-                | models.Q(author__in=self.user.blocked_users.values("id"))
-                | models.Q(voters=self.user)
-            )
+            .exclude(author=self.user)
+            .exclude(author__in=self.user.blocked_users.values("id"))
+            .exclude(author__in=self.user.blocking_users.values("id"))
+            .exclude(voters=self.user)
             .order_by("date_published")
             .values_list("id", flat=True)[: self.MAX_SIZE]
         )
