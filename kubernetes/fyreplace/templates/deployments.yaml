@@ -51,6 +51,54 @@ spec:
           ports:
             - containerPort: 80
 
+      initContainers:
+        - name: migrations
+          image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
+          command: ['poetry', 'run', 'python', 'manage.py', 'migrate']
+          envFrom:
+            - configMapRef:
+                name: configuration
+            - secretRef:
+                name: secrets
+
+        - name: static-files
+          image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
+          command: ['poetry', 'run', 'python', 'manage.py', 'collectstatic', '--no-input']
+          envFrom:
+            - configMapRef:
+                name: configuration
+            - secretRef:
+                name: secrets
+
+      volumes:
+        - name: certificate
+          secret:
+            secretName: api-fyreplace-app-tls
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ include "fyreplace.name" . }}
+  name: {{ include "fyreplace.fullname" . }}-workers
+  labels:
+    {{- include "fyreplace.labels" . | nindent 4 }}
+    app: {{ include "fyreplace.fullname" . }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "fyreplace.selectorLabels" . | nindent 6 }}
+      app: {{ include "fyreplace.fullname" . }}
+  minReadySeconds: 5
+  template:
+    metadata:
+      namespace: {{ include "fyreplace.name" . }}
+      labels:
+        {{- include "fyreplace.selectorLabels" . | nindent 8 }}
+        app: {{ include "fyreplace.fullname" . }}
+    spec:
+      containers:
         - name: celery-beat
           image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
           command: ['poetry', 'run', 'celery', '--app=core', 'beat', '--loglevel=info']
@@ -106,29 +154,7 @@ spec:
             - secretRef:
                 name: secrets
 
-      initContainers:
-        - name: migrations
-          image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
-          command: ['poetry', 'run', 'python', 'manage.py', 'migrate']
-          envFrom:
-            - configMapRef:
-                name: configuration
-            - secretRef:
-                name: secrets
-
-        - name: static-files
-          image: ghcr.io/fyreplace/fyreplace-server:{{ .Values.version | default .Chart.AppVersion }}
-          command: ['poetry', 'run', 'python', 'manage.py', 'collectstatic', '--no-input']
-          envFrom:
-            - configMapRef:
-                name: configuration
-            - secretRef:
-                name: secrets
-
       volumes:
-        - name: certificate
-          secret:
-            secretName: api-fyreplace-app-tls
         - name: apns
           secret:
             secretName: apns
