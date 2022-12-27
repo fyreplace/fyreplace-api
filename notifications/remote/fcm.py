@@ -64,7 +64,6 @@ def send_remote_notifications_comment_acknowledgement(comment_id: str, user_id: 
     if user_id == comment.author_id:
         return
 
-    payload = make_payload(comment, "comment:acknowledgement")
     remote_messagings = RemoteMessaging.objects.filter(
         service=MessagingService.FCM,
         connection__in=Connection.objects.filter(user_id=user_id),
@@ -74,8 +73,25 @@ def send_remote_notifications_comment_acknowledgement(comment_id: str, user_id: 
         make_multicast_message(
             list(remote_messagings.values_list("token", flat=True)),
             "",
-            payload,
+            make_payload(comment, "comment:acknowledgement"),
             comment,
+        )
+    )
+
+
+@shared_task
+def send_remote_notifications_clear(user_id: str):
+    remote_messagings = RemoteMessaging.objects.filter(
+        service=MessagingService.FCM,
+        connection__in=Connection.objects.filter(user_id=user_id),
+    )
+
+    send_multicast_message(
+        make_multicast_message(
+            list(remote_messagings.values_list("token", flat=True)),
+            "",
+            make_payload(None, "notifications:clear"),
+            None,
         )
     )
 
@@ -86,18 +102,20 @@ def send_multicast_message(
     return messaging.send_multicast(message) if settings.FIREBASE_APP else None
 
 
-def make_payload(comment: Comment, command: str) -> dict:
-    return {
-        "_command": command,
-        "comment": b64encode(
+def make_payload(comment: Optional[Comment], command: str) -> dict:
+    payload = {"_command": command}
+
+    if comment:
+        payload["comment"] = b64encode(
             comment.to_message().SerializeToString(deterministic=True)
-        ),
-        "postId": b64encode(comment.post_id),
-    }
+        )
+        payload["postId"] = b64encode(comment.post_id)
+
+    return payload
 
 
 def make_multicast_message(
-    tokens: List[str], channel_id: str, payload: dict, comment: Comment
+    tokens: List[str], channel_id: str, payload: dict, comment: Optional[Comment]
 ) -> messaging.MulticastMessage:
     is_silent = payload["_command"] != "comment:creation"
     return messaging.MulticastMessage(

@@ -47,8 +47,18 @@ def send_remote_notifications_comment_change(comment_id: str):
 
 @shared_task(autoretry_for=[IntegrityError], retry_backoff=True)
 def send_remote_notifications_comment_acknowledgement(comment_id: str, user_id: str):
-    apns.send_remote_notifications_comment_acknowledgement.delay(comment_id=comment_id, user_id=user_id)
-    fcm.send_remote_notifications_comment_acknowledgement.delay(comment_id=comment_id, user_id=user_id)
+    apns.send_remote_notifications_comment_acknowledgement.delay(
+        comment_id=comment_id, user_id=user_id
+    )
+    fcm.send_remote_notifications_comment_acknowledgement.delay(
+        comment_id=comment_id, user_id=user_id
+    )
+
+
+@shared_task(autoretry_for=[IntegrityError], retry_backoff=True)
+def send_remote_notifications_clear(user_id: str):
+    apns.send_remote_notifications_clear.delay(user_id=user_id)
+    fcm.send_remote_notifications_clear.delay(user_id=user_id)
 
 
 @shared_task(autoretry_for=[IntegrityError], retry_backoff=True)

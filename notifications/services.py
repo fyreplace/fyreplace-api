@@ -11,6 +11,7 @@ from protos import notification_pb2, notification_pb2_grpc, pagination_pb2
 
 from .models import Notification, RemoteMessaging, count_notifications_for
 from .pagination import NotificationPaginationAdapter
+from .tasks import send_remote_notifications_clear
 
 
 class NotificationService(
@@ -51,6 +52,7 @@ class NotificationService(
             subscription__in=Subscription.objects.filter(user=context.caller)
         ).delete()
 
+        send_remote_notifications_clear.delay(user_id=str(context.caller.id))
         return empty_pb2.Empty()
 
     @atomic
