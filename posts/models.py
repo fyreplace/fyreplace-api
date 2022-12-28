@@ -378,7 +378,7 @@ class Comment(UUIDModel, TimestampModel, SoftDeleteModel):
     author = models.ForeignKey(
         to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+"
     )
-    text = models.CharField(max_length=500, validators=[MaxLengthValidator(500)])
+    text = models.CharField(max_length=1500, validators=[MaxLengthValidator(1500)])
 
     @property
     def position(self) -> int:
