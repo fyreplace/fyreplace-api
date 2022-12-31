@@ -5,6 +5,7 @@ import grpc
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.transaction import atomic
+from django.utils.timezone import now
 from google.protobuf import empty_pb2
 from grpc_interceptor.exceptions import InvalidArgument, PermissionDenied
 
@@ -28,7 +29,7 @@ from protos import (
 
 from .models import Chapter, Comment, Post, Stack, Subscription, Vote
 from .pagination import (
-    ArchivePaginationAdapter,
+    ArchiveSubscriptionsPaginationAdapter,
     CommentsPaginationAdapter,
     DraftsPaginationAdapter,
     OwnPostsPaginationAdapter,
@@ -42,7 +43,6 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
     ) -> Iterator[post_pb2.Post]:
         posts = []
         fetch_after = None
-        end_reached = False
 
         def refill_stack():
             nonlocal posts
@@ -116,11 +116,13 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
         request_iterator: Iterator[pagination_pb2.Page],
         context: grpc.ServicerContext,
     ) -> Iterator[post_pb2.Posts]:
-        posts = Post.published_objects.filter(subscribers=context.caller)
+        subscriptions = Subscription.objects.filter(
+            user=context.caller, post__in=Post.published_objects.all()
+        ).distinct()
         return self.paginate(
             request_iterator,
             bundle_class=post_pb2.Posts,
-            adapter=ArchivePaginationAdapter(context, posts),
+            adapter=ArchiveSubscriptionsPaginationAdapter(context, subscriptions),
             message_overrides={"is_preview": True},
         )
 
@@ -163,6 +165,9 @@ class PostService(PaginatorMixin, post_pb2_grpc.PostServiceServicer):
                 context.caller, id__bytes=comment.post_id
             )
 
+        Subscription.objects.filter(user=context.caller, post=post).update(
+            date_last_seen=now()
+        )
         return post.to_message(
             context=context, **post.overrides_for_user(context.caller)
         )

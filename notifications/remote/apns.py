@@ -103,7 +103,7 @@ def make_jwt() -> str:
 
 
 def make_headers(command: str) -> dict:
-    future = now() + timedelta(days=10)
+    future = now() + timedelta(weeks=1)
     headers = {
         "authorization": f"bearer {ApnsToken.objects.last().token}",
         "apns-push-type": "alert" if command == "comment:creation" else "background",
