@@ -3,15 +3,14 @@ from typing import Iterable
 from core.pagination import PaginationAdapter
 from protos import pagination_pb2, post_pb2
 
-from .models import Post
+from .models import Post, Subscription
 
 
 class PostsPaginationAdapter(PaginationAdapter):
     def make_message(self, item: Post, **overrides) -> post_pb2.Post:
-        message: post_pb2.Post = super().make_message(
+        return super().make_message(
             item, **overrides, **item.overrides_for_user(self.context.caller)
         )
-        return message
 
 
 class CreationDatePaginationAdapter(PaginationAdapter):
@@ -24,10 +23,14 @@ class PublicationDatePaginationAdapter(PaginationAdapter):
         return ["date_published", "id"]
 
 
-class ArchivePaginationAdapter(
-    PostsPaginationAdapter, PublicationDatePaginationAdapter
-):
-    pass
+class ArchiveSubscriptionsPaginationAdapter(PaginationAdapter):
+    def get_cursor_fields(self) -> Iterable[str]:
+        return ["date_last_seen", "post_id"]
+
+    def make_message(self, item: Subscription, **overrides) -> post_pb2.Post:
+        return super().make_message(
+            item.post, **overrides, **item.post.overrides_for_user(self.context.caller)
+        )
 
 
 class OwnPostsPaginationAdapter(

@@ -436,6 +436,7 @@ class Subscription(UUIDModel):
     last_comment_seen = models.ForeignKey(
         to=Comment, on_delete=models.SET_NULL, related_name="+", null=True
     )
+    date_last_seen = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
         return f"{self.user}, {self.post}"

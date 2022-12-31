@@ -265,7 +265,7 @@ class PostService_ListFeed(PostServiceTestCase):
 
 
 class PostService_ListArchive(PostPaginationTestCase):
-    main_pagination_field = "date_published"
+    main_pagination_field = "date_last_seen"
 
     def _create_test_posts(self) -> list[Post]:
         self._create_posts(author=self.main_user, count=5, published=False)
@@ -281,6 +281,10 @@ class PostService_ListArchive(PostPaginationTestCase):
             else:
                 post.subscribers.remove(self.main_user)
 
+        the_posts = sorted(
+            the_posts,
+            key=lambda p: p.subscriptions.get(user=self.main_user).date_last_seen,
+        )
         return the_posts
 
     def paginate(
