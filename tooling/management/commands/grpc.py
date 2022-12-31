@@ -10,7 +10,7 @@ from core.grpc import create_server
 class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         if settings.DEBUG:
-            autoreload.run_with_reloader(self.run, **kwargs)
+            autoreload.run_with_reloader(self.run, *args, **kwargs)
         else:
             self.run()
 
