@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import List, Optional
 
 from celery import shared_task
@@ -121,6 +122,7 @@ def make_multicast_message(
     return messaging.MulticastMessage(
         tokens=tokens,
         android=messaging.AndroidConfig(
+            ttl=timedelta(weeks=1),
             notification=None
             if is_silent
             else messaging.AndroidNotification(
