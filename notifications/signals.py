@@ -13,7 +13,7 @@ def on_post_soft_delete(instance: Model, **kwargs):
 
 
 @receiver(post_save, sender=Notification)
-def on_notification_post_save(instance: Notification, created: bool, **kwargs):
+def on_notification_post_save(instance: Notification, **kwargs):
     if instance.count == 0:
         instance.delete()
 
