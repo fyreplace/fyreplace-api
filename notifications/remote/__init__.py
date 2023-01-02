@@ -8,3 +8,7 @@ def b64encode(data: Union[bytes, UUID], padding: bool = False) -> str:
         data.bytes if isinstance(data, UUID) else data
     ).decode("ascii")
     return encoded_data if padding else encoded_data.replace("=", "")
+
+
+def cut_text(text: str) -> str:
+    return text[:499] + "\u2026" if len(text) > 500 else text
