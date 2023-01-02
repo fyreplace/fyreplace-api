@@ -10,7 +10,7 @@ from posts.models import Comment
 from users.models import Block, Connection
 
 from ..models import MessagingService, RemoteMessaging
-from . import b64encode
+from . import b64encode, cut_text
 
 
 @shared_task
@@ -127,7 +127,7 @@ def make_multicast_message(
             if is_silent
             else messaging.AndroidNotification(
                 title=comment.author.username,
-                body=comment.text,
+                body=cut_text(comment.text),
                 tag=make_notification_tag(comment),
                 channel_id=channel_id,
                 event_timestamp=comment.date_created,

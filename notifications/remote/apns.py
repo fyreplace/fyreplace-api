@@ -22,7 +22,7 @@ from ..models import (
     RemoteMessaging,
     count_notifications_for,
 )
-from . import b64encode
+from . import b64encode, cut_text
 
 
 @shared_task
@@ -138,7 +138,10 @@ def make_json(payload: dict, comment: Optional[Comment], user: AbstractUser) -> 
             if is_silent
             else {
                 "badge": badge,
-                "alert": {"title": comment.author.username, "body": comment.text},
+                "alert": {
+                    "title": comment.author.username,
+                    "body": cut_text(comment.text),
+                },
                 "thread-id": b64encode(comment.post_id),
                 "relevance-score": relevance_score,
             }
