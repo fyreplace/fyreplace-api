@@ -346,7 +346,7 @@ else:
 
 FYREPLACE_POST_SPREAD_LIFE = 4
 
-FYREPLACE_POST_MAX_DURATION = timedelta(weeks=4)
+FYREPLACE_POST_MAX_DURATION = timedelta(weeks=1)
 
 # Other
 
