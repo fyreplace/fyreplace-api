@@ -133,6 +133,14 @@ class Post(TimestampModel, SoftDeleteModel, ValidatableModel):
     def chapter_count(self) -> int:
         return self.chapters.count()
 
+    @property
+    def vote_count(self) -> int:
+        return Vote.objects.filter(post_id=self.id).count()
+
+    @property
+    def comment_count(self) -> int:
+        return Comment.existing_objects.filter(post_id=self.id).count()
+
     def __str__(self) -> str:
         return f"{self.author}: {self.chapters.count()} ({self.date_published or self.date_created})"
 
