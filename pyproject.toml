@@ -22,10 +22,10 @@ grpcio = "^1.51"
 grpcio-tools = "^1.51"
 grpc-interceptor = "^0.15"
 httpx = {extras = ["http2"], version = "^0.23"}
-ipython = "^8.7"
+ipython = "^8.8"
 isort = "^5.11"
 mysqlclient = "^2.1"
-pillow = "^9.3"
+pillow = "^9.4"
 psycopg2 = "^2.9"
 pyjwt = {extras = ["crypto"], version = "^2.6"}
 pytest-xdist = {extras = ["psutil"], version = "^3.1"}
