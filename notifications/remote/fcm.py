@@ -4,7 +4,7 @@ from typing import List, Optional
 from celery import shared_task
 from django.conf import settings
 from django.db.models import OuterRef
-from firebase_admin import messaging
+from firebase_admin import exceptions, messaging
 
 from posts.models import Comment
 from users.models import Block, Connection
@@ -54,8 +54,10 @@ def send_remote_notifications_comment_change(comment_id: str):
                 break
 
             for response, remote_messaging in zip(batch_response.responses, chunk):
-                if not response.success:
+                if response.exception.code == exceptions.NOT_FOUND:
                     remote_messaging.delete()
+                elif response.exception:
+                    raise response.exception
 
 
 @shared_task
