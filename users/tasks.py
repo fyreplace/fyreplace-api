@@ -31,7 +31,7 @@ def cleanup_users():
 
 @shared_task
 def cleanup_connections():
-    deadline = now() - timedelta(weeks=12)
+    deadline = now() - timedelta(weeks=4)
     Connection.objects.filter(date_last_used__lte=deadline).delete()
 
 
