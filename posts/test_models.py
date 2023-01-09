@@ -1,6 +1,7 @@
 from time import sleep
 from unittest.case import TestCase
 
+from django.conf import settings
 from django.core.files.images import ImageFile
 from django.db import IntegrityError
 from django.utils.timezone import now
@@ -192,7 +193,9 @@ class Vote_create(PublishedPostTestCase):
         stack_count = self.other_user.stack.posts.count()
         Vote.objects.create(user=self.other_user, post=self.post, spread=True)
         self.post.refresh_from_db()
-        self.assertEqual(self.post.life, post_life + 4)
+        self.assertEqual(
+            self.post.life, post_life + settings.FYREPLACE_POST_SPREAD_LIFE
+        )
         self.assertEqual(self.other_user.stack.posts.count(), stack_count - 1)
 
     def test_no_spread(self):

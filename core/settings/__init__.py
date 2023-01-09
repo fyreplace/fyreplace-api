@@ -344,6 +344,10 @@ else:
 
 # Fyreplace
 
+FYREPLACE_INACTIVE_USER_DURATION = timedelta(days=1)
+
+FYREPLACE_CONNECTION_DURATION = timedelta(weeks=4)
+
 FYREPLACE_POST_SPREAD_LIFE = 3
 
 FYREPLACE_POST_MAX_DURATION = timedelta(weeks=1)

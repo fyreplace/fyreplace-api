@@ -23,7 +23,7 @@ from .models import Connection
 
 @shared_task
 def cleanup_users():
-    deadline = now() - timedelta(days=1)
+    deadline = now() - settings.FYREPLACE_INACTIVE_USER_DURATION
     get_user_model().objects.filter(
         date_joined__lte=deadline, is_active=False, is_deleted=False
     ).delete()
@@ -31,7 +31,7 @@ def cleanup_users():
 
 @shared_task
 def cleanup_connections():
-    deadline = now() - timedelta(weeks=4)
+    deadline = now() - settings.FYREPLACE_CONNECTION_DURATION
     Connection.objects.filter(date_last_used__lte=deadline).delete()
 
 
