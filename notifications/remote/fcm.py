@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from celery import shared_task
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import OuterRef
 from firebase_admin import exceptions, messaging
 
@@ -13,7 +14,7 @@ from ..models import MessagingService, RemoteMessaging
 from . import b64encode, cut_text
 
 
-@shared_task
+@shared_task(autoretry_for=[ObjectDoesNotExist], retry_backoff=True)
 def send_remote_notifications_comment_change(comment_id: str):
     comment = Comment.objects.get(id=comment_id)
     payload = make_payload(
@@ -62,7 +63,7 @@ def send_remote_notifications_comment_change(comment_id: str):
                     raise response.exception
 
 
-@shared_task
+@shared_task(autoretry_for=[ObjectDoesNotExist], retry_backoff=True)
 def send_remote_notifications_comment_acknowledgement(comment_id: str, user_id: str):
     comment = Comment.objects.get(id=comment_id)
 

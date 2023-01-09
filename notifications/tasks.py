@@ -1,5 +1,6 @@
 from celery import shared_task
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.transaction import atomic
 
@@ -9,7 +10,7 @@ from .models import ApnsToken, Notification
 from .remote import apns, fcm
 
 
-@shared_task(autoretry_for=[IntegrityError], retry_backoff=True)
+@shared_task(autoretry_for=[IntegrityError, ObjectDoesNotExist], retry_backoff=True)
 def send_notifications(comment_id: str, new_notifications: bool):
     comment = Comment.objects.get(id=comment_id)
     subscriptions = Subscription.objects.filter(post_id=comment.post_id).exclude(
@@ -36,7 +37,7 @@ def send_notifications(comment_id: str, new_notifications: bool):
                 notification.save()
 
 
-@shared_task(autoretry_for=[IntegrityError], retry_backoff=True)
+@shared_task(autoretry_for=[ObjectDoesNotExist], retry_backoff=True)
 def send_remote_notifications_comment_change(comment_id: str):
     comment = Comment.objects.get(id=comment_id)
 
@@ -45,7 +46,7 @@ def send_remote_notifications_comment_change(comment_id: str):
         fcm.send_remote_notifications_comment_change.delay(comment_id=comment_id)
 
 
-@shared_task(autoretry_for=[IntegrityError], retry_backoff=True)
+@shared_task
 def send_remote_notifications_comment_acknowledgement(comment_id: str, user_id: str):
     apns.send_remote_notifications_comment_acknowledgement.delay(
         comment_id=comment_id, user_id=user_id
@@ -55,13 +56,13 @@ def send_remote_notifications_comment_acknowledgement(comment_id: str, user_id: 
     )
 
 
-@shared_task(autoretry_for=[IntegrityError], retry_backoff=True)
+@shared_task
 def send_remote_notifications_clear(user_id: str):
     apns.send_remote_notifications_clear.delay(user_id=user_id)
     fcm.send_remote_notifications_clear.delay(user_id=user_id)
 
 
-@shared_task(autoretry_for=[IntegrityError], retry_backoff=True)
+@shared_task
 @atomic
 def refresh_apns_token():
     if token := ApnsToken.objects.first():

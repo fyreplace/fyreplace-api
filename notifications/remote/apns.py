@@ -9,6 +9,7 @@ from celery import shared_task
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils.timezone import now
 from google.protobuf.json_format import MessageToDict
 from httpx import Client, ReadTimeout
@@ -25,7 +26,7 @@ from ..models import (
 from . import b64encode, cut_text
 
 
-@shared_task(autoretry_for=[ReadTimeout], retry_backoff=True)
+@shared_task(autoretry_for=[ObjectDoesNotExist, ReadTimeout], retry_backoff=True)
 def send_remote_notifications_comment_change(comment_id: str):
     comment = Comment.objects.get(id=comment_id)
     users = comment.post.subscribers.exclude(id=comment.author_id)
@@ -39,7 +40,7 @@ def send_remote_notifications_comment_change(comment_id: str):
         )
 
 
-@shared_task(autoretry_for=[ReadTimeout], retry_backoff=True)
+@shared_task(autoretry_for=[ObjectDoesNotExist, ReadTimeout], retry_backoff=True)
 def send_remote_notifications_comment_acknowledgement(comment_id: str, user_id: str):
     comment = Comment.objects.get(id=comment_id)
 
