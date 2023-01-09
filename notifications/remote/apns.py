@@ -11,7 +11,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
 from django.utils.timezone import now
 from google.protobuf.json_format import MessageToDict
-from httpx import Client
+from httpx import Client, ReadTimeout
 
 from posts.models import Comment
 from users.models import Block, Connection
@@ -25,7 +25,7 @@ from ..models import (
 from . import b64encode, cut_text
 
 
-@shared_task
+@shared_task(autoretry_for=[ReadTimeout], retry_backoff=True)
 def send_remote_notifications_comment_change(comment_id: str):
     comment = Comment.objects.get(id=comment_id)
     users = comment.post.subscribers.exclude(id=comment.author_id)
@@ -39,7 +39,7 @@ def send_remote_notifications_comment_change(comment_id: str):
         )
 
 
-@shared_task
+@shared_task(autoretry_for=[ReadTimeout], retry_backoff=True)
 def send_remote_notifications_comment_acknowledgement(comment_id: str, user_id: str):
     comment = Comment.objects.get(id=comment_id)
 
@@ -51,7 +51,7 @@ def send_remote_notifications_comment_acknowledgement(comment_id: str, user_id: 
     )
 
 
-@shared_task
+@shared_task(autoretry_for=[ReadTimeout], retry_backoff=True)
 def send_remote_notifications_clear(user_id: str):
     send_message(
         None, [get_user_model().objects.get(id=user_id)], "notifications:clear"
