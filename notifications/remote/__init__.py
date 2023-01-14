@@ -11,4 +11,4 @@ def b64encode(data: Union[bytes, UUID], padding: bool = False) -> str:
 
 
 def cut_text(text: str) -> str:
-    return text[:255] + "\u2026" if len(text) > 256 else text
+    return text[:249] + "\u2026" if len(text) > 250 else text

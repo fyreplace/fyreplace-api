@@ -331,7 +331,7 @@ class Stack(UUIDModel):
             .exclude(author__in=self.user.blocked_users.values("id"))
             .exclude(author__in=self.user.blocking_users.values("id"))
             .exclude(voters=self.user)
-            .order_by("date_published")
+            .order_by("life", "date_published")
             .values_list("id", flat=True)[: self.MAX_SIZE]
         )
         current_post_ids = list(self.posts.values_list("id", flat=True))
