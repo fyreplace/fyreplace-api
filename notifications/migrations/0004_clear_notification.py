@@ -11,7 +11,6 @@ def noop(*args, **kwargs):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("notifications", "0003_alter_notification_recipient"),
     ]

@@ -1,5 +1,12 @@
-from django.http import HttpRequest, HttpResponse
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from rest_framework import exceptions, views
+from rest_framework.response import Response
 
 
-def health(request: HttpRequest) -> HttpResponse:
-    return HttpResponse(status=200)
+def exception_handler(exception: Exception, context: dict) -> Response:
+    if isinstance(exception, ValidationError):
+        exception = exceptions.ValidationError(exception.messages)
+    elif isinstance(exception, ObjectDoesNotExist):
+        exception = exceptions.NotFound()
+
+    return views.exception_handler(exception, context)

@@ -3,7 +3,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("posts", "0004_alter_chapter_text_alter_comment_text"),
     ]

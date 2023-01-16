@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.files.images import ImageFile
 from django.db import IntegrityError
 from django.utils.timezone import now
-from grpc_interceptor.exceptions import InvalidArgument
+from rest_framework.exceptions import ValidationError
 
 from core.tests import get_asset
 
@@ -120,7 +120,7 @@ class Chapter_validate(BasePostTestCase):
             post=self.post, position=self.post.chapter_position(0)
         )
 
-        with self.assertRaises(InvalidArgument):
+        with self.assertRaises(ValidationError):
             chapter.validate()
 
     def test_text_empty(self):
@@ -128,13 +128,13 @@ class Chapter_validate(BasePostTestCase):
             post=self.post, position=self.post.chapter_position(0), text=""
         )
 
-        with self.assertRaises(InvalidArgument):
+        with self.assertRaises(ValidationError):
             chapter.validate()
 
     def assertValid(self, chapter: Chapter):
         try:
             chapter.validate()
-        except InvalidArgument as err:
+        except ValidationError as err:
             self.fail(err.detail)
 
     def _get_image_file(self):

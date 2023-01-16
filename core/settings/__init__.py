@@ -1,14 +1,17 @@
+import json
 import os
-import re
+from base64 import b64decode
 from datetime import timedelta
 from pathlib import Path
-from urllib.parse import urlparse
 
+import dj_database_url
 import firebase_admin
-import rollbar
+import sentry_sdk
 from celery.schedules import crontab
 from dotenv import find_dotenv, load_dotenv
 from firebase_admin.credentials import Certificate as FirebaseCertificate
+from sentry_sdk.integrations.celery import CeleryIntegration
+from sentry_sdk.integrations.django import DjangoIntegration
 
 from ..utils import str_to_bool
 
@@ -25,12 +28,16 @@ TEST_RUNNER = "core.tests.PytestTestRunner"
 
 IS_TESTING = False
 
-ROLLBAR_TOKEN = os.getenv("ROLLBAR_TOKEN")
-
-ROLLBAR_ENVIRONMENT = os.getenv("ROLLBAR_ENVIRONMENT")
-
-if ROLLBAR_TOKEN and ROLLBAR_ENVIRONMENT:
-    rollbar.init(ROLLBAR_TOKEN, ROLLBAR_ENVIRONMENT)
+if SENTRY_DSN := os.getenv("SENTRY_DSN"):
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment=os.getenv("SENTRY_ENVIRONMENT"),
+        integrations=[
+            DjangoIntegration(),
+            CeleryIntegration(),
+        ],
+        send_default_pii=True,
+    )
 
 # Self-awareness
 
@@ -58,6 +65,9 @@ PRETTY_APP_NAME = APP_NAME.capitalize()
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
+    "whitenoise.runserver_nostatic",
+    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -65,6 +75,11 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_celery_beat",
     "django_extensions",
+    "health_check",
+    "health_check.db",
+    "health_check.contrib.migrations",
+    "rest_framework",
+    "drf_spectacular",
     "anymail",
     "tooling",
     "core",
@@ -74,8 +89,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    "django.middleware.gzip.GZipMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.middleware.gzip.GZipMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -104,46 +120,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "core.wsgi.application"
 
+ASGI_APPLICATION = "core.asgi.application"
+
 # Database
 
-
-def db_engine(name: str):
-    overrides = {
-        "sqlite": "sqlite3",
-        "mariadb": "mysql",
-        "postgres": "postgresql",
-    }
-
-    return "django.db.backends." + overrides.get(name, name)
-
-
-if database_url := os.getenv("DATABASE_URL"):
-    parsed_url = urlparse(database_url)
-    DB_ENGINE = db_engine(parsed_url.scheme or "sqlite")
-    DB_NAME = parsed_url.path.removeprefix("/")
-    DB_USER, DB_PASSWORD, DB_HOST, DB_PORT = (
-        re.split(r"[:@]", parsed_url.netloc) + [None] * 4
-    )[:4]
-else:
-    DB_ENGINE = db_engine(os.getenv("DATABASE_ENGINE", "sqlite"))
-    DB_NAME = os.getenv("DATABASE_NAME")
-    DB_USER = os.getenv("DATABASE_USER")
-    DB_PASSWORD = os.getenv("DATABASE_PASSWORD")
-    DB_HOST = os.getenv("DATABASE_HOST")
-    DB_PORT = os.getenv("DATABASE_PORT")
-
-if DB_ENGINE == db_engine("sqlite") and not DB_NAME:
-    DB_NAME = "db.sqlite3"
-
 DATABASES = {
-    "default": {
-        "ENGINE": DB_ENGINE,
-        "NAME": DB_NAME,
-        "USER": DB_USER,
-        "PASSWORD": DB_PASSWORD,
-        "HOST": DB_HOST,
-        "PORT": DB_PORT,
-    }
+    "default": dj_database_url.config(conn_max_age=600, conn_health_checks=True)
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
@@ -175,6 +157,23 @@ PASSWORD_HASHERS = [
         "BCryptSHA256PasswordHasher",
     ]
 ]
+
+# Rest framework
+
+REST_FRAMEWORK = {
+    "EXCEPTION_HANDLER": "core.views.exception_handler",
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "1/second",
+        "user": "5/second",
+    },
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.CursorPagination",
+    "PAGE_SIZE": 12,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
 
 # JSON Web Tokens
 
@@ -220,14 +219,10 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 FILE_UPLOAD_MAX_MEMORY_SIZE = 1 * 1024 * 1024
 
-STATICFILES_STORAGE = (
-    "storages.backends.s3boto3.S3StaticStorage"
-    if AWS_ACCESS_KEY_ID
-    else "django.contrib.staticfiles.storage.StaticFilesStorage"
-)
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 DEFAULT_FILE_STORAGE = (
-    "storages.backends.s3boto3.S3Boto3Storage"
+    "core.storages.BotoStorage"
     if AWS_ACCESS_KEY_ID
     else "core.storages.FileSystemStorage"
 )
@@ -259,35 +254,17 @@ ADMINS = [
 
 EMAIL_LINKS_DOMAIN = os.getenv("EMAIL_LINKS_DOMAIN")
 
-# gRPC
-
-GRPC_HOST = os.getenv("GRPC_HOST", "[::]")
-
-GRPC_PORT = os.getenv("GRPC_PORT", "50051")
-
-GRPC_URL = f"{GRPC_HOST}:{GRPC_PORT}"
-
-if path := os.getenv("SSL_PRIVATE_KEY_PATH"):
-    with open(path, "rb") as file:
-        SSL_PRIVATE_KEY = file.read()
-else:
-    SSL_PRIVATE_KEY = None
-
-if path := os.getenv("SSL_CERTIFICATE_PATH"):
-    with open(path, "rb") as file:
-        SSL_CERTIFICATE_CHAIN = file.read()
-else:
-    SSL_CERTIFICATE_CHAIN = None
-
-MAX_CONCURRENCY = int(os.getenv("MAX_CONCURRENCY", os.cpu_count()))
-
 # Celery
 
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
 
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    "global_keyprefix": os.getenv("CELERY_BROKER_KEY_PREFIX")
+}
+
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
 
-CELERY_IGNORE_RESULT = True
+CELERY_IGNORE_RESULT = not CELERY_RESULT_BACKEND
 
 CELERY_TASK_ROUTES = {
     "*.send_*": "messaging",
@@ -326,7 +303,9 @@ APNS_URL = os.getenv("APNS_URL")
 
 APNS_PRIVATE_KEY_ID = os.getenv("APNS_PRIVATE_KEY_ID")
 
-if path := os.getenv("APNS_PRIVATE_KEY_PATH"):
+if base64_data := os.getenv("APNS_PRIVATE_KEY_B64"):
+    APNS_PRIVATE_KEY = b64decode(base64_data)
+elif path := os.getenv("APNS_PRIVATE_KEY_PATH"):
     with open(path, "rb") as file:
         APNS_PRIVATE_KEY = file.read()
 else:
@@ -334,11 +313,19 @@ else:
 
 # Firebase
 
-if path := os.getenv("FIREBASE_ACCOUNT_PATH"):
-    try:
-        FIREBASE_APP = firebase_admin.get_app()
-    except ValueError:
-        FIREBASE_APP = firebase_admin.initialize_app(FirebaseCertificate(path))
+
+try:
+    FIREBASE_APP = firebase_admin.get_app()
+except ValueError:
+    if base64_data := os.getenv("FIREBASE_ACCOUNT_B64"):
+        data = json.loads(b64decode(base64_data))
+        certificate = FirebaseCertificate(data)
+    elif path := os.getenv("FIREBASE_ACCOUNT_PATH"):
+        certificate = FirebaseCertificate(path)
+    else:
+        certificate = None
+
+    FIREBASE_APP = firebase_admin.initialize_app(certificate)
 else:
     FIREBASE_APP = None
 

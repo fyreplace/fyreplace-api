@@ -6,11 +6,9 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Case, Sum, When
-from django.utils.translation import gettext as _
 
-from core.models import MessageConvertible, TimestampModel, UUIDModel
+from core.models import TimestampModel, UUIDModel
 from posts.models import Comment, Subscription
-from protos import notification_pb2
 from users.models import Connection
 
 
@@ -60,14 +58,13 @@ class FlagsManager(NotificationsManager):
         return super().get_queryset().filter(subscription__isnull=True)
 
 
-class Notification(UUIDModel, MessageConvertible):
+class Notification(UUIDModel):
     class Meta:
         unique_together = ["subscription", "target_type", "target_id"]
         ordering = ["date_updated", "id"]
 
     objects = NotificationsManager()
     flag_objects = FlagsManager()
-    default_message_class = notification_pb2.Notification
 
     subscription = models.OneToOneField(
         to=Subscription,
@@ -101,25 +98,6 @@ class Notification(UUIDModel, MessageConvertible):
 
         super().save(*args, **kwargs)
 
-    def get_message_field_values(self, **overrides) -> dict:
-        values = super().get_message_field_values(**overrides)
-        target_field = self.target_type.model.lower()
-
-        if target_field == "post":
-            target_overrides = {
-                "is_preview": True,
-                **self.target.overrides_for_user(self._context.caller),
-            }
-        else:
-            target_overrides = {}
-
-        values[target_field] = self.target.to_message(
-            message_class=self.retrieve_message_class(target_field),
-            context=self._context,
-            **target_overrides,
-        )
-        return values
-
 
 class Flag(UUIDModel):
     class Meta:
@@ -139,8 +117,8 @@ class Flag(UUIDModel):
 
 
 class MessagingService(models.IntegerChoices):
-    APNS = notification_pb2.MessagingService.MESSAGING_SERVICE_APNS
-    FCM = notification_pb2.MessagingService.MESSAGING_SERVICE_FCM
+    APNS = 1
+    FCM = 2
 
 
 class RemoteMessaging(UUIDModel):

@@ -1,0 +1,80 @@
+name: Validation
+
+on:
+  push:
+    branches:
+      - develop
+      - feature/*
+    tags:
+      - v*.*.*
+
+jobs:
+  tests:
+    name: Run tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Poetry
+        run: python -m pipx install poetry
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+          cache: poetry
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run tests
+        run: poetry run python manage.py test
+        env:
+          SECRET_KEY: secret
+          DATABASE_URL: postgres://postgres:postgres@localhost/postgres
+
+  openapi:
+    name: OpenAPI specification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Poetry
+        run: python -m pipx install poetry
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+          cache: poetry
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Generate OpenAPI schema
+        run: |
+          mkdir -p output
+          poetry run python manage.py spectacular > output/openapi.yaml
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: openapi.yaml
+          path: output/openapi.yaml
+          if-no-files-found: error

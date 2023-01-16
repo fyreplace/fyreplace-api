@@ -1,4 +1,3 @@
-from datetime import timedelta
 from math import ceil
 from typing import Any, Dict, Optional, Tuple
 
@@ -9,17 +8,10 @@ from django.db import models
 from django.db.models.functions import Replace
 from django.db.transaction import atomic
 from django.utils.timezone import now
-from grpc_interceptor.exceptions import InvalidArgument, PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from core.models import (
-    ExistingManager,
-    MessageConvertible,
-    SoftDeleteModel,
-    TimestampModel,
-    UUIDModel,
-)
+from core.models import ExistingManager, SoftDeleteModel, TimestampModel, UUIDModel
 from core.validators import FileSizeValidator
-from protos import comment_pb2, post_pb2
 
 
 def position_between(before: Optional[str], after: Optional[str]) -> str:
@@ -42,7 +34,7 @@ def position_between(before: Optional[str], after: Optional[str]) -> str:
         return after[:-1] + "a" + "z"
 
 
-class ValidatableModel(UUIDModel, MessageConvertible):
+class ValidatableModel(UUIDModel):
     class Meta:
         abstract = True
 
@@ -110,7 +102,6 @@ class Post(TimestampModel, SoftDeleteModel, ValidatableModel):
     published_objects = PublishedPostManager()
     draft_objects = DraftPostManager()
     active_objects = ActivePostManager()
-    default_message_class = post_pb2.Post
 
     author = models.ForeignKey(
         to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="%(class)ss"
@@ -186,7 +177,7 @@ class Post(TimestampModel, SoftDeleteModel, ValidatableModel):
 
     def validate(self):
         if self.chapters.count() == 0:
-            raise InvalidArgument("post_empty")
+            raise ValidationError("post_empty")
 
         for chapter in self.chapters.all():
             chapter.validate()
@@ -196,7 +187,7 @@ class Post(TimestampModel, SoftDeleteModel, ValidatableModel):
         chapter_count = len(positions)
 
         if position < 0 or position > chapter_count:
-            raise InvalidArgument("invalid_position")
+            raise ValidationError("invalid_position")
 
         before = None if position == 0 else positions[position - 1]
         after = (
@@ -213,7 +204,7 @@ class Post(TimestampModel, SoftDeleteModel, ValidatableModel):
             )
             return chapters[position]
         except IndexError:
-            raise InvalidArgument("invalid_position")
+            raise ValidationError("invalid_position")
 
     @atomic
     def normalize_chapters(self):
@@ -256,8 +247,6 @@ class Chapter(ValidatableModel):
         unique_together = ["post", "position"]
         ordering = unique_together
 
-    default_message_class = post_pb2.Chapter
-
     post = models.ForeignKey(
         to=Post, on_delete=models.CASCADE, related_name="%(class)ss"
     )
@@ -295,7 +284,7 @@ class Chapter(ValidatableModel):
 
     def validate(self):
         if not self.text and not self.image:
-            raise InvalidArgument("chapter_empty")
+            raise ValidationError("chapter_empty")
 
     def clear(self, save: bool = True):
         self.text = ""
@@ -378,7 +367,6 @@ class Comment(UUIDModel, TimestampModel, SoftDeleteModel):
 
     objects = models.Manager()
     existing_objects = ExistingManager()
-    default_message_class = comment_pb2.Comment
 
     post = models.ForeignKey(
         to=Post, on_delete=models.CASCADE, related_name="%(class)ss"

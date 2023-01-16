@@ -112,9 +112,7 @@ def make_payload(comment: Optional[Comment], command: str) -> dict:
     payload = {"_command": command}
 
     if comment:
-        payload["comment"] = b64encode(
-            comment.to_message().SerializeToString(deterministic=True)
-        )
+        # TODO: set payload["comment"]
         payload["postId"] = b64encode(comment.post_id)
 
     return payload

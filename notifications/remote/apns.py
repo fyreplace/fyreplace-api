@@ -123,7 +123,7 @@ def make_payload(comment: Optional[Comment], command: str) -> dict:
     payload = {"_command": command}
 
     if comment:
-        payload["comment"] = MessageToDict(comment.to_message())
+        # TODO: set payload["comment"]
         payload["postId"] = b64encode(comment.post_id)
 
     return payload

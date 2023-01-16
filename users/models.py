@@ -7,7 +7,7 @@ from django.contrib.auth.hashers import (
     UNUSABLE_PASSWORD_SUFFIX_LENGTH,
 )
 from django.contrib.auth.models import AbstractUser, UserManager
-from django.core.validators import MaxLengthValidator, MinLengthValidator
+from django.core.validators import MinLengthValidator
 from django.db import models
 from django.utils.timezone import now
 from django.utils.translation import gettext as _
@@ -15,7 +15,8 @@ from django.utils.translation import gettext as _
 from core import jwt
 from core.models import SoftDeleteModel, TimestampModel, UUIDModel
 from core.validators import FileSizeValidator
-from protos import user_pb2
+
+from .validators import UsernameNotReservedValidator
 
 
 class Block(UUIDModel):
@@ -51,12 +52,15 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
         ordering = ["username", "date_joined", "id"]
 
     existing_objects = ExistingUserManager()
-    default_message_class = user_pb2.User
 
     email = models.EmailField(unique=True, null=True)
     username = models.CharField(
         max_length=50,
-        validators=[AbstractUser.username_validator, MinLengthValidator(3)],
+        validators=[
+            AbstractUser.username_validator,
+            MinLengthValidator(3),
+            UsernameNotReservedValidator(),
+        ],
         unique=True,
         null=True,
     )
@@ -71,9 +75,7 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
         null=True,
         blank=True,
     )
-    bio = models.CharField(
-        max_length=3000, blank=True, validators=[MaxLengthValidator(3000)]
-    )
+    bio = models.CharField(max_length=3000, blank=True)
     blocked_users = models.ManyToManyField(
         to=settings.AUTH_USER_MODEL,
         related_name="blocking_%(class)ss",
@@ -98,15 +100,6 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
     def profile(self) -> "User":
         return self
 
-    @property
-    def rank(self) -> user_pb2.Rank:
-        if self.is_superuser:
-            return user_pb2.RANK_SUPERUSER
-        elif self.is_staff:
-            return user_pb2.RANK_STAFF
-        else:
-            return user_pb2.RANK_CITIZEN
-
     def __str__(self) -> str:
         if self.is_deleted:
             return f"{_('Deleted user')} {self.id}"
@@ -114,45 +107,6 @@ class User(AbstractUser, UUIDModel, SoftDeleteModel):
             return f"{_('Banned user')} {self.id}"
         else:
             return super().__str__()
-
-    def get_message_fields(self, **overrides) -> list[str]:
-        if overrides.get("is_banned", self.is_banned) and not self.date_ban_end:
-            if self._message_class == user_pb2.User:
-                return ["profile", "date_joined"]
-            elif self._message_class == user_pb2.Profile:
-                return ["id", "is_banned"]
-            else:
-                return []
-
-        fields = super().get_message_fields(**overrides)
-
-        if self._message_class == user_pb2.User and (
-            not self._context
-            or not self._context.caller
-            or (self.id != self._context.caller.id)
-        ):
-            fields.remove("email")
-            fields.remove("blocked_users")
-
-        return fields
-
-    def get_message_field_values(self, **overrides) -> dict:
-        if self._context and self._context.caller:
-            overrides["is_blocked"] = self._context.caller.blocked_users.filter(
-                id=self.id
-            ).exists()
-
-        values = super().get_message_field_values(**overrides)
-
-        if (
-            self._message_class == user_pb2.User
-            and self._context
-            and self._context.caller
-            and self.id == self._context.caller.id
-        ):
-            values["blocked_users"] = self.blocked_users.count()
-
-        return values
 
     def delete(self, *args, **kwargs) -> tuple[int, dict[str, int]]:
         return self.soft_delete()
@@ -214,8 +168,6 @@ class Connection(UUIDModel, TimestampModel):
             "id",
         ]
 
-    default_message_class = user_pb2.Connection
-
     user = models.ForeignKey(
         to=settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="%(class)ss"
     )
@@ -228,12 +180,7 @@ class Connection(UUIDModel, TimestampModel):
     )
 
     def __str__(self) -> str:
-        return f"{self.user}: {self.hardware}/{self.software} ({self.date_created})"
-
-    def get_message_field_values(self, **overrides) -> dict:
-        data = super().get_message_field_values(**overrides)
-        data["client"] = user_pb2.Client(hardware=self.hardware, software=self.software)
-        return data
+        return f"{self.user}: {self.hardware}/{self.software}"
 
     def get_token(self) -> str:
         payload = {"user_id": str(self.user_id), "connection_id": str(self.id)}

@@ -1,6 +1,8 @@
+import re
+import unicodedata
 from uuid import UUID
 
-from grpc_interceptor.exceptions import InvalidArgument
+from rest_framework.exceptions import ValidationError
 
 
 def str_to_bool(string: str) -> bool:
@@ -18,4 +20,9 @@ def make_uuid(data: bytes) -> UUID:
     try:
         return UUID(bytes=data)
     except ValueError:
-        raise InvalidArgument("invalid_uuid")
+        raise ValidationError("invalid_uuid")
+
+
+def normalize(value: str) -> str:
+    value = unicodedata.normalize("NFKD", value).encode("ascii", "ignore")
+    return re.sub(r"[^\w]", "", value.decode("ascii")).strip().upper()
