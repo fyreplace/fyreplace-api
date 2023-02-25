@@ -1,8 +1,8 @@
-# Fyreplace server
+# Fyreplace API
 
-[![Shipping](https://github.com/fyreplace/fyreplace-server/actions/workflows/shipping.yml/badge.svg)](https://github.com/fyreplace/fyreplace-server/actions/workflows/shipping.yml)
+[![Shipping](https://github.com/fyreplace/fyreplace-api/actions/workflows/shipping.yml/badge.svg)](https://github.com/fyreplace/fyreplace-api/actions/workflows/shipping.yml)
 
-The server for [Fyreplace](https://fyreplace.net).
+The API for [Fyreplace](https://fyreplace.net).
 
 ## License
 

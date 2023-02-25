@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "fyreplace-server"
+name = "fyreplace-api"
 version = "0.0.0"
-description = "Fyreplace server"
+description = "Fyreplace API"
 authors = []
 license = "AGPL-3.0-or-later"
 readme = "README.md"
