@@ -5,8 +5,11 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework.schemas import get_schema_view
 
+from .views import robots_txt
+
 urlpatterns = [
     path("health/", include(health_check.urls)),
+    path("robots.txt", robots_txt),
     path(
         "openapi/",
         get_schema_view(
