@@ -14,6 +14,7 @@ daphne = "^4.0"
 django = {extras = ["argon2"], version = "^4.1"}
 django-anymail = {extras = ["mailgun"], version = "^9.1"}
 django-celery-beat = "^2.5"
+django-cors-headers = "^3.14"
 django-extensions = "^3.2"
 django-health-check = "^3.17"
 django-storages = {extras = ["boto3"], version = "^1.13"}

@@ -58,6 +58,11 @@ for host in os.getenv("ALLOWED_HOSTS", "").split(","):
 if len(ALLOWED_HOSTS) == 0:
     ALLOWED_HOSTS = ["*"]
 
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+
 APP_NAME = "fyreplace"
 
 PRETTY_APP_NAME = APP_NAME.capitalize()
@@ -78,6 +83,7 @@ INSTALLED_APPS = [
     "health_check",
     "health_check.db",
     "health_check.contrib.migrations",
+    "corsheaders",
     "rest_framework",
     "drf_spectacular",
     "anymail",
@@ -89,6 +95,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.gzip.GZipMiddleware",
