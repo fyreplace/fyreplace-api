@@ -61,7 +61,9 @@ if len(ALLOWED_HOSTS) == 0:
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 else:
-    CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+    CORS_ALLOWED_ORIGINS = [
+        origin for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if origin
+    ]
 
 APP_NAME = "fyreplace"
 
