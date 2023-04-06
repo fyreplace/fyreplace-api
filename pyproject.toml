@@ -11,7 +11,7 @@ packages = []
 black = "^23.3"
 celery = {extras = ["redis"], version = "^5.2"}
 daphne = "^4.0"
-django = {extras = ["argon2"], version = "^4.1"}
+django = {extras = ["argon2"], version = "^4.2"}
 django-anymail = {extras = ["mailgun"], version = "^9.1"}
 django-celery-beat = "^2.5"
 django-cors-headers = "^3.14"
@@ -29,8 +29,8 @@ httpx = {extras = ["http2"], version = "^0.23"}
 ipython = "^8.12"
 isort = "^5.12"
 mysqlclient = "^2.1"
-pillow = "^9.4"
-psycopg2 = "^2.9"
+pillow = "^9.5"
+psycopg = {extras = ["c"], version = "^3.1"}
 pyjwt = {extras = ["crypto"], version = "^2.6"}
 pytest-xdist = {extras = ["psutil"], version = "^3.2"}
 pytest-django = "^4.5"
@@ -41,7 +41,7 @@ qrcode = "^7.4"
 requests = "^2.28"
 tqdm = "^4.65"
 twisted = {extras = ["http2", "tls"], version = "^22.10"}
-sentry-sdk = "^1.18"
+sentry-sdk = "^1.19"
 whitenoise = {extras = ["brotli"], version = "^6.3"}
 
 [build-system]
