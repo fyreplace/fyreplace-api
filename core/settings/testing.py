@@ -2,6 +2,8 @@ from . import *
 
 IS_TESTING = True
 
+REST_FRAMEWORK["DEFAULT_THROTTLE_CLASSES"] = []
+
 AWS_ACCESS_KEY_ID = None
 
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"

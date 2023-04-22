@@ -15,10 +15,14 @@ nil
 none
 nul
 null
+staff
+staffs
 superuser
 superusers
 system
 systems
+test
+tests
 user
 users
 void
