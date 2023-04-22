@@ -13,7 +13,9 @@ class UUIDModel(models.Model):
     class Meta:
         abstract = True
 
-    id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4)
+    id = models.UUIDField(
+        primary_key=True, unique=True, editable=False, default=uuid.uuid4
+    )
 
 
 class TimestampModel(models.Model):

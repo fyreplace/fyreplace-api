@@ -12,7 +12,7 @@ from posts.models import Comment, Subscription
 from users.models import Connection
 
 
-def count_notifications_for(user: AbstractUser):
+def count_notifications_for(user: AbstractUser) -> int:
     return (
         Notification.objects.filter_readable_by(user)
         .aggregate(total_count=Sum("count"))
@@ -28,7 +28,9 @@ def remove_notifications_for(instance: models.Model):
 
 
 class NotificationQuerySet(models.QuerySet):
-    def filter_readable_by(self, user: AbstractUser, *args, **kwargs):
+    def filter_readable_by(
+        self, user: AbstractUser, *args, **kwargs
+    ) -> "NotificationQuerySet":
         return (
             self.filter(
                 models.Q(subscription__isnull=True) | models.Q(subscription__user=user),
@@ -49,7 +51,9 @@ class NotificationsManager(models.Manager):
             importance=Case(When(subscription__isnull=True, then=1), default=0),
         )
 
-    def filter_readable_by(self, user: AbstractUser, *args, **kwargs):
+    def filter_readable_by(
+        self, user: AbstractUser, *args, **kwargs
+    ) -> models.QuerySet:
         return self.get_queryset().filter_readable_by(user, *args, **kwargs)
 
 
