@@ -27,7 +27,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: true
@@ -36,9 +36,9 @@ jobs:
         run: python -m pipx install poetry
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.12'
           cache: poetry
 
       - name: Install dependencies
@@ -62,12 +62,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Login to registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -75,7 +75,7 @@ jobs:
 
       - name: Extract metadata
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
@@ -84,10 +84,10 @@ jobs:
             type=sha,format=long
 
       - name: Setup Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Build and push image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
@@ -118,6 +118,7 @@ jobs:
 
   deployment:
     name: Deploy to Kubernetes
+    if: github.ref_type == 'tag'
     needs:
       - tests
       - container
@@ -125,7 +126,7 @@ jobs:
     environment: ${{ needs.container.outputs.environment }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -205,7 +206,7 @@ jobs:
           helm --kubeconfig=kube.yml upgrade --install --namespace=fyreplace fyreplace fyreplace --set "$variables"
 
       - name: Notify Rollbar
-        uses: rollbar/github-deploy-action@2.1.1
+        uses: rollbar/github-deploy-action@2.1.2
         with:
           environment: ${{ secrets.ROLLBAR_ENVIRONMENT }}
           version: ${{ needs.container.outputs.version }}

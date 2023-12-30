@@ -546,7 +546,7 @@ class UserService_Retrieve(UserServiceTestCase):
     def test_non_existent(self):
         self.request.id = uuid.uuid4().bytes
 
-        with (self.assertRaises(ObjectDoesNotExist)):
+        with self.assertRaises(ObjectDoesNotExist):
             self.service.Retrieve(self.request, self.grpc_context)
 
 

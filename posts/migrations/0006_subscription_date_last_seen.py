@@ -24,7 +24,6 @@ def noop(*args, **kwargs):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("posts", "0005_alter_comment_text"),
     ]
