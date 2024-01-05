@@ -234,6 +234,7 @@ class AccountService(user_pb2_grpc.AccountServiceServicer):
 
 
 class UserService(PaginatorMixin, ImageUploadMixin, user_pb2_grpc.UserServiceServicer):
+    @no_auth
     def Retrieve(
         self, request: id_pb2.Id, context: grpc.ServicerContext
     ) -> user_pb2.User:
