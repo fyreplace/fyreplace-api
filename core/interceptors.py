@@ -1,3 +1,4 @@
+import traceback
 from importlib import import_module
 from inspect import getmembers
 from types import GeneratorType
@@ -117,10 +118,7 @@ class ExceptionInterceptor(ServerInterceptor):
         if settings.ROLLBAR_TOKEN:
             rollbar.report_exc_info(extra_data=extras, level=level)
         else:
-            details = context.details()
-            print(
-                details.decode("utf8") if isinstance(details, bytes) else str(details)
-            )
+            print(traceback.format_exc())
 
 
 class AuthorizationInterceptor(ServerInterceptor):
