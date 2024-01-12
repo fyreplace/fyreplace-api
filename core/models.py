@@ -114,3 +114,9 @@ class SoftDeleteModel(models.Model, MessageConvertible):
 class ExistingManager(models.Manager):
     def get_queryset(self) -> models.QuerySet:
         return super().get_queryset().filter(is_deleted=False)
+
+
+class CachedRequest(UUIDModel, TimestampModel):
+    request_id = models.CharField(max_length=50, unique=True)
+    serialized_response = models.CharField(max_length=1000)
+    serialized_response_message = models.BinaryField(max_length=100)

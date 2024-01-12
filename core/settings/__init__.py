@@ -299,6 +299,10 @@ CELERY_TASK_ROUTES = {
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 CELERY_BEAT_SCHEDULE = {
+    "core.cleanup_cached_requests": {
+        "task": "core.tasks.cleanup_cached_requests",
+        "schedule": crontab(),
+    },
     "users.cleanup_users": {
         "task": "users.tasks.cleanup_users",
         "schedule": crontab(minute=0),
