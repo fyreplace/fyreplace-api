@@ -1,6 +1,6 @@
 import io
 from base64 import b64encode
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Callable
 
 import qrcode
@@ -49,7 +49,7 @@ class BaseUserEmail(Email):
     @property
     def token(self) -> str:
         payload = {
-            "timestamp": datetime.utcnow().timestamp(),
+            "timestamp": datetime.now(timezone.utc).timestamp(),
             "user_id": str(self.user.id),
             **self.payload_extras,
         }

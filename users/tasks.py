@@ -1,6 +1,5 @@
 import hashlib
 import io
-from datetime import timedelta
 from urllib.parse import urljoin
 
 import magic

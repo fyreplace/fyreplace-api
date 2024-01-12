@@ -220,17 +220,18 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 FILE_UPLOAD_MAX_MEMORY_SIZE = 1 * 1024 * 1024
 
-STATICFILES_STORAGE = (
-    "storages.backends.s3boto3.S3StaticStorage"
-    if AWS_ACCESS_KEY_ID
-    else "django.contrib.staticfiles.storage.StaticFilesStorage"
-)
-
-DEFAULT_FILE_STORAGE = (
-    "storages.backends.s3boto3.S3Boto3Storage"
-    if AWS_ACCESS_KEY_ID
-    else "core.storages.FileSystemStorage"
-)
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage"
+        if AWS_ACCESS_KEY_ID
+        else "core.storages.FileSystemStorage"
+    },
+    "staticfiles": {
+        "BACKEND": "storages.backends.s3boto3.S3StaticStorage"
+        if AWS_ACCESS_KEY_ID
+        else "django.contrib.staticfiles.storage.StaticFilesStorage"
+    },
+}
 
 VALID_IMAGE_MIMES = [f"image/{i}" for i in ("png", "jpeg", "webp")]
 
@@ -298,6 +299,10 @@ CELERY_TASK_ROUTES = {
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 CELERY_BEAT_SCHEDULE = {
+    "core.cleanup_cached_requests": {
+        "task": "core.tasks.cleanup_cached_requests",
+        "schedule": crontab(),
+    },
     "users.cleanup_users": {
         "task": "users.tasks.cleanup_users",
         "schedule": crontab(minute=0),

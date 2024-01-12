@@ -1,3 +1,5 @@
+import pickle
+import traceback
 from importlib import import_module
 from inspect import getmembers
 from types import GeneratorType
@@ -8,10 +10,12 @@ import rollbar
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
 from django.db.utils import DataError
+from google.protobuf.json_format import MessageToJson, Parse
 from google.protobuf.message import Message
 from grpc_interceptor.exceptions import GrpcException, Unauthenticated
 from grpc_interceptor.server import ServerInterceptor
 
+from .models import CachedRequest
 from .services import get_servicer_interfaces
 
 
@@ -111,16 +115,15 @@ class ExceptionInterceptor(ServerInterceptor):
             "method": method_name,
             "request": request,
             "context_metadata": context.invocation_metadata(),
-            "user_id": str(context.caller.id) if context.caller else None,
+            "user_id": str(context.caller.id)
+            if getattr(context, "caller", None)
+            else None,
         }
 
         if settings.ROLLBAR_TOKEN:
             rollbar.report_exc_info(extra_data=extras, level=level)
         else:
-            details = context.details()
-            print(
-                details.decode("utf8") if isinstance(details, bytes) else str(details)
-            )
+            print(traceback.format_exc())
 
 
 class AuthorizationInterceptor(ServerInterceptor):
@@ -158,3 +161,33 @@ class AuthorizationInterceptor(ServerInterceptor):
             raise Unauthenticated("missing_credentials")
 
         return super().intercept(method, request, context, method_name)
+
+
+class CacheInterceptor(ServerInterceptor):
+    def intercept(
+        self,
+        method: Callable,
+        request: Message,
+        context: grpc.ServicerContext,
+        method_name: str,
+    ) -> Any:
+        from .grpc import get_request_id
+
+        request_id = get_request_id(context)
+
+        if cached_request := CachedRequest.objects.filter(
+            request_id=request_id
+        ).first():
+            message = pickle.loads(cached_request.serialized_response_message)()
+            return Parse(cached_request.serialized_response, message)
+
+        message = super().intercept(method, request, context, method_name)
+
+        if request_id and isinstance(message, Message):
+            CachedRequest.objects.create(
+                request_id=request_id,
+                serialized_response=MessageToJson(message),
+                serialized_response_message=pickle.dumps(type(message)),
+            )
+
+        return message

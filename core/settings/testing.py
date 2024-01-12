@@ -4,9 +4,10 @@ IS_TESTING = True
 
 AWS_ACCESS_KEY_ID = None
 
-STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
-
-DEFAULT_FILE_STORAGE = "core.storages.FileSystemStorage"
+STORAGES = {
+    "default": {"BACKEND": "core.storages.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
 
 CELERY_TASK_ALWAYS_EAGER = True
 

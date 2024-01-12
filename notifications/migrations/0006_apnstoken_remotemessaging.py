@@ -7,7 +7,6 @@ import core.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("users", "0006_alter_connection_user_alter_user_blocked_users"),
         ("notifications", "0005_flag_alter_notification_unique_together_and_more"),

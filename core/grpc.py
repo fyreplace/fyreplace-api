@@ -16,7 +16,11 @@ from grpc_interceptor.exceptions import Unauthenticated
 from users.models import Connection
 
 from . import jwt
-from .interceptors import AuthorizationInterceptor, ExceptionInterceptor
+from .interceptors import (
+    AuthorizationInterceptor,
+    CacheInterceptor,
+    ExceptionInterceptor,
+)
 from .services import get_servicer_interfaces
 
 User = get_user_model()
@@ -29,6 +33,7 @@ def create_server() -> grpc.Server:
         interceptors=(
             ExceptionInterceptor(),
             AuthorizationInterceptor(services),
+            CacheInterceptor(),
         ),
     )
 
@@ -90,6 +95,10 @@ def get_info_from_token(
         return user, connection
     except (KeyError, jwt.InvalidTokenError, ObjectDoesNotExist):
         raise Unauthenticated("invalid_token")
+
+
+def get_request_id(context: grpc.ServicerContext) -> Optional[str]:
+    return dict(context.invocation_metadata()).get("x-request-id")
 
 
 def serialize_message(message: Message) -> dict:
