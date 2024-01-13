@@ -118,5 +118,5 @@ class ExistingManager(models.Manager):
 
 class CachedRequest(UUIDModel, TimestampModel):
     request_id = models.CharField(max_length=50, unique=True)
-    serialized_response = models.CharField(max_length=1000)
-    serialized_response_message = models.BinaryField(max_length=100)
+    serialized_response = models.TextField()
+    serialized_response_message = models.BinaryField(max_length=1024)
