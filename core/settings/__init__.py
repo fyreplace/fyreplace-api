@@ -222,14 +222,18 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 1 * 1024 * 1024
 
 STORAGES = {
     "default": {
-        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage"
-        if AWS_ACCESS_KEY_ID
-        else "core.storages.FileSystemStorage"
+        "BACKEND": (
+            "storages.backends.s3boto3.S3Boto3Storage"
+            if AWS_ACCESS_KEY_ID
+            else "core.storages.FileSystemStorage"
+        )
     },
     "staticfiles": {
-        "BACKEND": "storages.backends.s3boto3.S3StaticStorage"
-        if AWS_ACCESS_KEY_ID
-        else "django.contrib.staticfiles.storage.StaticFilesStorage"
+        "BACKEND": (
+            "storages.backends.s3boto3.S3StaticStorage"
+            if AWS_ACCESS_KEY_ID
+            else "django.contrib.staticfiles.storage.StaticFilesStorage"
+        )
     },
 }
 

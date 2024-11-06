@@ -24,11 +24,10 @@ from core.authentication import no_auth
 from core.grpc import get_info_from_token, serialize_message
 from core.pagination import PaginatorMixin
 from core.services import ImageUploadMixin
-from core.utils import make_uuid
 from notifications.models import Flag, remove_notifications_for
 from protos import id_pb2, image_pb2, pagination_pb2, user_pb2, user_pb2_grpc
 
-from .models import Connection
+from .models import Connection, User
 from .pagination import UsersPaginationAdapter
 from .tasks import (
     fetch_default_user_avatar,
@@ -52,7 +51,7 @@ def check_email(email: str):
         raise InvalidArgument("invalid_email")
 
 
-def check_user(user: get_user_model()):
+def check_user(user: User):
     if not user.is_alive_and_kicking:
         if user.is_pending:
             message_end = "pending"

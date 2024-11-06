@@ -2,7 +2,6 @@ from datetime import timedelta
 from typing import Iterator, Optional
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.images import ImageFile
@@ -14,6 +13,7 @@ from core.tests import ImageTestCaseMixin, PaginationTestCase, get_asset
 from notifications.models import Flag, Notification
 from notifications.tests import BaseNotificationTestCase
 from protos import comment_pb2, id_pb2, pagination_pb2, post_pb2
+from users.models import User
 from users.tests import AuthenticatedTestCase
 
 from .models import Chapter, Comment, Post, Subscription
@@ -27,7 +27,7 @@ class PostServiceTestCase(AuthenticatedTestCase, BaseNotificationTestCase):
 
     def _create_posts(
         self,
-        author: get_user_model(),
+        author: User,
         count: int,
         published: bool,
         anonymous: bool = False,
@@ -121,7 +121,7 @@ class CommentServiceTestCase(AuthenticatedTestCase, BaseNotificationTestCase):
 
     def _create_comments(
         self,
-        author: get_user_model(),
+        author: User,
         count: int,
     ) -> list[Post]:
         return [
@@ -503,7 +503,7 @@ class PostService_Retrieve(PostServiceTestCase):
         self.assertEqual(post.author.id, b"")
 
     def _get_request(
-        self, author: get_user_model(), published: bool, anonymous: bool = False
+        self, author: User, published: bool, anonymous: bool = False
     ) -> id_pb2.Id:
         posts = self._create_posts(
             author=author, count=1, published=published, anonymous=anonymous
@@ -512,7 +512,7 @@ class PostService_Retrieve(PostServiceTestCase):
         return id_pb2.Id(id=self.post.id.bytes)
 
     def _get_comment_request(
-        self, author: get_user_model(), published: bool, anonymous: bool = False
+        self, author: User, published: bool, anonymous: bool = False
     ):
         self._get_request(author=author, published=published, anonymous=anonymous)
         self.comment = Comment.objects.create(

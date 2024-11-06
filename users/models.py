@@ -22,7 +22,7 @@ class Block(UUIDModel):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=~models.Q(issuer=models.F("target")),
+                condition=~models.Q(issuer=models.F("target")),
                 name="issuer_ne_target",
             )
         ]
@@ -198,11 +198,11 @@ class Connection(UUIDModel, TimestampModel):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=models.Q(hardware__in=Hardware.values),
+                condition=models.Q(hardware__in=Hardware.values),
                 name="hardware",
             ),
             models.CheckConstraint(
-                check=models.Q(software__in=Software.values),
+                condition=models.Q(software__in=Software.values),
                 name="software",
             ),
         ]

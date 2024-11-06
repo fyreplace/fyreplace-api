@@ -263,7 +263,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="connection",
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     ("hardware__in", ["desktop", "mobile", "watch", "unknown"])
                 ),
                 name="hardware",
@@ -272,7 +272,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="connection",
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     (
                         "software__in",
                         ["android", "bsd", "darwin", "linux", "windows", "unknown"],
@@ -284,7 +284,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="block",
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     ("issuer", django.db.models.expressions.F("target")), _negated=True
                 ),
                 name="issuer_ne_target",

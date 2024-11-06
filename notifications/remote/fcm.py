@@ -128,14 +128,16 @@ def make_multicast_message(
         tokens=tokens,
         android=messaging.AndroidConfig(
             ttl=timedelta(weeks=1),
-            notification=None
-            if is_silent
-            else messaging.AndroidNotification(
-                title=comment.author.username,
-                body=cut_text(comment.text),
-                tag=make_notification_tag(comment),
-                channel_id=channel_id,
-                event_timestamp=comment.date_created,
+            notification=(
+                None
+                if is_silent
+                else messaging.AndroidNotification(
+                    title=comment.author.username,
+                    body=cut_text(comment.text),
+                    tag=make_notification_tag(comment),
+                    channel_id=channel_id,
+                    event_timestamp=comment.date_created,
+                )
             ),
             data={"_fcm.channel": channel_id, **payload} if is_silent else payload,
         ),

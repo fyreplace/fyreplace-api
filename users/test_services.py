@@ -7,7 +7,7 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.images import ImageFile
-from django.db.utils import DataError, IntegrityError
+from django.db.utils import DataError
 from django.utils.timezone import get_current_timezone, now
 from grpc_interceptor.exceptions import (
     AlreadyExists,
@@ -30,7 +30,7 @@ from .emails import (
     UserBannedEmail,
     UserEmailUpdateEmail,
 )
-from .models import Connection, Hardware, Software
+from .models import Connection, Hardware, Software, User
 from .services import AccountService, UserService
 from .tests import AuthenticatedTestCase, BaseUserTestCase, make_email
 
@@ -647,7 +647,7 @@ class UserService_ConfirmEmailUpdate(UserServiceTestCase):
         with self.assertRaises(PermissionDenied):
             self.service.ConfirmEmailUpdate(self.request, self.grpc_context)
 
-    def _make_token(self, user: get_user_model()):
+    def _make_token(self, user: User) -> str:
         return UserEmailUpdateEmail(user.id, make_email("new")).token
 
 
