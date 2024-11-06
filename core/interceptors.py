@@ -3,7 +3,7 @@ import traceback
 from importlib import import_module
 from inspect import getmembers
 from types import GeneratorType
-from typing import Any, Callable
+from typing import Any, Callable, Generator
 
 import grpc
 import rollbar
@@ -45,11 +45,11 @@ class ExceptionInterceptor(ServerInterceptor):
 
     def _wrap_generator(
         self,
-        generator: GeneratorType,
+        generator: Generator,
         request: Message,
         context: grpc.ServicerContext,
         method_name: str,
-    ) -> GeneratorType:
+    ) -> Generator:
         def action():
             return next(generator)
 

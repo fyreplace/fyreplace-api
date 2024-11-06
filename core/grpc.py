@@ -7,13 +7,12 @@ from typing import Any, Iterable, Iterator, Optional
 import grpc
 from django.apps import apps
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.timezone import now
 from google.protobuf.message import Message
 from grpc_interceptor.exceptions import Unauthenticated
 
-from users.models import Connection
+from users.models import Connection, User
 
 from . import jwt
 from .interceptors import (
@@ -22,8 +21,6 @@ from .interceptors import (
     ExceptionInterceptor,
 )
 from .services import get_servicer_interfaces
-
-User = get_user_model()
 
 
 def create_server() -> grpc.Server:
