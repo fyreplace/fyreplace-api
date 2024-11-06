@@ -115,9 +115,9 @@ class ExceptionInterceptor(ServerInterceptor):
             "method": method_name,
             "request": request,
             "context_metadata": context.invocation_metadata(),
-            "user_id": str(context.caller.id)
-            if getattr(context, "caller", None)
-            else None,
+            "user_id": (
+                str(context.caller.id) if getattr(context, "caller", None) else None
+            ),
         }
 
         if settings.ROLLBAR_TOKEN:
