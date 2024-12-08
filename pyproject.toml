@@ -18,26 +18,26 @@ django-extensions = "~3.2"
 django-storages = {extras = ["boto3"], version = "~1.14"}
 django-stubs = "~5.1"
 email-validator = "~2.2"
-firebase-admin = "~6.5"
-grpcio = "~1.67"
-grpcio-tools = "~1.67"
+firebase-admin = "~6.6"
+grpcio = "~1.68"
+grpcio-tools = "~1.68"
 grpc-interceptor = "~0.15"
-httpx = {extras = ["http2"], version = "~0.27"}
-ipython = "~8.29"
+httpx = {extras = ["http2"], version = "~0.28"}
+ipython = "~8.30"
 isort = "~5.13"
 mysqlclient = "~2.2"
 pillow = "~11.0"
 psycopg = "~3.2"
-pyjwt = {extras = ["crypto"], version = "~2.9"}
+pyjwt = {extras = ["crypto"], version = "~2.10"}
 pytest-xdist = {extras = ["psutil"], version = "~3.6"}
 pytest-django = "~4.9"
-python = "~3.12"
+python = "~3.13"
 python-dotenv = "~1.0"
 python-magic = "~0.4"
 qrcode = "~8.0"
 requests = "~2.32"
-rollbar = "~1.0"
-tqdm = "~4.66"
+rollbar = "~1.1"
+tqdm = "~4.67"
 
 [build-system]
 requires = ["poetry-core"]
