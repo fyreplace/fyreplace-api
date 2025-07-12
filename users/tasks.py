@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.images import ImageFile
 from django.db.transaction import atomic
 from django.utils.timezone import now
-from requests import get
+from httpx import get
 
 from .emails import (
     AccountActivationEmail,
@@ -54,7 +54,7 @@ def fetch_default_user_avatar(user_id: str):
     avatar_url = urljoin(settings.GRAVATAR_BASE_URL, f"avatar/{email_hash}")
     response = get(f"{avatar_url}?d=404&s=256")
 
-    if not response.ok:
+    if not response.is_success:
         return
 
     mime = magic.from_buffer(response.content, mime=True)
