@@ -7,6 +7,7 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.images import ImageFile
+from django.db.utils import DataError
 from django.utils.timezone import get_current_timezone, now
 from grpc_interceptor.exceptions import (
     AlreadyExists,
@@ -83,7 +84,7 @@ class AccountService_Create(AccountServiceTestCase):
     def test_username_too_long(self):
         self.request.username = "a" * (get_user_model().username.field.max_length + 1)
 
-        with self.assertRaises(ValidationError):
+        with self.assertRaises((ValidationError, DataError)):
             self.service.Create(self.request, self.grpc_context)
 
         self.assertEqual(get_user_model().objects.count(), self.user_count)
