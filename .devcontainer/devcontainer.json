@@ -1,0 +1,9 @@
+{
+	"name": "Development",
+	"image": "mcr.microsoft.com/devcontainers/python:1-3.13-bookworm",
+	"features": {
+		"ghcr.io/devcontainers/features/node:1": {}
+	},
+	"forwardPorts": [8000, 50051],
+	"postCreateCommand": "pip install --upgrade pip pip-tools poetry; poetry install --no-root; make protobufs emails"
+}

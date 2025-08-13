@@ -22,7 +22,7 @@ migrations:
 	python manage.py migrate
 
 emails:
-	npx mjml users/templates/*.html.mjml -c.minify=true -o users/templates
+	yes | npx mjml users/templates/*.html.mjml -c.minify=true -o users/templates
 
 chart:
 	cp kubernetes/fyreplace/Chart.template.yaml kubernetes/fyreplace/Chart.yaml

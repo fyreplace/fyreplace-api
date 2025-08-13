@@ -8,35 +8,34 @@ readme = "README.md"
 packages = []
 
 [tool.poetry.dependencies]
-black = "~24.10"
-boto3 = "~1.35"
-celery = {extras = ["redis"], version = "~5.4"}
-django = {extras = ["argon2"], version = "~5.1"}
-django-anymail = {extras = ["mailgun"], version = "~12.0"}
-django-celery-beat = "~2.7"
-django-extensions = "~3.2"
+black = "~25.1"
+boto3 = "~1.40"
+celery = {extras = ["redis"], version = "~5.5"}
+django = {extras = ["argon2"], version = "~5.2"}
+django-anymail = {extras = ["mailgun"], version = "~13.0"}
+django-celery-beat = "~2.8"
+django-extensions = "~4.1"
 django-storages = {extras = ["boto3"], version = "~1.14"}
-django-stubs = "~5.1"
+django-stubs = "~5.2"
 email-validator = "~2.2"
-firebase-admin = "~6.6"
-grpcio = "~1.68"
-grpcio-tools = "~1.68"
+firebase-admin = "~7.1"
+grpcio = "~1.74"
+grpcio-tools = "~1.74"
 grpc-interceptor = "~0.15"
 httpx = {extras = ["http2"], version = "~0.28"}
-ipython = "~8.30"
-isort = "~5.13"
+ipython = "~9.4"
+isort = "~6.0"
 mysqlclient = "~2.2"
-pillow = "~11.0"
+pillow = "~11.3"
 psycopg = "~3.2"
 pyjwt = {extras = ["crypto"], version = "~2.10"}
-pytest-xdist = {extras = ["psutil"], version = "~3.6"}
-pytest-django = "~4.9"
+pytest-xdist = {extras = ["psutil"], version = "~3.8"}
+pytest-django = "~4.11"
 python = "~3.13"
-python-dotenv = "~1.0"
+python-dotenv = "~1.1"
 python-magic = "~0.4"
-qrcode = "~8.0"
-requests = "~2.32"
-rollbar = "~1.1"
+qrcode = "~8.2"
+rollbar = "~1.3"
 tqdm = "~4.67"
 
 [build-system]
