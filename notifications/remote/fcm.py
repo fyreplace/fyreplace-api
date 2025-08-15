@@ -105,7 +105,7 @@ def send_remote_notifications_clear(user_id: str):
 def send_multicast_message(
     message: messaging.MulticastMessage,
 ) -> Optional[messaging.BatchResponse]:
-    return messaging.send_multicast(message) if settings.FIREBASE_APP else None
+    return messaging.send_each_for_multicast(message) if settings.FIREBASE_APP else None
 
 
 def make_payload(comment: Optional[Comment], command: str) -> dict:
