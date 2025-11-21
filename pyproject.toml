@@ -8,31 +8,31 @@ readme = "README.md"
 packages = []
 
 [tool.poetry.dependencies]
-black = "~25.1"
+black = "~25.11"
 boto3 = "~1.40"
 celery = {extras = ["redis"], version = "~5.5"}
 django = {extras = ["argon2"], version = "~5.2"}
-django-anymail = {extras = ["mailgun"], version = "~13.0"}
+django-anymail = {extras = ["mailgun"], version = "~13.1"}
 django-celery-beat = "~2.8"
 django-extensions = "~4.1"
 django-storages = {extras = ["boto3"], version = "~1.14"}
 django-stubs = "~5.2"
-email-validator = "~2.2"
+email-validator = "~2.3"
 firebase-admin = "~7.1"
-grpcio = "~1.74"
-grpcio-tools = "~1.74"
+grpcio = "~1.76"
+grpcio-tools = "~1.76"
 grpc-interceptor = "~0.15"
 httpx = {extras = ["http2"], version = "~0.28"}
-ipython = "~9.4"
-isort = "~6.0"
+ipython = "~9.7"
+isort = "~7.0"
 mysqlclient = "~2.2"
-pillow = "~11.3"
+pillow = "~12.0"
 psycopg = "~3.2"
 pyjwt = {extras = ["crypto"], version = "~2.10"}
 pytest-xdist = {extras = ["psutil"], version = "~3.8"}
 pytest-django = "~4.11"
 python = "~3.13"
-python-dotenv = "~1.1"
+python-dotenv = "~1.2"
 python-magic = "~0.4"
 qrcode = "~8.2"
 rollbar = "~1.3"
