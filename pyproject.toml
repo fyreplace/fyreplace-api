@@ -8,9 +8,9 @@ readme = "README.md"
 packages = []
 
 [tool.poetry.dependencies]
-black = "~25.11"
-boto3 = "~1.40"
-celery = {extras = ["redis"], version = "~5.5"}
+black = "~25.12"
+boto3 = "~1.42"
+celery = {extras = ["redis"], version = "~5.6"}
 django = {extras = ["argon2"], version = "~5.2"}
 django-anymail = {extras = ["mailgun"], version = "~13.1"}
 django-celery-beat = "~2.8"
@@ -23,15 +23,15 @@ grpcio = "~1.76"
 grpcio-tools = "~1.76"
 grpc-interceptor = "~0.15"
 httpx = {extras = ["http2"], version = "~0.28"}
-ipython = "~9.7"
+ipython = "~9.8"
 isort = "~7.0"
 mysqlclient = "~2.2"
 pillow = "~12.0"
-psycopg = "~3.2"
+psycopg = "~3.3"
 pyjwt = {extras = ["crypto"], version = "~2.10"}
-pytest-xdist = {extras = ["psutil"], version = "~3.8"}
 pytest-django = "~4.11"
-python = "~3.13"
+pytest-xdist = {extras = ["psutil"], version = "~3.8"}
+python = "~3.14"
 python-dotenv = "~1.2"
 python-magic = "~0.4"
 qrcode = "~8.2"
