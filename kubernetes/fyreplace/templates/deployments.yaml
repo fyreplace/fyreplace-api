@@ -46,7 +46,7 @@ spec:
 
         - name: server-rest
           image: ghcr.io/fyreplace/fyreplace-api:{{ .Values.version | default .Chart.AppVersion }}
-          command: ['poetry', 'run', 'python', 'manage.py', 'runserver', '0.0.0.0:80']
+          command: ['poetry', 'run', 'uvicorn', 'core:settings', '--host', '0.0.0.0', '--port', '80']
           envFrom:
             - configMapRef:
                 name: configuration
