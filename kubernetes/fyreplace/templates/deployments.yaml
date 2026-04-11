@@ -39,6 +39,8 @@ spec:
               value: "/etc/fyreplace/certificate/tls.key"
           ports:
             - containerPort: 50051
+            - containerPort: 50051
+              hostPort: 443
           lifecycle:
             preStop:
               exec:
