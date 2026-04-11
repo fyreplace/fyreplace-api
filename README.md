@@ -1,6 +1,6 @@
 # Fyreplace API
 
-[![Shipping](https://github.com/fyreplace/fyreplace-api/actions/workflows/shipping.yml/badge.svg)](https://github.com/fyreplace/fyreplace-api/actions/workflows/shipping.yml)
+[![Shipping](https://github.com/fyreplace/fyreplace-api-django/actions/workflows/shipping.yml/badge.svg)](https://github.com/fyreplace/fyreplace-api-django/actions/workflows/shipping.yml)
 
 The API for [Fyreplace](https://fyreplace.net).
 

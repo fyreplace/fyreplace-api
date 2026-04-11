@@ -14,13 +14,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           submodules: true
 
       - name: Set up CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
 
       - name: Run analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
