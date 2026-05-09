@@ -1,5 +1,7 @@
+import json
 import os
 import re
+from base64 import b64decode
 from datetime import timedelta
 from pathlib import Path
 from urllib.parse import urlparse
@@ -339,17 +341,28 @@ if path := os.getenv("APNS_PRIVATE_KEY_PATH"):
     with open(path, "rb") as file:
         APNS_PRIVATE_KEY = file.read()
 else:
-    APNS_PRIVATE_KEY = None
+    if file_b64 := os.getenv("APNS_PRIVATE_KEY_B64"):
+        APNS_PRIVATE_KEY = b64decode(file_b64)
+    else:
+        APNS_PRIVATE_KEY = None
 
 # Firebase
 
-if path := os.getenv("FIREBASE_ACCOUNT_PATH"):
-    try:
-        FIREBASE_APP = firebase_admin.get_app()
-    except ValueError:
-        FIREBASE_APP = firebase_admin.initialize_app(FirebaseCertificate(path))
-else:
-    FIREBASE_APP = None
+try:
+    FIREBASE_APP = firebase_admin.get_app()
+except ValueError:
+    if path := os.getenv("FIREBASE_ACCOUNT_PATH"):
+        credential = path
+    elif file_b64 := os.getenv("FIREBASE_ACCOUNT_B64"):
+        credential = json.loads(b64decode(file_b64))
+    else:
+        credential = None
+
+    FIREBASE_APP = (
+        firebase_admin.initialize_app(FirebaseCertificate(credential))
+        if credential
+        else None
+    )
 
 # Fyreplace
 
