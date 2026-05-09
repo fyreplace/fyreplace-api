@@ -23,7 +23,3 @@ migrations:
 
 emails:
 	yes | npx mjml users/templates/*.html.mjml -c.minify=true -o users/templates
-
-chart:
-	cp kubernetes/fyreplace/Chart.template.yaml kubernetes/fyreplace/Chart.yaml
-	echo "appVersion: $(shell git describe --tags)" >> kubernetes/fyreplace/Chart.yaml
