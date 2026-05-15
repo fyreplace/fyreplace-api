@@ -32,23 +32,22 @@ jobs:
           fetch-depth: 0
           submodules: true
 
-      - name: Install Poetry
-        run: python -m pipx install poetry
+      - name: Install UV
+        run: python -m pipx install uv
 
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.14'
-          cache: poetry
 
       - name: Install dependencies
-        run: poetry install --no-root
+        run: uv sync
 
       - name: Compile protos
         run: make protobufs
 
       - name: Run tests
-        run: poetry run python manage.py test
+        run: uv run python manage.py test
         env:
           SECRET_KEY: secret
           DATABASE_URL: postgres://postgres:postgres@localhost/postgres

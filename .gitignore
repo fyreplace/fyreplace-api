@@ -13,7 +13,6 @@ venv
 env
 .venv
 .env
-.python-version
 
 db.sqlite3
 .coverage
