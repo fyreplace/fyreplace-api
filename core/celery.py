@@ -1,6 +1,7 @@
+import logging
 import os
+from typing import Any, Dict, List
 
-import rollbar
 from celery import Celery
 from celery.signals import task_failure
 from django.conf import settings
@@ -13,5 +14,12 @@ app.autodiscover_tasks()
 
 
 @task_failure.connect
-def on_task_failure(**kwargs):
-    rollbar.report_exc_info(extra_data=kwargs)
+def on_task_failure(sender: Any, args: List, kwargs: Dict, **__):
+    logging.error(
+        msg=f"Task failed: {sender}",
+        exc_info=True,
+        extra={
+            "arguments": args,
+            "keyword_arguments": kwargs,
+        },
+    )

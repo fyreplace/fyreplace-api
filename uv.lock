@@ -604,7 +604,7 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "python-magic" },
     { name = "qrcode" },
-    { name = "rollbar" },
+    { name = "sentry-sdk" },
     { name = "tqdm" },
     { name = "uvicorn" },
 ]
@@ -637,7 +637,7 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1,<2" },
     { name = "python-magic", specifier = ">=0.4,<0.5" },
     { name = "qrcode", specifier = ">=8,<9" },
-    { name = "rollbar", specifier = ">=1,<2" },
+    { name = "sentry-sdk", specifier = ">=2,<3" },
     { name = "tqdm", specifier = ">=4,<5" },
     { name = "uvicorn", specifier = ">=0.46,<0.47" },
 ]
@@ -1438,18 +1438,6 @@ wheels = [
 ]
 
 [[package]]
-name = "rollbar"
-version = "1.3.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/d2/43/966a7d64ff2c0901451aa2fcbe205a68528b6c6fbac6760b5ad5a705a944/rollbar-1.3.0.tar.gz", hash = "sha256:519402eac39bcc4fa484821872f6bb18497fb7b6c81167047867d17714d3b379", size = 85300, upload-time = "2025-03-26T15:12:19.274Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c3/d2/b6bf3f24349bc3bc681522fa8c55271923614b47e5e9d923f443523de81a/rollbar-1.3.0-py3-none-any.whl", hash = "sha256:d800c4265a4d5aae547cb3f29e48414b6d4fedaa7f679cd0fd64dac16a1eded3", size = 117183, upload-time = "2025-03-26T15:12:17.828Z" },
-]
-
-[[package]]
 name = "s3transfer"
 version = "0.17.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1459,6 +1447,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/9b/ec/7c692cde9125b77e84b307354d4fb705f98b8ccad59a036d5957ca75bfc3/s3transfer-0.17.0.tar.gz", hash = "sha256:9edeb6d1c3c2f89d6050348548834ad8289610d886e5bf7b7207728bd43ce33a", size = 155337, upload-time = "2026-04-29T22:07:36.33Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/87/72/c6c32d2b657fa3dad1de340254e14390b1e334ce38268b7ad51abda3c8c2/s3transfer-0.17.0-py3-none-any.whl", hash = "sha256:ce3801712acf4ad3e89fb9990df97b4972e93f4b3b0004d214be5bce12814c20", size = 86811, upload-time = "2026-04-29T22:07:34.966Z" },
+]
+
+[[package]]
+name = "sentry-sdk"
+version = "2.60.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "certifi" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/54/a2/2e6c090db384cc515069f4f85542bd5baf6786852073020ea73d4a76d3ea/sentry_sdk-2.60.0.tar.gz", hash = "sha256:0bd25e54e78ca02d0be512529fa644bbbf9e8470d7b26371294012d4ca93c978", size = 452946, upload-time = "2026-05-13T13:34:52.516Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/29/41/f2b800b7f12a05dd48c2a6280d4dd812d1425fc66ed3fe3fd99420c41d1a/sentry_sdk-2.60.0-py3-none-any.whl", hash = "sha256:28a536c03291c8bcb363cf35c611b32738ec118ff64d8d6383b096448ac4c803", size = 475616, upload-time = "2026-05-13T13:34:50.259Z" },
 ]
 
 [[package]]

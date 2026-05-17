@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import re
 from base64 import b64decode
@@ -7,7 +8,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import firebase_admin
-import rollbar
+import sentry_sdk
 from celery.schedules import crontab
 from dotenv import find_dotenv, load_dotenv
 from firebase_admin.credentials import Certificate as FirebaseCertificate
@@ -27,12 +28,18 @@ TEST_RUNNER = "core.tests.PytestTestRunner"
 
 IS_TESTING = False
 
-ROLLBAR_TOKEN = os.getenv("ROLLBAR_TOKEN")
+# Sentry
 
-ROLLBAR_ENVIRONMENT = os.getenv("ROLLBAR_ENVIRONMENT")
+SENTRY_DSN = os.getenv("SENTRY_DSN")
 
-if ROLLBAR_TOKEN and ROLLBAR_ENVIRONMENT:
-    rollbar.init(ROLLBAR_TOKEN, ROLLBAR_ENVIRONMENT)
+SENTRY_ENVIRONMENT = os.getenv("SENTRY_ENVIRONMENT")
+
+if SENTRY_DSN and SENTRY_ENVIRONMENT:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment=SENTRY_ENVIRONMENT,
+        send_default_pii=True,
+    )
 
 # Self-awareness
 
