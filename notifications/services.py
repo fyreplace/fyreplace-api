@@ -63,10 +63,10 @@ class NotificationService(
             token=request.token
         ).delete()
         messaging, _ = RemoteMessaging.objects.update_or_create(
-            token=request.token,
+            connection=context.caller_connection,
             defaults={
                 "service": request.service,
-                "connection": context.caller_connection,
+                "token": request.token,
             },
         )
         messaging.full_clean()
