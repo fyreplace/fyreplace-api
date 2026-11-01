@@ -1,9 +1,8 @@
 package app.fyreplace.services;
 
+import app.fyreplace.errors.InvalidArgumentException;
 import app.fyreplace.services.mimetype.KnownFileType;
 import com.google.protobuf.ByteString;
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
 import io.quarkus.runtime.configuration.MemorySize;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -25,11 +24,14 @@ public final class ImageService {
     @ConfigProperty(name = "app.storage.limits.max-size")
     MemorySize fileMaxSize;
 
+    @ConfigProperty(name = "app.storage.limits.chapter-image-max-size")
+    MemorySize chapterImageMaxSize;
+
     public boolean isValidImage(@Nonnull byte[] data) {
         try {
             final var mimeType = getMimeType(data);
             return Arrays.stream(KnownFileType.values()).anyMatch(m -> m.mime.equals(mimeType));
-        } catch (Exception e) {
+        } catch (InvalidArgumentException e) {
             return false;
         }
     }
@@ -44,13 +46,14 @@ public final class ImageService {
                     .orElseThrow()
                     .mime;
         } catch (IOException | NoSuchElementException e) {
-            throw new StatusRuntimeException(Status.INVALID_ARGUMENT.withCause(e));
+            throw new InvalidArgumentException("invalid_image");
         }
     }
 
     public int getWidth(@Nonnull byte[] data) {
         try {
-            return ImageIO.read(new ByteArrayInputStream(data)).getWidth();
+            final var image = ImageIO.read(new ByteArrayInputStream(data));
+            return image != null ? image.getWidth() : 0;
         } catch (IOException e) {
             return 0;
         }
@@ -58,7 +61,8 @@ public final class ImageService {
 
     public int getHeight(@Nonnull byte[] data) {
         try {
-            return ImageIO.read(new ByteArrayInputStream(data)).getHeight();
+            final var image = ImageIO.read(new ByteArrayInputStream(data));
+            return image != null ? image.getHeight() : 0;
         } catch (IOException e) {
             return 0;
         }
@@ -67,10 +71,28 @@ public final class ImageService {
     public @Nonnull Uni<byte[]> collectImage(@Nonnull Multi<ByteString> requests) {
         return requests.collect()
                 .with(Collectors.reducing(ByteString.EMPTY, ByteString::concat))
-                .map(ByteString::toByteArray)
+                .map(ByteString::toByteArray);
+    }
+
+    public @Nonnull Uni<byte[]> collectChapterImage(@Nonnull Multi<ByteString> requests) {
+        return collectImage(requests)
+                .flatMap(data -> data.length > chapterImageMaxSize.asLongValue()
+                        ? Uni.createFrom().failure(new InvalidArgumentException("payload_too_large"))
+                        : Uni.createFrom().item(data));
+    }
+
+    public @Nonnull Uni<byte[]> shrinkImage(@Nonnull byte[] data) {
+        return Uni.createFrom()
+                .item(data)
                 .emitOn(Infrastructure.getDefaultWorkerPool())
-                .map(this::shrink)
-                .emitOn(Infrastructure.getDefaultExecutor());
+                .map(this::shrink);
+    }
+
+    public @Nonnull Uni<Dimensions> dimensions(@Nonnull byte[] data) {
+        return Uni.createFrom()
+                .item(data)
+                .emitOn(Infrastructure.getDefaultWorkerPool())
+                .map(d -> new Dimensions(getWidth(d), getHeight(d)));
     }
 
     private byte[] shrink(@Nonnull byte[] data) {
@@ -93,7 +115,7 @@ public final class ImageService {
         if (output.length <= maxSize) {
             return output;
         } else if (scaleFactorIncrease >= 3) {
-            throw new StatusRuntimeException(Status.INVALID_ARGUMENT);
+            throw new InvalidArgumentException("invalid_image");
         } else {
             return shrink(data, scaleFactorIncrease + 0.5);
         }
@@ -115,4 +137,6 @@ public final class ImageService {
             throw new IOException();
         }
     }
+
+    public record Dimensions(int width, int height) {}
 }

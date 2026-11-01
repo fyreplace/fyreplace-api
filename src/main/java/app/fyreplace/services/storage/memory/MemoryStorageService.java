@@ -7,14 +7,14 @@ import io.smallrye.mutiny.Uni;
 import jakarta.annotation.Nonnull;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @ApplicationScoped
 @Unremovable
 @IfBuildProperty(name = "app.storage.type", stringValue = "memory")
 public final class MemoryStorageService extends LocalStorageServiceBase {
-    private final Map<String, byte[]> storage = new HashMap<>();
+    private final Map<String, byte[]> storage = new ConcurrentHashMap<>();
 
     @Override
     public @Nonnull Uni<byte[]> fetch(@Nonnull String path) {

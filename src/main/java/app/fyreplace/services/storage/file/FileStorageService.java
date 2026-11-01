@@ -4,11 +4,13 @@ import app.fyreplace.services.storage.LocalStorageServiceBase;
 import io.quarkus.arc.Unremovable;
 import io.quarkus.arc.properties.IfBuildProperty;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.file.FileSystemException;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.core.buffer.Buffer;
 import jakarta.annotation.Nonnull;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.nio.file.NoSuchFileException;
 
 @ApplicationScoped
 @Unremovable
@@ -32,7 +34,12 @@ public final class FileStorageService extends LocalStorageServiceBase {
 
     @Override
     public @Nonnull Uni<Void> remove(@Nonnull String path) {
-        return vertx.fileSystem().delete(getFullPath(path));
+        return vertx.fileSystem()
+                .delete(getFullPath(path))
+                .onFailure(failure -> failure instanceof FileSystemException fsException
+                        && fsException.getCause() instanceof NoSuchFileException)
+                .recoverWithNull()
+                .replaceWithVoid();
     }
 
     private @Nonnull String getFullPath(@Nonnull String path) {
