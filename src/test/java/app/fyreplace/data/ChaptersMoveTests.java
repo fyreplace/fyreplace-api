@@ -16,13 +16,13 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-@RunOnVertxContext
 public final class ChaptersMoveTests extends DataTestsBase {
     private static final String AUTHOR_USERNAME = "chapter_author";
     private static final List<String> ORIGINAL_LAYOUT =
             List.of("chapter_0/10", "chapter_1/20", "chapter_2/30", "chapter_3/40");
 
     @Test
+    @RunOnVertxContext
     void testForwardMove(@Nonnull TransactionalUniAsserter asserter) {
         asserter.execute(() -> resolvePostId()
                 .flatMap(postId -> assertLayout(postId, ORIGINAL_LAYOUT)
@@ -34,6 +34,7 @@ public final class ChaptersMoveTests extends DataTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testBackwardMove(@Nonnull TransactionalUniAsserter asserter) {
         asserter.execute(() -> resolvePostId()
                 .flatMap(postId -> assertLayout(postId, ORIGINAL_LAYOUT)
@@ -45,6 +46,7 @@ public final class ChaptersMoveTests extends DataTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testMoveToOwnPositionKeepsLayout(@Nonnull TransactionalUniAsserter asserter) {
         asserter.execute(() -> resolvePostId()
                 .flatMap(postId -> chapterRepository
@@ -53,6 +55,7 @@ public final class ChaptersMoveTests extends DataTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testMoveFromMissingPositionIsNoOp(@Nonnull TransactionalUniAsserter asserter) {
         asserter.execute(() -> resolvePostId()
                 .flatMap(postId -> chapterRepository

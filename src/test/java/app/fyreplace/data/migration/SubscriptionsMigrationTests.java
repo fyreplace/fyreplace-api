@@ -16,14 +16,15 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-@RunOnVertxContext
 public final class SubscriptionsMigrationTests extends MigrationTestsBase {
     @Test
+    @RunOnVertxContext
     void testEntityCount(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertEquals(subscriptionRepository::count, 2L);
     }
 
     @Test
+    @RunOnVertxContext
     void testSubscription(@Nonnull TransactionalUniAsserter asserter) {
         final Supplier<Uni<Post>> postSupplier =
                 () -> getPostsFromUser("user_0").map(List::getFirst);

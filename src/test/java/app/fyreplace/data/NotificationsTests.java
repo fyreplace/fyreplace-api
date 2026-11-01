@@ -10,9 +10,9 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-@RunOnVertxContext
 public final class NotificationsTests extends DataTestsBase {
     @Test
+    @RunOnVertxContext
     void testDeletedPostIsAbsentFromNotifications(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertEquals(notificationRepository::count, 1L);
         asserter.assertEquals(() -> userId("user_1").flatMap(notificationRepository::countByUserId), 1L);

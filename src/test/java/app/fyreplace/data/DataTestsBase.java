@@ -1,5 +1,6 @@
 package app.fyreplace.data;
 
+import app.fyreplace.TestsBase;
 import app.fyreplace.data.entities.Block;
 import app.fyreplace.data.entities.Chapter;
 import app.fyreplace.data.entities.Comment;
@@ -11,27 +12,14 @@ import app.fyreplace.data.entities.Subscription;
 import app.fyreplace.data.entities.User;
 import app.fyreplace.data.entities.Vote;
 import io.quarkus.hibernate.reactive.panache.Panache;
-import io.quarkus.vertx.core.runtime.context.VertxContextSafetyToggle;
-import io.smallrye.common.vertx.VertxContext;
 import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.tuples.Tuple2;
-import io.smallrye.mutiny.tuples.Tuple3;
-import io.vertx.core.Vertx;
 import io.vertx.sqlclient.DatabaseException;
 import jakarta.annotation.Nonnull;
 import jakarta.inject.Inject;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Supplier;
 import org.hibernate.exception.ConstraintViolationException;
 import org.hibernate.reactive.mutiny.Mutiny;
 
-public abstract class DataTestsBase {
-    @Inject
-    protected Vertx vertx;
-
+public abstract class DataTestsBase extends TestsBase {
     @Inject
     protected User.Repository userRepository;
 
@@ -85,37 +73,5 @@ public abstract class DataTestsBase {
         }
 
         return false;
-    }
-
-    protected static <A, B> @Nonnull Uni<Tuple2<A, B>> joinAsTuple(@Nonnull Uni<A> aUni, @Nonnull Uni<B> bUni) {
-        return aUni.flatMap(a -> bUni.map(b -> Tuple2.of(a, b)));
-    }
-
-    protected static <A, B, C> @Nonnull Uni<Tuple3<A, B, C>> joinAsTuple(
-            @Nonnull Uni<A> aUni, @Nonnull Uni<B> bUni, @Nonnull Uni<C> cUni) {
-        return aUni.flatMap(a -> bUni.flatMap(b -> cUni.map(c -> Tuple3.of(a, b, c))));
-    }
-
-    protected <E> void awaitOnSafeContext(@Nonnull Supplier<Uni<E>> action) {
-        final var done = new CompletableFuture<Void>();
-        final var context = VertxContext.getOrCreateDuplicatedContext(vertx.getOrCreateContext());
-
-        VertxContextSafetyToggle.setContextSafe(context, true);
-        context.runOnContext(ignored -> {
-            try {
-                Panache.withTransaction(action).subscribe().with(_ -> done.complete(null), done::completeExceptionally);
-            } catch (Throwable throwable) {
-                done.completeExceptionally(throwable);
-            }
-        });
-
-        try {
-            done.get(15, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while waiting for the Vert.x context", e);
-        } catch (ExecutionException | TimeoutException e) {
-            throw new IllegalStateException("Could not run the action on the Vert.x context", e);
-        }
     }
 }

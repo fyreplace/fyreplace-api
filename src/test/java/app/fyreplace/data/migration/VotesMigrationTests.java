@@ -13,14 +13,15 @@ import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-@RunOnVertxContext
 public final class VotesMigrationTests extends MigrationTestsBase {
     @Test
+    @RunOnVertxContext
     void testEntityCount(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertEquals(voteRepository::count, 2L);
     }
 
     @Test
+    @RunOnVertxContext
     void testUser0Vote(@Nonnull TransactionalUniAsserter asserter) {
         final Supplier<Uni<User>> userSupplier = () -> userRepository.findByUsername("user_0");
         final Supplier<Uni<Post>> postSupplier =
@@ -33,6 +34,7 @@ public final class VotesMigrationTests extends MigrationTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testUser1Vote(@Nonnull TransactionalUniAsserter asserter) {
         final Supplier<Uni<User>> userSupplier = () -> userRepository.findByUsername("user_1");
         final Supplier<Uni<Post>> postSupplier =

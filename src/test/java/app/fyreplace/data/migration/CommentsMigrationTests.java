@@ -14,14 +14,15 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-@RunOnVertxContext
 public final class CommentsMigrationTests extends MigrationTestsBase {
     @Test
+    @RunOnVertxContext
     void testEntityCount(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertEquals(commentRepository::count, 6L);
     }
 
     @Test
+    @RunOnVertxContext
     void testCommentFromUser1(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertThat(() -> getCommentsFromPost().map(List::getFirst), comment -> {
             Assertions.assertEquals("user_1", comment.getAuthor().getUsername());
@@ -33,6 +34,7 @@ public final class CommentsMigrationTests extends MigrationTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testCommentFromUser2(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertThat(() -> getCommentsFromPost().map(c -> c.get(1)), comment -> {
             Assertions.assertEquals("user_2", comment.getAuthor().getUsername());
@@ -44,6 +46,7 @@ public final class CommentsMigrationTests extends MigrationTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testCommentDeleted(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertThat(() -> getCommentsFromPost().map(c -> c.get(2)), comment -> {
             Assertions.assertEquals("user_1", comment.getAuthor().getUsername());

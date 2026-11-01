@@ -12,9 +12,9 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-@RunOnVertxContext
 public final class PostsVisibilityTests extends DataTestsBase {
     @Test
+    @RunOnVertxContext
     void testDeletedPostsAreHiddenFromAuthorReads(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertEquals(
                 () -> user1Id().map(postRepository::findByAuthorId).flatMap(PanacheQuery::count), 1L);

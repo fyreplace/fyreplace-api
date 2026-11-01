@@ -16,14 +16,15 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-@RunOnVertxContext
 public final class ReportsMigrationTests extends MigrationTestsBase {
     @Test
+    @RunOnVertxContext
     void testEntityCount(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertEquals(reportRepository::count, 3L);
     }
 
     @Test
+    @RunOnVertxContext
     void testUserReport(@Nonnull TransactionalUniAsserter asserter) {
         final Supplier<Uni<Report>> reportSupplier = () -> userRepository
                 .findByUsername("user_2")
@@ -42,6 +43,7 @@ public final class ReportsMigrationTests extends MigrationTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testPostReport(@Nonnull TransactionalUniAsserter asserter) {
         final Supplier<Uni<Report>> reportSupplier = () -> userRepository
                 .findByUsername("user_1")
@@ -61,6 +63,7 @@ public final class ReportsMigrationTests extends MigrationTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testCommentReport(@Nonnull TransactionalUniAsserter asserter) {
         final Supplier<Uni<Report>> reportSupplier = () -> userRepository
                 .findByUsername("user_0")

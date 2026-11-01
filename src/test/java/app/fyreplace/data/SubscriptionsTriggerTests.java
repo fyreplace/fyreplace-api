@@ -15,9 +15,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-@RunOnVertxContext
 public final class SubscriptionsTriggerTests extends DataTestsBase {
     @Test
+    @RunOnVertxContext
     void testLatestCommentIsSeenEvenIfDeleted(@Nonnull TransactionalUniAsserter asserter) {
         asserter.execute(() -> loadFixtures()
                 .flatMap(fixtures -> subscribeAndAssert(fixtures.author(), fixtures.post(), created -> {
@@ -31,6 +31,7 @@ public final class SubscriptionsTriggerTests extends DataTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testSubscribeToPostWithoutComments(@Nonnull TransactionalUniAsserter asserter) {
         asserter.execute(() -> userRepository
                 .findByUsername("trigger_author")

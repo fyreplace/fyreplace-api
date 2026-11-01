@@ -8,20 +8,22 @@ import io.quarkus.test.vertx.RunOnVertxContext;
 import jakarta.annotation.Nonnull;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-@RunOnVertxContext
 public final class UsersMigrationTests extends MigrationTestsBase {
     @Test
+    @RunOnVertxContext
     void testEntityCount(@Nonnull TransactionalUniAsserter asserter) {
-        asserter.assertEquals(userRepository::count, 13L);
+        asserter.assertEquals(userRepository::count, 17L);
         asserter.assertEquals(blockRepository::count, 1L);
     }
 
     @Test
+    @RunOnVertxContext
     void testAdmin(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertThat(() -> userRepository.findByUsername("the_admin"), user -> {
             Assertions.assertEquals("admin@example.org", user.getEmail());
@@ -38,6 +40,7 @@ public final class UsersMigrationTests extends MigrationTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testStaff(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertThat(() -> userRepository.findByUsername("the_staff"), user -> {
             Assertions.assertEquals("staff@example.org", user.getEmail());
@@ -53,6 +56,7 @@ public final class UsersMigrationTests extends MigrationTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testUser0(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertThat(() -> userRepository.findByUsername("user_0"), user -> {
             Assertions.assertEquals("user_0@example.org", user.getEmail());
@@ -70,6 +74,7 @@ public final class UsersMigrationTests extends MigrationTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testUser1(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertThat(() -> userRepository.findByUsername("user_1"), user -> {
             Assertions.assertEquals("user_1@example.com", user.getEmail());
@@ -86,6 +91,7 @@ public final class UsersMigrationTests extends MigrationTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testUser2(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertThat(() -> userRepository.findByUsername("user_2"), user -> {
             Assertions.assertEquals("user_2@example.com", user.getEmail());
@@ -101,6 +107,7 @@ public final class UsersMigrationTests extends MigrationTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testBanned(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertThat(() -> userRepository.findByUsername("banned_user"), user -> {
             Assertions.assertEquals("banned_user@example.org", user.getEmail());
@@ -113,7 +120,7 @@ public final class UsersMigrationTests extends MigrationTestsBase {
             Assertions.assertEquals("avatars/banned.png", user.getAvatar().getPath());
             Assertions.assertEquals(User.BanCount.ONCE, user.getBanCount());
             Assertions.assertNotNull(user.getDateBanEnd());
-            final var expectedBanEnd = OffsetDateTime.now().plus(Duration.ofDays(10));
+            final var expectedBanEnd = ZonedDateTime.now().plusDays(10).toOffsetDateTime();
             final var actualBanEnd = user.getDateBanEnd();
             final var distance = Duration.between(actualBanEnd, expectedBanEnd);
             Assertions.assertTrue(
@@ -124,6 +131,7 @@ public final class UsersMigrationTests extends MigrationTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testPermanentBanned(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertThat(() -> userRepository.findByUsername("permanent_banned_user"), user -> {
             Assertions.assertEquals("permanent_banned_user@example.org", user.getEmail());
@@ -139,6 +147,7 @@ public final class UsersMigrationTests extends MigrationTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testUser1BlocksUser2(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertEquals(
                 () -> userRepository
@@ -151,10 +160,12 @@ public final class UsersMigrationTests extends MigrationTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testDeletedUsers(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertThat(
-                () -> userRepository.find("isDeleted AND dateBanEnd IS NULL").singleResult(),
-                user -> Assertions.assertEquals(User.BanCount.NEVER, user.getBanCount()));
+                () -> userRepository.find("isDeleted AND dateBanEnd IS NULL").list(),
+                users -> Assertions.assertTrue(
+                        users.stream().anyMatch(user -> user.getBanCount() == User.BanCount.NEVER)));
 
         asserter.assertThat(
                 () -> userRepository

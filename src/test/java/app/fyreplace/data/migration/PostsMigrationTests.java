@@ -13,15 +13,16 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-@RunOnVertxContext
 public final class PostsMigrationTests extends MigrationTestsBase {
     @Test
+    @RunOnVertxContext
     void testEntityCount(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertEquals(postRepository::count, 8L);
         asserter.assertEquals(chapterRepository::count, 7L);
     }
 
     @Test
+    @RunOnVertxContext
     void testUser0Post0(@Nonnull TransactionalUniAsserter asserter) {
         final Supplier<Uni<Post>> postSupplier =
                 () -> getPostsFromUser("user_0").map(List::getFirst);
@@ -54,6 +55,7 @@ public final class PostsMigrationTests extends MigrationTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testUser0Post1(@Nonnull TransactionalUniAsserter asserter) {
         final Supplier<Uni<Post>> postSupplier =
                 () -> getPostsFromUser("user_0").map(List::getLast);
@@ -70,6 +72,7 @@ public final class PostsMigrationTests extends MigrationTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testUser1Post0(@Nonnull TransactionalUniAsserter asserter) {
         final Supplier<Uni<Post>> postSupplier =
                 () -> getPostsFromUser("user_1").map(List::getFirst);
@@ -95,6 +98,7 @@ public final class PostsMigrationTests extends MigrationTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testUser1Post1(@Nonnull TransactionalUniAsserter asserter) {
         final Supplier<Uni<Post>> postSupplier =
                 () -> getPostsFromUser("user_1").map(List::getLast);

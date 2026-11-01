@@ -13,14 +13,15 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-@RunOnVertxContext
 public final class MessagingTokensMigrationTests extends MigrationTestsBase {
     @Test
+    @RunOnVertxContext
     void testEntityCount(@Nonnull TransactionalUniAsserter asserter) {
         asserter.assertEquals(messagingTokenRepository::count, 2L);
     }
 
     @Test
+    @RunOnVertxContext
     void testUser0(@Nonnull TransactionalUniAsserter asserter) {
         final Supplier<Uni<MessagingToken>> tokenSupplier = () -> userRepository
                 .findByUsername("user_0")
@@ -35,6 +36,7 @@ public final class MessagingTokensMigrationTests extends MigrationTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testUser1(@Nonnull TransactionalUniAsserter asserter) {
         final Supplier<Uni<MessagingToken>> tokenSupplier = () -> userRepository
                 .findByUsername("user_1")

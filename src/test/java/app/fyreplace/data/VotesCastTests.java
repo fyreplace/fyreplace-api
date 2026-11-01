@@ -14,12 +14,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-@RunOnVertxContext
 public final class VotesCastTests extends DataTestsBase {
     private static final String POST_AUTHOR = "chapter_author";
     private static final String VOTER = "user_1";
 
     @Test
+    @RunOnVertxContext
     void testFirstSpreadVoteGrantsLife(@Nonnull TransactionalUniAsserter asserter) {
         asserter.execute(() -> loadFixture(VOTER).flatMap(fixture -> {
             final var lifeBefore = fixture.post().getLife();
@@ -46,6 +46,7 @@ public final class VotesCastTests extends DataTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testVoteRenewalReturnsExistingRow(@Nonnull TransactionalUniAsserter asserter) {
         asserter.execute(() -> loadFixture(VOTER).flatMap(fixture -> {
             final var lifeBefore = fixture.post().getLife();
@@ -70,6 +71,7 @@ public final class VotesCastTests extends DataTestsBase {
     }
 
     @Test
+    @RunOnVertxContext
     void testFirstPlainVoteGrantsNoLife(@Nonnull TransactionalUniAsserter asserter) {
         asserter.execute(() -> loadFixture(VOTER).flatMap(fixture -> {
             final var lifeBefore = fixture.post().getLife();
@@ -81,12 +83,14 @@ public final class VotesCastTests extends DataTestsBase {
                     .call(() -> refresh(fixture.post()))
                     .map(Vote::isSpread)
                     .invoke(Assertions::assertFalse)
-                    .invoke(() -> Assertions.assertEquals(lifeBefore, fixture.post().getLife()))
+                    .invoke(() ->
+                            Assertions.assertEquals(lifeBefore, fixture.post().getLife()))
                     .eventually(() -> deleteVote(fixture));
         }));
     }
 
     @Test
+    @RunOnVertxContext
     void testSelfVoteIsNoOp(@Nonnull TransactionalUniAsserter asserter) {
         asserter.execute(() -> loadFixture(POST_AUTHOR).flatMap(fixture -> {
             final var lifeBefore = fixture.post().getLife();
