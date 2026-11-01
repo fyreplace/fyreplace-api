@@ -10,6 +10,7 @@ bin/
 
 # IntelliJ
 .idea
+.ai
 *.ipr
 *.iml
 *.iws
