@@ -1,6 +1,7 @@
 package app.fyreplace.data.entities;
 
 import io.quarkus.hibernate.reactive.panache.PanacheQuery;
+import io.smallrye.mutiny.Uni;
 import jakarta.annotation.Nonnull;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.Column;
@@ -20,6 +21,8 @@ import org.hibernate.annotations.OnDeleteAction;
 @Entity
 @Table(name = "messaging_tokens")
 public final class MessagingToken extends EntityBase {
+    public static final int TOKEN_MAX_LENGTH = 300;
+
     @ManyToOne(optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     public User user;
@@ -28,7 +31,7 @@ public final class MessagingToken extends EntityBase {
     @Enumerated(value = EnumType.STRING)
     public Service service;
 
-    @Column(nullable = false, unique = true)
+    @Column(length = TOKEN_MAX_LENGTH, nullable = false, unique = true)
     public String token;
 
     public enum Service {
@@ -42,6 +45,14 @@ public final class MessagingToken extends EntityBase {
     public static final class Repository implements RepositoryBase<MessagingToken> {
         public @Nonnull PanacheQuery<MessagingToken> findByUserId(@Nonnull UUID userId) {
             return find("user.id", userId);
+        }
+
+        public @Nonnull Uni<MessagingToken> findByTokenOrNull(@Nonnull String token) {
+            return find("token", token).firstResult();
+        }
+
+        public @Nonnull Uni<Long> deleteByUserId(@Nonnull UUID userId) {
+            return delete("user.id", userId);
         }
     }
 }

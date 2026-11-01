@@ -19,6 +19,8 @@ public final class StoredFile extends EntityBase {
     @Column(unique = true, nullable = false)
     public String path;
 
+    protected StoredFile() {}
+
     public StoredFile(@Nonnull String path) {
         this.path = path;
     }
@@ -27,10 +29,6 @@ public final class StoredFile extends EntityBase {
     public static final class Repository implements RepositoryBase<StoredFile> {
         @Inject
         StorageService storageService;
-
-        public @Nonnull Uni<StoredFile> findByPath(@Nonnull String path) {
-            return find("path", path).firstResult();
-        }
 
         public @Nonnull Uni<StoredFile> store(@Nonnull String directory, @Nonnull byte[] data) {
             return Uni.createFrom()
@@ -41,8 +39,11 @@ public final class StoredFile extends EntityBase {
                     .call(this::persist);
         }
 
-        public @Nonnull Uni<Void> remove(@Nonnull StoredFile storedFile) {
-            return delete(storedFile).call(() -> storageService.remove(storedFile.getPath()));
+        public @Nonnull Uni<Void> removeByPath(@Nonnull String path) {
+            return delete("path", path)
+                    .replaceWith(path)
+                    .call(storageService::remove)
+                    .replaceWithVoid();
         }
     }
 }

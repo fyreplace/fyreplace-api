@@ -407,7 +407,7 @@ ALTER TABLE public.posts_subscription
 DROP CONSTRAINT subscriptions__last_comment_seen_id__fk;
 
 ALTER TABLE public.posts_subscription
-ADD CONSTRAINT subscriptions__last_comment_seen_id__fk FOREIGN KEY (last_comment_seen_id) REFERENCES public.posts_comment(id) ON DELETE CASCADE;
+ADD CONSTRAINT subscriptions__last_comment_seen_id__fk FOREIGN KEY (last_comment_seen_id) REFERENCES public.posts_comment(id) ON DELETE SET NULL;
 
 --------------
 -- Comments --
@@ -848,6 +848,35 @@ BEGIN
     RETURNING * INTO result_user;
 
     RETURN result_user;
+END;
+$$;
+
+CREATE FUNCTION blocks__insert_if_absent(issuer_id uuid, target_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+AS
+$$
+BEGIN
+    INSERT INTO public.blocks (issuer_id, target_id)
+    VALUES (blocks__insert_if_absent.issuer_id, blocks__insert_if_absent.target_id)
+    ON CONFLICT DO NOTHING;
+END;
+$$;
+
+CREATE FUNCTION subscriptions__insert_if_absent(user_id uuid, post_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+AS
+$$
+BEGIN
+    INSERT INTO public.subscriptions (user_id, post_id, date_last_seen, last_comment_seen_id)
+    VALUES (
+        subscriptions__insert_if_absent.user_id,
+        subscriptions__insert_if_absent.post_id,
+        CURRENT_TIMESTAMP,
+        (SELECT comments.id FROM public.comments WHERE comments.post_id = subscriptions__insert_if_absent.post_id ORDER BY comments.date_created DESC, comments.id DESC LIMIT 1)
+    )
+    ON CONFLICT DO NOTHING;
 END;
 $$;
 

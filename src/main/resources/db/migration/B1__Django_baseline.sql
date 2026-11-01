@@ -586,11 +586,11 @@ ALTER TABLE ONLY public.auth_group
 
 
 --
--- Name: auth_group_permissions auth_group_permissions_group_id_permission_id_0cd325b0_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: auth_group_permissions auth_group_permissions_group_id_permission_id_00000001_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.auth_group_permissions
-    ADD CONSTRAINT auth_group_permissions_group_id_permission_id_0cd325b0_uniq UNIQUE (group_id, permission_id);
+    ADD CONSTRAINT auth_group_permissions_group_id_permission_id_00000001_uniq UNIQUE (group_id, permission_id);
 
 
 --
@@ -610,11 +610,11 @@ ALTER TABLE ONLY public.auth_group
 
 
 --
--- Name: auth_permission auth_permission_content_type_id_codename_01ab375a_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: auth_permission auth_permission_content_type_id_codename_00000002_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.auth_permission
-    ADD CONSTRAINT auth_permission_content_type_id_codename_01ab375a_uniq UNIQUE (content_type_id, codename);
+    ADD CONSTRAINT auth_permission_content_type_id_codename_00000002_uniq UNIQUE (content_type_id, codename);
 
 
 --
@@ -690,11 +690,11 @@ ALTER TABLE ONLY public.django_celery_beat_periodictasks
 
 
 --
--- Name: django_celery_beat_solarschedule django_celery_beat_solar_event_latitude_longitude_ba64999a_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: django_celery_beat_solarschedule django_celery_beat_solar_event_latitude_longitude_00000003_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.django_celery_beat_solarschedule
-    ADD CONSTRAINT django_celery_beat_solar_event_latitude_longitude_ba64999a_uniq UNIQUE (event, latitude, longitude);
+    ADD CONSTRAINT django_celery_beat_solar_event_latitude_longitude_00000003_uniq UNIQUE (event, latitude, longitude);
 
 
 --
@@ -706,11 +706,11 @@ ALTER TABLE ONLY public.django_celery_beat_solarschedule
 
 
 --
--- Name: django_content_type django_content_type_app_label_model_76bd3d3b_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: django_content_type django_content_type_app_label_model_00000004_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.django_content_type
-    ADD CONSTRAINT django_content_type_app_label_model_76bd3d3b_uniq UNIQUE (app_label, model);
+    ADD CONSTRAINT django_content_type_app_label_model_00000004_uniq UNIQUE (app_label, model);
 
 
 --
@@ -746,11 +746,11 @@ ALTER TABLE ONLY public.notifications_apnstoken
 
 
 --
--- Name: notifications_flag notifications_flag_issuer_id_target_type_id_8d30de13_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: notifications_flag notifications_flag_issuer_id_target_type_id_00000005_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.notifications_flag
-    ADD CONSTRAINT notifications_flag_issuer_id_target_type_id_8d30de13_uniq UNIQUE (issuer_id, target_type_id, target_id);
+    ADD CONSTRAINT notifications_flag_issuer_id_target_type_id_00000005_uniq UNIQUE (issuer_id, target_type_id, target_id);
 
 
 --
@@ -762,11 +762,11 @@ ALTER TABLE ONLY public.notifications_flag
 
 
 --
--- Name: notifications_notification notifications_notificati_subscription_id_target_t_fa4b19f2_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: notifications_notification notifications_notificati_subscription_id_target_t_00000006_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.notifications_notification
-    ADD CONSTRAINT notifications_notificati_subscription_id_target_t_fa4b19f2_uniq UNIQUE (subscription_id, target_type_id, target_id);
+    ADD CONSTRAINT notifications_notificati_subscription_id_target_t_00000006_uniq UNIQUE (subscription_id, target_type_id, target_id);
 
 
 --
@@ -818,11 +818,11 @@ ALTER TABLE ONLY public.posts_chapter
 
 
 --
--- Name: posts_chapter posts_chapter_post_id_position_a88a6e02_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: posts_chapter posts_chapter_post_id_position_00000007_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.posts_chapter
-    ADD CONSTRAINT posts_chapter_post_id_position_a88a6e02_uniq UNIQUE (post_id, "position");
+    ADD CONSTRAINT posts_chapter_post_id_position_00000007_uniq UNIQUE (post_id, "position");
 
 
 --
@@ -866,11 +866,11 @@ ALTER TABLE ONLY public.posts_subscription
 
 
 --
--- Name: posts_subscription posts_subscription_user_id_post_id_43ef8a9d_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: posts_subscription posts_subscription_user_id_post_id_00000008_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.posts_subscription
-    ADD CONSTRAINT posts_subscription_user_id_post_id_43ef8a9d_uniq UNIQUE (user_id, post_id);
+    ADD CONSTRAINT posts_subscription_user_id_post_id_00000008_uniq UNIQUE (user_id, post_id);
 
 
 --
@@ -882,11 +882,11 @@ ALTER TABLE ONLY public.posts_visibility
 
 
 --
--- Name: posts_visibility posts_visibility_stack_id_post_id_fcc436b2_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: posts_visibility posts_visibility_stack_id_post_id_00000009_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.posts_visibility
-    ADD CONSTRAINT posts_visibility_stack_id_post_id_fcc436b2_uniq UNIQUE (stack_id, post_id);
+    ADD CONSTRAINT posts_visibility_stack_id_post_id_00000009_uniq UNIQUE (stack_id, post_id);
 
 
 --
@@ -898,19 +898,19 @@ ALTER TABLE ONLY public.posts_vote
 
 
 --
--- Name: posts_vote posts_vote_user_id_post_id_b43a064a_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: posts_vote posts_vote_user_id_post_id_0000000a_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.posts_vote
-    ADD CONSTRAINT posts_vote_user_id_post_id_b43a064a_uniq UNIQUE (user_id, post_id);
+    ADD CONSTRAINT posts_vote_user_id_post_id_0000000a_uniq UNIQUE (user_id, post_id);
 
 
 --
--- Name: users_block users_block_issuer_id_target_id_ecd28069_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: users_block users_block_issuer_id_target_id_0000000b_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users_block
-    ADD CONSTRAINT users_block_issuer_id_target_id_ecd28069_uniq UNIQUE (issuer_id, target_id);
+    ADD CONSTRAINT users_block_issuer_id_target_id_0000000b_uniq UNIQUE (issuer_id, target_id);
 
 
 --
@@ -946,11 +946,11 @@ ALTER TABLE ONLY public.users_user_groups
 
 
 --
--- Name: users_user_groups users_user_groups_user_id_group_id_b88eab82_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: users_user_groups users_user_groups_user_id_group_id_0000000c_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users_user_groups
-    ADD CONSTRAINT users_user_groups_user_id_group_id_b88eab82_uniq UNIQUE (user_id, group_id);
+    ADD CONSTRAINT users_user_groups_user_id_group_id_0000000c_uniq UNIQUE (user_id, group_id);
 
 
 --
@@ -970,11 +970,11 @@ ALTER TABLE ONLY public.users_user_user_permissions
 
 
 --
--- Name: users_user_user_permissions users_user_user_permissions_user_id_permission_id_43338c45_uniq; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: users_user_user_permissions users_user_user_permissions_user_id_permission_id_0000000d_uniq; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users_user_user_permissions
-    ADD CONSTRAINT users_user_user_permissions_user_id_permission_id_43338c45_uniq UNIQUE (user_id, permission_id);
+    ADD CONSTRAINT users_user_user_permissions_user_id_permission_id_0000000d_uniq UNIQUE (user_id, permission_id);
 
 
 --
@@ -986,503 +986,503 @@ ALTER TABLE ONLY public.users_user
 
 
 --
--- Name: auth_group_name_a6ea08ec_like; Type: INDEX; Schema: public; Owner: -
+-- Name: auth_group_name_0000000e_like; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX auth_group_name_a6ea08ec_like ON public.auth_group USING btree (name varchar_pattern_ops);
+CREATE INDEX auth_group_name_0000000e_like ON public.auth_group USING btree (name varchar_pattern_ops);
 
 
 --
--- Name: auth_group_permissions_group_id_b120cbf9; Type: INDEX; Schema: public; Owner: -
+-- Name: auth_group_permissions_group_id_0000000f; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX auth_group_permissions_group_id_b120cbf9 ON public.auth_group_permissions USING btree (group_id);
+CREATE INDEX auth_group_permissions_group_id_0000000f ON public.auth_group_permissions USING btree (group_id);
 
 
 --
--- Name: auth_group_permissions_permission_id_84c5c92e; Type: INDEX; Schema: public; Owner: -
+-- Name: auth_group_permissions_permission_id_00000010; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX auth_group_permissions_permission_id_84c5c92e ON public.auth_group_permissions USING btree (permission_id);
+CREATE INDEX auth_group_permissions_permission_id_00000010 ON public.auth_group_permissions USING btree (permission_id);
 
 
 --
--- Name: auth_permission_content_type_id_2f476e4b; Type: INDEX; Schema: public; Owner: -
+-- Name: auth_permission_content_type_id_00000011; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX auth_permission_content_type_id_2f476e4b ON public.auth_permission USING btree (content_type_id);
+CREATE INDEX auth_permission_content_type_id_00000011 ON public.auth_permission USING btree (content_type_id);
 
 
 --
--- Name: core_cachedrequest_request_id_66b5da21_like; Type: INDEX; Schema: public; Owner: -
+-- Name: core_cachedrequest_request_id_00000012_like; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX core_cachedrequest_request_id_66b5da21_like ON public.core_cachedrequest USING btree (request_id varchar_pattern_ops);
+CREATE INDEX core_cachedrequest_request_id_00000012_like ON public.core_cachedrequest USING btree (request_id varchar_pattern_ops);
 
 
 --
--- Name: django_celery_beat_periodictask_clocked_id_47a69f82; Type: INDEX; Schema: public; Owner: -
+-- Name: django_celery_beat_periodictask_clocked_id_00000013; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX django_celery_beat_periodictask_clocked_id_47a69f82 ON public.django_celery_beat_periodictask USING btree (clocked_id);
+CREATE INDEX django_celery_beat_periodictask_clocked_id_00000013 ON public.django_celery_beat_periodictask USING btree (clocked_id);
 
 
 --
--- Name: django_celery_beat_periodictask_crontab_id_d3cba168; Type: INDEX; Schema: public; Owner: -
+-- Name: django_celery_beat_periodictask_crontab_id_00000014; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX django_celery_beat_periodictask_crontab_id_d3cba168 ON public.django_celery_beat_periodictask USING btree (crontab_id);
+CREATE INDEX django_celery_beat_periodictask_crontab_id_00000014 ON public.django_celery_beat_periodictask USING btree (crontab_id);
 
 
 --
--- Name: django_celery_beat_periodictask_interval_id_a8ca27da; Type: INDEX; Schema: public; Owner: -
+-- Name: django_celery_beat_periodictask_interval_id_00000015; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX django_celery_beat_periodictask_interval_id_a8ca27da ON public.django_celery_beat_periodictask USING btree (interval_id);
+CREATE INDEX django_celery_beat_periodictask_interval_id_00000015 ON public.django_celery_beat_periodictask USING btree (interval_id);
 
 
 --
--- Name: django_celery_beat_periodictask_name_265a36b7_like; Type: INDEX; Schema: public; Owner: -
+-- Name: django_celery_beat_periodictask_name_00000016_like; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX django_celery_beat_periodictask_name_265a36b7_like ON public.django_celery_beat_periodictask USING btree (name varchar_pattern_ops);
+CREATE INDEX django_celery_beat_periodictask_name_00000016_like ON public.django_celery_beat_periodictask USING btree (name varchar_pattern_ops);
 
 
 --
--- Name: django_celery_beat_periodictask_solar_id_a87ce72c; Type: INDEX; Schema: public; Owner: -
+-- Name: django_celery_beat_periodictask_solar_id_00000017; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX django_celery_beat_periodictask_solar_id_a87ce72c ON public.django_celery_beat_periodictask USING btree (solar_id);
+CREATE INDEX django_celery_beat_periodictask_solar_id_00000017 ON public.django_celery_beat_periodictask USING btree (solar_id);
 
 
 --
--- Name: django_session_expire_date_a5c62663; Type: INDEX; Schema: public; Owner: -
+-- Name: django_session_expire_date_00000018; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX django_session_expire_date_a5c62663 ON public.django_session USING btree (expire_date);
+CREATE INDEX django_session_expire_date_00000018 ON public.django_session USING btree (expire_date);
 
 
 --
--- Name: django_session_session_key_c0390e0f_like; Type: INDEX; Schema: public; Owner: -
+-- Name: django_session_session_key_00000019_like; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX django_session_session_key_c0390e0f_like ON public.django_session USING btree (session_key varchar_pattern_ops);
+CREATE INDEX django_session_session_key_00000019_like ON public.django_session USING btree (session_key varchar_pattern_ops);
 
 
 --
--- Name: notifications_flag_issuer_id_6ed7015c; Type: INDEX; Schema: public; Owner: -
+-- Name: notifications_flag_issuer_id_0000001a; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX notifications_flag_issuer_id_6ed7015c ON public.notifications_flag USING btree (issuer_id);
+CREATE INDEX notifications_flag_issuer_id_0000001a ON public.notifications_flag USING btree (issuer_id);
 
 
 --
--- Name: notifications_flag_target_type_id_b196a835; Type: INDEX; Schema: public; Owner: -
+-- Name: notifications_flag_target_type_id_0000001b; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX notifications_flag_target_type_id_b196a835 ON public.notifications_flag USING btree (target_type_id);
+CREATE INDEX notifications_flag_target_type_id_0000001b ON public.notifications_flag USING btree (target_type_id);
 
 
 --
--- Name: notifications_notification_target_type_id_24f86f16; Type: INDEX; Schema: public; Owner: -
+-- Name: notifications_notification_target_type_id_0000001c; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX notifications_notification_target_type_id_24f86f16 ON public.notifications_notification USING btree (target_type_id);
+CREATE INDEX notifications_notification_target_type_id_0000001c ON public.notifications_notification USING btree (target_type_id);
 
 
 --
--- Name: notifications_remotemessaging_token_ed6a49ef_like; Type: INDEX; Schema: public; Owner: -
+-- Name: notifications_remotemessaging_token_0000001d_like; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX notifications_remotemessaging_token_ed6a49ef_like ON public.notifications_remotemessaging USING btree (token varchar_pattern_ops);
+CREATE INDEX notifications_remotemessaging_token_0000001d_like ON public.notifications_remotemessaging USING btree (token varchar_pattern_ops);
 
 
 --
--- Name: posts_chapter_post_id_fcf5c24d; Type: INDEX; Schema: public; Owner: -
+-- Name: posts_chapter_post_id_0000001e; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX posts_chapter_post_id_fcf5c24d ON public.posts_chapter USING btree (post_id);
+CREATE INDEX posts_chapter_post_id_0000001e ON public.posts_chapter USING btree (post_id);
 
 
 --
--- Name: posts_comment_author_id_795e4d12; Type: INDEX; Schema: public; Owner: -
+-- Name: posts_comment_author_id_0000001f; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX posts_comment_author_id_795e4d12 ON public.posts_comment USING btree (author_id);
+CREATE INDEX posts_comment_author_id_0000001f ON public.posts_comment USING btree (author_id);
 
 
 --
--- Name: posts_comment_post_id_e81436d7; Type: INDEX; Schema: public; Owner: -
+-- Name: posts_comment_post_id_00000020; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX posts_comment_post_id_e81436d7 ON public.posts_comment USING btree (post_id);
+CREATE INDEX posts_comment_post_id_00000020 ON public.posts_comment USING btree (post_id);
 
 
 --
--- Name: posts_post_author_id_fe5487bf; Type: INDEX; Schema: public; Owner: -
+-- Name: posts_post_author_id_00000021; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX posts_post_author_id_fe5487bf ON public.posts_post USING btree (author_id);
+CREATE INDEX posts_post_author_id_00000021 ON public.posts_post USING btree (author_id);
 
 
 --
--- Name: posts_subscription_last_comment_seen_id_ecf9cf40; Type: INDEX; Schema: public; Owner: -
+-- Name: posts_subscription_last_comment_seen_id_00000022; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX posts_subscription_last_comment_seen_id_ecf9cf40 ON public.posts_subscription USING btree (last_comment_seen_id);
+CREATE INDEX posts_subscription_last_comment_seen_id_00000022 ON public.posts_subscription USING btree (last_comment_seen_id);
 
 
 --
--- Name: posts_subscription_post_id_bd0e1f3e; Type: INDEX; Schema: public; Owner: -
+-- Name: posts_subscription_post_id_00000023; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX posts_subscription_post_id_bd0e1f3e ON public.posts_subscription USING btree (post_id);
+CREATE INDEX posts_subscription_post_id_00000023 ON public.posts_subscription USING btree (post_id);
 
 
 --
--- Name: posts_subscription_user_id_7f7f4ca7; Type: INDEX; Schema: public; Owner: -
+-- Name: posts_subscription_user_id_00000024; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX posts_subscription_user_id_7f7f4ca7 ON public.posts_subscription USING btree (user_id);
+CREATE INDEX posts_subscription_user_id_00000024 ON public.posts_subscription USING btree (user_id);
 
 
 --
--- Name: posts_visibility_post_id_d60d73af; Type: INDEX; Schema: public; Owner: -
+-- Name: posts_visibility_post_id_00000025; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX posts_visibility_post_id_d60d73af ON public.posts_visibility USING btree (post_id);
+CREATE INDEX posts_visibility_post_id_00000025 ON public.posts_visibility USING btree (post_id);
 
 
 --
--- Name: posts_visibility_stack_id_fcdfc87c; Type: INDEX; Schema: public; Owner: -
+-- Name: posts_visibility_stack_id_00000026; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX posts_visibility_stack_id_fcdfc87c ON public.posts_visibility USING btree (stack_id);
+CREATE INDEX posts_visibility_stack_id_00000026 ON public.posts_visibility USING btree (stack_id);
 
 
 --
--- Name: posts_vote_post_id_8ef1a8db; Type: INDEX; Schema: public; Owner: -
+-- Name: posts_vote_post_id_00000027; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX posts_vote_post_id_8ef1a8db ON public.posts_vote USING btree (post_id);
+CREATE INDEX posts_vote_post_id_00000027 ON public.posts_vote USING btree (post_id);
 
 
 --
--- Name: posts_vote_user_id_8509048a; Type: INDEX; Schema: public; Owner: -
+-- Name: posts_vote_user_id_00000028; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX posts_vote_user_id_8509048a ON public.posts_vote USING btree (user_id);
+CREATE INDEX posts_vote_user_id_00000028 ON public.posts_vote USING btree (user_id);
 
 
 --
--- Name: users_block_issuer_id_be940d95; Type: INDEX; Schema: public; Owner: -
+-- Name: users_block_issuer_id_00000029; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX users_block_issuer_id_be940d95 ON public.users_block USING btree (issuer_id);
+CREATE INDEX users_block_issuer_id_00000029 ON public.users_block USING btree (issuer_id);
 
 
 --
--- Name: users_block_target_id_f169e790; Type: INDEX; Schema: public; Owner: -
+-- Name: users_block_target_id_0000002a; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX users_block_target_id_f169e790 ON public.users_block USING btree (target_id);
+CREATE INDEX users_block_target_id_0000002a ON public.users_block USING btree (target_id);
 
 
 --
--- Name: users_connection_user_id_171cf501; Type: INDEX; Schema: public; Owner: -
+-- Name: users_connection_user_id_0000002b; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX users_connection_user_id_171cf501 ON public.users_connection USING btree (user_id);
+CREATE INDEX users_connection_user_id_0000002b ON public.users_connection USING btree (user_id);
 
 
 --
--- Name: users_user_email_243f6e77_like; Type: INDEX; Schema: public; Owner: -
+-- Name: users_user_email_0000002c_like; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX users_user_email_243f6e77_like ON public.users_user USING btree (email varchar_pattern_ops);
+CREATE INDEX users_user_email_0000002c_like ON public.users_user USING btree (email varchar_pattern_ops);
 
 
 --
--- Name: users_user_groups_group_id_9afc8d0e; Type: INDEX; Schema: public; Owner: -
+-- Name: users_user_groups_group_id_0000002d; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX users_user_groups_group_id_9afc8d0e ON public.users_user_groups USING btree (group_id);
+CREATE INDEX users_user_groups_group_id_0000002d ON public.users_user_groups USING btree (group_id);
 
 
 --
--- Name: users_user_groups_user_id_5f6f5a90; Type: INDEX; Schema: public; Owner: -
+-- Name: users_user_groups_user_id_0000002e; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX users_user_groups_user_id_5f6f5a90 ON public.users_user_groups USING btree (user_id);
+CREATE INDEX users_user_groups_user_id_0000002e ON public.users_user_groups USING btree (user_id);
 
 
 --
--- Name: users_user_user_permissions_permission_id_0b93982e; Type: INDEX; Schema: public; Owner: -
+-- Name: users_user_user_permissions_permission_id_0000002f; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX users_user_user_permissions_permission_id_0b93982e ON public.users_user_user_permissions USING btree (permission_id);
+CREATE INDEX users_user_user_permissions_permission_id_0000002f ON public.users_user_user_permissions USING btree (permission_id);
 
 
 --
--- Name: users_user_user_permissions_user_id_20aca447; Type: INDEX; Schema: public; Owner: -
+-- Name: users_user_user_permissions_user_id_00000030; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX users_user_user_permissions_user_id_20aca447 ON public.users_user_user_permissions USING btree (user_id);
+CREATE INDEX users_user_user_permissions_user_id_00000030 ON public.users_user_user_permissions USING btree (user_id);
 
 
 --
--- Name: users_user_username_06e46fe6_like; Type: INDEX; Schema: public; Owner: -
+-- Name: users_user_username_00000031_like; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX users_user_username_06e46fe6_like ON public.users_user USING btree (username varchar_pattern_ops);
+CREATE INDEX users_user_username_00000031_like ON public.users_user USING btree (username varchar_pattern_ops);
 
 
 --
--- Name: auth_group_permissions auth_group_permissio_permission_id_84c5c92e_fk_auth_perm; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: auth_group_permissions auth_group_permissio_permission_id_00000010_fk_auth_perm; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.auth_group_permissions
-    ADD CONSTRAINT auth_group_permissio_permission_id_84c5c92e_fk_auth_perm FOREIGN KEY (permission_id) REFERENCES public.auth_permission(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT auth_group_permissio_permission_id_00000010_fk_auth_perm FOREIGN KEY (permission_id) REFERENCES public.auth_permission(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: auth_group_permissions auth_group_permissions_group_id_b120cbf9_fk_auth_group_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: auth_group_permissions auth_group_permissions_group_id_0000000f_fk_auth_group_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.auth_group_permissions
-    ADD CONSTRAINT auth_group_permissions_group_id_b120cbf9_fk_auth_group_id FOREIGN KEY (group_id) REFERENCES public.auth_group(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT auth_group_permissions_group_id_0000000f_fk_auth_group_id FOREIGN KEY (group_id) REFERENCES public.auth_group(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: auth_permission auth_permission_content_type_id_2f476e4b_fk_django_co; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: auth_permission auth_permission_content_type_id_00000011_fk_django_co; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.auth_permission
-    ADD CONSTRAINT auth_permission_content_type_id_2f476e4b_fk_django_co FOREIGN KEY (content_type_id) REFERENCES public.django_content_type(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT auth_permission_content_type_id_00000011_fk_django_co FOREIGN KEY (content_type_id) REFERENCES public.django_content_type(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: django_celery_beat_periodictask django_celery_beat_p_clocked_id_47a69f82_fk_django_ce; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.django_celery_beat_periodictask
-    ADD CONSTRAINT django_celery_beat_p_clocked_id_47a69f82_fk_django_ce FOREIGN KEY (clocked_id) REFERENCES public.django_celery_beat_clockedschedule(id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: django_celery_beat_periodictask django_celery_beat_p_crontab_id_d3cba168_fk_django_ce; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: django_celery_beat_periodictask django_celery_beat_p_clocked_id_00000013_fk_django_ce; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.django_celery_beat_periodictask
-    ADD CONSTRAINT django_celery_beat_p_crontab_id_d3cba168_fk_django_ce FOREIGN KEY (crontab_id) REFERENCES public.django_celery_beat_crontabschedule(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT django_celery_beat_p_clocked_id_00000013_fk_django_ce FOREIGN KEY (clocked_id) REFERENCES public.django_celery_beat_clockedschedule(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: django_celery_beat_periodictask django_celery_beat_p_interval_id_a8ca27da_fk_django_ce; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.django_celery_beat_periodictask
-    ADD CONSTRAINT django_celery_beat_p_interval_id_a8ca27da_fk_django_ce FOREIGN KEY (interval_id) REFERENCES public.django_celery_beat_intervalschedule(id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: django_celery_beat_periodictask django_celery_beat_p_solar_id_a87ce72c_fk_django_ce; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: django_celery_beat_periodictask django_celery_beat_p_crontab_id_00000014_fk_django_ce; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.django_celery_beat_periodictask
-    ADD CONSTRAINT django_celery_beat_p_solar_id_a87ce72c_fk_django_ce FOREIGN KEY (solar_id) REFERENCES public.django_celery_beat_solarschedule(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT django_celery_beat_p_crontab_id_00000014_fk_django_ce FOREIGN KEY (crontab_id) REFERENCES public.django_celery_beat_crontabschedule(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: notifications_flag notifications_flag_issuer_id_6ed7015c_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: django_celery_beat_periodictask django_celery_beat_p_interval_id_00000015_fk_django_ce; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.django_celery_beat_periodictask
+    ADD CONSTRAINT django_celery_beat_p_interval_id_00000015_fk_django_ce FOREIGN KEY (interval_id) REFERENCES public.django_celery_beat_intervalschedule(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: django_celery_beat_periodictask django_celery_beat_p_solar_id_00000017_fk_django_ce; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.django_celery_beat_periodictask
+    ADD CONSTRAINT django_celery_beat_p_solar_id_00000017_fk_django_ce FOREIGN KEY (solar_id) REFERENCES public.django_celery_beat_solarschedule(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: notifications_flag notifications_flag_issuer_id_0000001a_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.notifications_flag
-    ADD CONSTRAINT notifications_flag_issuer_id_6ed7015c_fk_users_user_id FOREIGN KEY (issuer_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT notifications_flag_issuer_id_0000001a_fk_users_user_id FOREIGN KEY (issuer_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: notifications_flag notifications_flag_target_type_id_b196a835_fk_django_co; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: notifications_flag notifications_flag_target_type_id_0000001b_fk_django_co; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.notifications_flag
-    ADD CONSTRAINT notifications_flag_target_type_id_b196a835_fk_django_co FOREIGN KEY (target_type_id) REFERENCES public.django_content_type(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT notifications_flag_target_type_id_0000001b_fk_django_co FOREIGN KEY (target_type_id) REFERENCES public.django_content_type(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: notifications_notification notifications_notifi_subscription_id_e81b2f5a_fk_posts_sub; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.notifications_notification
-    ADD CONSTRAINT notifications_notifi_subscription_id_e81b2f5a_fk_posts_sub FOREIGN KEY (subscription_id) REFERENCES public.posts_subscription(id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: notifications_notification notifications_notifi_target_type_id_24f86f16_fk_django_co; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: notifications_notification notifications_notifi_subscription_id_00000032_fk_posts_sub; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.notifications_notification
-    ADD CONSTRAINT notifications_notifi_target_type_id_24f86f16_fk_django_co FOREIGN KEY (target_type_id) REFERENCES public.django_content_type(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT notifications_notifi_subscription_id_00000032_fk_posts_sub FOREIGN KEY (subscription_id) REFERENCES public.posts_subscription(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: notifications_remotemessaging notifications_remote_connection_id_76f0dba5_fk_users_con; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: notifications_notification notifications_notifi_target_type_id_0000001c_fk_django_co; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notifications_notification
+    ADD CONSTRAINT notifications_notifi_target_type_id_0000001c_fk_django_co FOREIGN KEY (target_type_id) REFERENCES public.django_content_type(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: notifications_remotemessaging notifications_remote_connection_id_00000033_fk_users_con; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.notifications_remotemessaging
-    ADD CONSTRAINT notifications_remote_connection_id_76f0dba5_fk_users_con FOREIGN KEY (connection_id) REFERENCES public.users_connection(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT notifications_remote_connection_id_00000033_fk_users_con FOREIGN KEY (connection_id) REFERENCES public.users_connection(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: posts_chapter posts_chapter_post_id_fcf5c24d_fk_posts_post_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: posts_chapter posts_chapter_post_id_0000001e_fk_posts_post_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.posts_chapter
-    ADD CONSTRAINT posts_chapter_post_id_fcf5c24d_fk_posts_post_id FOREIGN KEY (post_id) REFERENCES public.posts_post(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT posts_chapter_post_id_0000001e_fk_posts_post_id FOREIGN KEY (post_id) REFERENCES public.posts_post(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: posts_comment posts_comment_author_id_795e4d12_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.posts_comment
-    ADD CONSTRAINT posts_comment_author_id_795e4d12_fk_users_user_id FOREIGN KEY (author_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: posts_comment posts_comment_post_id_e81436d7_fk_posts_post_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: posts_comment posts_comment_author_id_0000001f_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.posts_comment
-    ADD CONSTRAINT posts_comment_post_id_e81436d7_fk_posts_post_id FOREIGN KEY (post_id) REFERENCES public.posts_post(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT posts_comment_author_id_0000001f_fk_users_user_id FOREIGN KEY (author_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: posts_post posts_post_author_id_fe5487bf_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: posts_comment posts_comment_post_id_00000020_fk_posts_post_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.posts_comment
+    ADD CONSTRAINT posts_comment_post_id_00000020_fk_posts_post_id FOREIGN KEY (post_id) REFERENCES public.posts_post(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: posts_post posts_post_author_id_00000021_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.posts_post
-    ADD CONSTRAINT posts_post_author_id_fe5487bf_fk_users_user_id FOREIGN KEY (author_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT posts_post_author_id_00000021_fk_users_user_id FOREIGN KEY (author_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: posts_stack posts_stack_user_id_a52affa4_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: posts_stack posts_stack_user_id_00000034_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.posts_stack
-    ADD CONSTRAINT posts_stack_user_id_a52affa4_fk_users_user_id FOREIGN KEY (user_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT posts_stack_user_id_00000034_fk_users_user_id FOREIGN KEY (user_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: posts_subscription posts_subscription_last_comment_seen_id_ecf9cf40_fk_posts_com; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.posts_subscription
-    ADD CONSTRAINT posts_subscription_last_comment_seen_id_ecf9cf40_fk_posts_com FOREIGN KEY (last_comment_seen_id) REFERENCES public.posts_comment(id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: posts_subscription posts_subscription_post_id_bd0e1f3e_fk_posts_post_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: posts_subscription posts_subscription_last_comment_seen_id_00000022_fk_posts_com; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.posts_subscription
-    ADD CONSTRAINT posts_subscription_post_id_bd0e1f3e_fk_posts_post_id FOREIGN KEY (post_id) REFERENCES public.posts_post(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT posts_subscription_last_comment_seen_id_00000022_fk_posts_com FOREIGN KEY (last_comment_seen_id) REFERENCES public.posts_comment(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: posts_subscription posts_subscription_user_id_7f7f4ca7_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: posts_subscription posts_subscription_post_id_00000023_fk_posts_post_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.posts_subscription
-    ADD CONSTRAINT posts_subscription_user_id_7f7f4ca7_fk_users_user_id FOREIGN KEY (user_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT posts_subscription_post_id_00000023_fk_posts_post_id FOREIGN KEY (post_id) REFERENCES public.posts_post(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: posts_visibility posts_visibility_post_id_d60d73af_fk_posts_post_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: posts_subscription posts_subscription_user_id_00000024_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.posts_subscription
+    ADD CONSTRAINT posts_subscription_user_id_00000024_fk_users_user_id FOREIGN KEY (user_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: posts_visibility posts_visibility_post_id_00000025_fk_posts_post_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.posts_visibility
-    ADD CONSTRAINT posts_visibility_post_id_d60d73af_fk_posts_post_id FOREIGN KEY (post_id) REFERENCES public.posts_post(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT posts_visibility_post_id_00000025_fk_posts_post_id FOREIGN KEY (post_id) REFERENCES public.posts_post(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: posts_visibility posts_visibility_stack_id_fcdfc87c_fk_posts_stack_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: posts_visibility posts_visibility_stack_id_00000026_fk_posts_stack_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.posts_visibility
-    ADD CONSTRAINT posts_visibility_stack_id_fcdfc87c_fk_posts_stack_id FOREIGN KEY (stack_id) REFERENCES public.posts_stack(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT posts_visibility_stack_id_00000026_fk_posts_stack_id FOREIGN KEY (stack_id) REFERENCES public.posts_stack(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: posts_vote posts_vote_post_id_8ef1a8db_fk_posts_post_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.posts_vote
-    ADD CONSTRAINT posts_vote_post_id_8ef1a8db_fk_posts_post_id FOREIGN KEY (post_id) REFERENCES public.posts_post(id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: posts_vote posts_vote_user_id_8509048a_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: posts_vote posts_vote_post_id_00000027_fk_posts_post_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.posts_vote
-    ADD CONSTRAINT posts_vote_user_id_8509048a_fk_users_user_id FOREIGN KEY (user_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT posts_vote_post_id_00000027_fk_posts_post_id FOREIGN KEY (post_id) REFERENCES public.posts_post(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: users_block users_block_issuer_id_be940d95_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: posts_vote posts_vote_user_id_00000028_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.posts_vote
+    ADD CONSTRAINT posts_vote_user_id_00000028_fk_users_user_id FOREIGN KEY (user_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: users_block users_block_issuer_id_00000029_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users_block
-    ADD CONSTRAINT users_block_issuer_id_be940d95_fk_users_user_id FOREIGN KEY (issuer_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT users_block_issuer_id_00000029_fk_users_user_id FOREIGN KEY (issuer_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: users_block users_block_target_id_f169e790_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: users_block users_block_target_id_0000002a_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users_block
-    ADD CONSTRAINT users_block_target_id_f169e790_fk_users_user_id FOREIGN KEY (target_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT users_block_target_id_0000002a_fk_users_user_id FOREIGN KEY (target_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: users_connection users_connection_user_id_171cf501_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: users_connection users_connection_user_id_0000002b_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users_connection
-    ADD CONSTRAINT users_connection_user_id_171cf501_fk_users_user_id FOREIGN KEY (user_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT users_connection_user_id_0000002b_fk_users_user_id FOREIGN KEY (user_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: users_user_groups users_user_groups_group_id_9afc8d0e_fk_auth_group_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.users_user_groups
-    ADD CONSTRAINT users_user_groups_group_id_9afc8d0e_fk_auth_group_id FOREIGN KEY (group_id) REFERENCES public.auth_group(id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: users_user_groups users_user_groups_user_id_5f6f5a90_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: users_user_groups users_user_groups_group_id_0000002d_fk_auth_group_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users_user_groups
-    ADD CONSTRAINT users_user_groups_user_id_5f6f5a90_fk_users_user_id FOREIGN KEY (user_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT users_user_groups_group_id_0000002d_fk_auth_group_id FOREIGN KEY (group_id) REFERENCES public.auth_group(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: users_user_user_permissions users_user_user_perm_permission_id_0b93982e_fk_auth_perm; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: users_user_groups users_user_groups_user_id_0000002e_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users_user_groups
+    ADD CONSTRAINT users_user_groups_user_id_0000002e_fk_users_user_id FOREIGN KEY (user_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: users_user_user_permissions users_user_user_perm_permission_id_0000002f_fk_auth_perm; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users_user_user_permissions
-    ADD CONSTRAINT users_user_user_perm_permission_id_0b93982e_fk_auth_perm FOREIGN KEY (permission_id) REFERENCES public.auth_permission(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT users_user_user_perm_permission_id_0000002f_fk_auth_perm FOREIGN KEY (permission_id) REFERENCES public.auth_permission(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: users_user_user_permissions users_user_user_permissions_user_id_20aca447_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: users_user_user_permissions users_user_user_permissions_user_id_00000030_fk_users_user_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users_user_user_permissions
-    ADD CONSTRAINT users_user_user_permissions_user_id_20aca447_fk_users_user_id FOREIGN KEY (user_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
+    ADD CONSTRAINT users_user_user_permissions_user_id_00000030_fk_users_user_id FOREIGN KEY (user_id) REFERENCES public.users_user(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --

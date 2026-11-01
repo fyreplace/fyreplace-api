@@ -28,15 +28,15 @@ import org.hibernate.annotations.OnDeleteAction;
     WHERE issuer.id = :issuerId AND target.id = :targetId
     """)})
 public final class Block extends EntityBase {
-    public static final String Q_FIND_BY_ISSUER_AND_TARGET = "Block.isBlocking";
+    public static final String Q_FIND_BY_ISSUER_AND_TARGET = "Block.findByIssuerAndTarget";
 
     @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    User issuer;
+    public User issuer;
 
     @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    User target;
+    public User target;
 
     @ApplicationScoped
     public static final class Repository implements RepositoryBase<Block> {
@@ -57,6 +57,16 @@ public final class Block extends EntityBase {
 
         public @Nonnull Uni<Long> deleteByIssuerIdAndTargetId(@Nonnull UUID issuerId, @Nonnull UUID targetId) {
             return delete("issuer.id = ?1 AND target.id = ?2", issuerId, targetId);
+        }
+
+        public @Nonnull Uni<Void> persistIfNotExists(@Nonnull Block block) {
+            return executeNative(
+                    "SELECT blocks__insert_if_absent(:issuerId, :targetId)",
+                    Map.of(
+                            "issuerId",
+                            block.getIssuer().getId(),
+                            "targetId",
+                            block.getTarget().getId()));
         }
     }
 }

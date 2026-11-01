@@ -9,6 +9,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.util.Map;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
@@ -41,12 +42,16 @@ public final class Vote extends EntityBase {
         }
 
         public @Nonnull Uni<Vote> castOrNull(@Nonnull Vote vote) {
-            return getSession()
-                    .map(session -> session.createNativeQuery(
-                                    "SELECT * FROM votes__cast(:userId, :postId, :spread)", Vote.class)
-                            .setParameter("userId", vote.getUser().getId())
-                            .setParameter("postId", vote.getPost().getId())
-                            .setParameter("spread", vote.isSpread() ? SPREAD_LIFE : 0))
+            return nativeQuery(
+                            Vote.class,
+                            "SELECT * FROM votes__cast(:userId, :postId, :spread)",
+                            Map.of(
+                                    "userId",
+                                    vote.getUser().getId(),
+                                    "postId",
+                                    vote.getPost().getId(),
+                                    "spread",
+                                    vote.isSpread() ? SPREAD_LIFE : 0))
                     .flatMap(Mutiny.SelectionQuery::getSingleResultOrNull);
         }
     }

@@ -40,6 +40,24 @@ public final class Report extends EntityBase {
             return find("issuer.id", issuerId);
         }
 
+        public @Nonnull Uni<Boolean> existsByIssuerIdAndTargetUserId(
+                @Nonnull UUID issuerId, @Nonnull UUID targetUserId) {
+            return count("issuer.id = ?1 AND targetUser.id = ?2", issuerId, targetUserId)
+                    .map(c -> c > 0);
+        }
+
+        public @Nonnull Uni<Boolean> existsByIssuerIdAndTargetPostId(
+                @Nonnull UUID issuerId, @Nonnull UUID targetPostId) {
+            return count("issuer.id = ?1 AND targetPost.id = ?2", issuerId, targetPostId)
+                    .map(c -> c > 0);
+        }
+
+        public @Nonnull Uni<Boolean> existsByIssuerIdAndTargetCommentId(
+                @Nonnull UUID issuerId, @Nonnull UUID targetCommentId) {
+            return count("issuer.id = ?1 AND targetComment.id = ?2", issuerId, targetCommentId)
+                    .map(c -> c > 0);
+        }
+
         public @Nonnull Uni<Long> deleteByTargetId(@Nonnull UUID targetId) {
             return delete("targetUser.id = ?1 OR targetPost.id = ?1 OR targetComment.id = ?1", targetId);
         }

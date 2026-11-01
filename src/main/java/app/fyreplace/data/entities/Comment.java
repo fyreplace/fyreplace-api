@@ -50,8 +50,29 @@ public final class Comment extends AuthoredEntityBase implements Comparable<Comm
             return find("author.id", Comment.SORTING, userId);
         }
 
+        public @Nonnull Uni<Comment> findExistingById(@Nonnull UUID id) {
+            return find("id = ?1 AND NOT isDeleted", id).singleResult();
+        }
+
         public @Nonnull Uni<Long> countByPostId(@Nonnull UUID postId) {
             return count("post.id", postId);
+        }
+
+        @Override
+        public @Nonnull Uni<Integer> softDeleteById(@Nonnull UUID id) {
+            return update("isDeleted = TRUE, text = '' WHERE id = ?1", id);
+        }
+
+        public @Nonnull Uni<Integer> softDeleteByAuthorId(@Nonnull UUID authorId) {
+            return update("isDeleted = TRUE, text = '' WHERE author.id = ?1 AND NOT isDeleted", authorId);
+        }
+
+        public @Nonnull Uni<Long> deleteByPostId(@Nonnull UUID postId) {
+            return delete("post.id = ?1", postId);
+        }
+
+        public @Nonnull Uni<Long> deleteByPostAuthorId(@Nonnull UUID authorId) {
+            return delete("post.author.id = ?1", authorId);
         }
     }
 }

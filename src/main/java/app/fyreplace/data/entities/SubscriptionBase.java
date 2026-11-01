@@ -38,5 +38,9 @@ public abstract class SubscriptionBase extends EntityBase {
         default @Nonnull Uni<Long> countByUserId(@Nonnull UUID userId) {
             return count("user.id", userId);
         }
+
+        default @Nonnull Uni<T> findByUserIdAndPostIdOrNull(@Nonnull UUID userId, @Nonnull UUID postId) {
+            return find("user.id = ?1 AND post.id = ?2", userId, postId).firstResult();
+        }
     }
 }
