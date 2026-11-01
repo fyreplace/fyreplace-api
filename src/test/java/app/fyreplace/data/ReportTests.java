@@ -20,13 +20,13 @@ public final class ReportTests extends DataTestsBase {
 
     @BeforeEach
     void setup() {
-        awaitOnSafeContext(this::createReport);
+        executorService.awaitOnSafeContext(this::createReport);
     }
 
     @AfterEach
     void teardown() {
         if (createdReportId != null) {
-            awaitOnSafeContext(() -> reportRepository.deleteById(createdReportId));
+            executorService.awaitOnSafeContext(() -> reportRepository.deleteById(createdReportId));
         }
     }
 
@@ -46,7 +46,7 @@ public final class ReportTests extends DataTestsBase {
     @Test
     void testDuplicateReportIsRejected() {
         try {
-            awaitOnSafeContext(this::createReport);
+            executorService.awaitOnSafeContext(this::createReport);
             Assertions.fail("a second identical report was accepted");
         } catch (IllegalStateException expected) {
             Assertions.assertTrue(isUniqueViolation(expected), "expected a unique violation, got: " + expected);

@@ -3,12 +3,10 @@ package app.fyreplace.services.gravatar;
 import app.fyreplace.data.entities.User;
 import app.fyreplace.errors.InvalidArgumentException;
 import app.fyreplace.errors.NotFoundException;
+import app.fyreplace.services.ExecutorService;
 import app.fyreplace.services.ImageService;
 import io.quarkus.hibernate.reactive.panache.Panache;
-import io.quarkus.vertx.core.runtime.context.VertxContextSafetyToggle;
-import io.smallrye.common.vertx.VertxContext;
 import io.smallrye.mutiny.Uni;
-import io.vertx.core.Vertx;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -21,9 +19,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.HexFormat;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
@@ -37,11 +33,14 @@ public final class GravatarService {
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration READ_TIMEOUT = Duration.ofSeconds(10);
 
+    @ConfigProperty(name = "app.gravatar.enabled")
+    boolean enabled;
+
     @ConfigProperty(name = "app.gravatar.base-url")
-    Optional<String> baseUrl;
+    String baseUrl;
 
     @Inject
-    Vertx vertx;
+    ExecutorService executorService;
 
     @Inject
     User.Repository userRepository;
@@ -56,16 +55,18 @@ public final class GravatarService {
     }
 
     public @Nonnull Uni<Void> fetchDefaultAvatar(@Nonnull UUID userId) {
-        if (baseUrl.isEmpty() || baseUrl.get().isBlank()) {
+        final var url = baseUrl;
+
+        if (!enabled) {
             return Uni.createFrom().voidItem();
         }
 
         return Uni.createFrom()
                 .voidItem()
-                .emitOn(safeExecutor())
+                .emitOn(executorService.safeExecutor())
                 .flatMap(_ -> Panache.withSession(() -> findUser(userId)))
-                .flatMap(this::avatarDataOrNull)
-                .emitOn(safeExecutor())
+                .flatMap(user -> avatarDataOrNull(user, url))
+                .emitOn(executorService.safeExecutor())
                 .flatMap(data -> storeAvatarIfPresent(userId, data))
                 .replaceWithVoid();
     }
@@ -74,12 +75,13 @@ public final class GravatarService {
         return userRepository.findById(userId).onItem().ifNull().failWith(NotFoundException::new);
     }
 
-    private @Nonnull Uni<byte[]> avatarDataOrNull(@Nonnull User user) {
+    private @Nonnull Uni<byte[]> avatarDataOrNull(@Nonnull User user, @Nonnull String baseUrl) {
         if (user.getAvatar() != null || user.getEmail() == null) {
             return Uni.createFrom().nullItem();
         }
 
-        return api().getAvatar(sha256Hex(user.getEmail()), DEFAULT_IMAGE_NOT_FOUND, AVATAR_SIZE)
+        return api(baseUrl)
+                .getAvatar(sha256Hex(user.getEmail()), DEFAULT_IMAGE_NOT_FOUND, AVATAR_SIZE)
                 .onFailure(WebApplicationException.class)
                 .recoverWithNull()
                 .flatMap(this::validImageDataOrNull);
@@ -106,18 +108,12 @@ public final class GravatarService {
                 .replaceWithVoid());
     }
 
-    private @Nonnull GravatarApi api() {
+    private @Nonnull GravatarApi api(@Nonnull String baseUrl) {
         return RestClientBuilder.newBuilder()
-                .baseUri(URI.create(baseUrl.orElseThrow()))
+                .baseUri(URI.create(baseUrl))
                 .connectTimeout(CONNECT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
                 .readTimeout(READ_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
                 .build(GravatarApi.class);
-    }
-
-    private @Nonnull Executor safeExecutor() {
-        final var context = VertxContext.getOrCreateDuplicatedContext(vertx.getOrCreateContext());
-        VertxContextSafetyToggle.setContextSafe(context, true);
-        return command -> context.runOnContext(_ -> command.run());
     }
 
     static @Nonnull String sha256Hex(@Nonnull String email) {

@@ -24,7 +24,7 @@ public abstract class CommentTestsBase extends PostTestsBase {
 
     @BeforeEach
     protected void snapshotComments() {
-        awaitOnSafeContext(() -> commentRepository
+        executorService.awaitOnSafeContext(() -> commentRepository
                 .findAll()
                 .list()
                 .invoke(list ->
@@ -33,7 +33,7 @@ public abstract class CommentTestsBase extends PostTestsBase {
 
     @AfterEach
     protected void cleanupComments() {
-        awaitOnSafeContext(() -> commentRepository.deleteByIdNotIn(seededCommentIds));
+        executorService.awaitOnSafeContext(() -> commentRepository.deleteByIdNotIn(seededCommentIds));
     }
 
     protected final @Nonnull MutinyCommentServiceGrpc.MutinyCommentServiceStub commentService() {

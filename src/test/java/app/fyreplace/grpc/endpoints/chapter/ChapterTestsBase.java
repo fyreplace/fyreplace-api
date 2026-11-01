@@ -59,7 +59,7 @@ public abstract class ChapterTestsBase extends GrpcTestsBase {
         final var postsRef = new AtomicReference<List<Post>>();
         final var filesRef = new AtomicReference<List<StoredFile>>();
 
-        awaitOnSafeContext(() -> chapterRepository
+        executorService.awaitOnSafeContext(() -> chapterRepository
                 .findAll()
                 .list()
                 .invoke(chaptersRef::set)
@@ -77,7 +77,7 @@ public abstract class ChapterTestsBase extends GrpcTestsBase {
 
     @AfterEach
     void teardown() {
-        awaitOnSafeContext(() -> Uni.createFrom()
+        executorService.awaitOnSafeContext(() -> Uni.createFrom()
                 .voidItem()
                 .chain(() -> chapterRepository.deleteByIdNotIn(seededChapterIds))
                 .chain(() -> postRepository.deleteByIdNotIn(seededPostIds))

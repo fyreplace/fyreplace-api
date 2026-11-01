@@ -20,7 +20,7 @@ public abstract class NotificationTestsBase extends PostTestsBase {
 
     @BeforeEach
     protected void snapshotTokens() {
-        awaitOnSafeContext(() -> messagingTokenRepository
+        executorService.awaitOnSafeContext(() -> messagingTokenRepository
                 .findAll()
                 .list()
                 .invoke(list -> seededTokenIds =
@@ -33,12 +33,12 @@ public abstract class NotificationTestsBase extends PostTestsBase {
 
     @AfterEach
     protected void cleanupTokens() {
-        awaitOnSafeContext(() -> messagingTokenRepository.deleteByIdNotIn(seededTokenIds));
+        executorService.awaitOnSafeContext(() -> messagingTokenRepository.deleteByIdNotIn(seededTokenIds));
     }
 
     @AfterEach
     protected void cleanupComments() {
-        awaitOnSafeContext(() -> commentRepository.deleteByIdNotIn(seededCommentIds));
+        executorService.awaitOnSafeContext(() -> commentRepository.deleteByIdNotIn(seededCommentIds));
     }
 
     protected final @Nonnull MutinyNotificationServiceGrpc.MutinyNotificationServiceStub notificationService() {

@@ -30,7 +30,7 @@ public abstract class AccountTestsBase extends GrpcTestsBase {
     @AfterEach
     void teardown() {
         restoreScenarioUsers();
-        awaitOnSafeContext(() -> userRepository.deleteByDateCreatedAfter(sweepThreshold));
+        executorService.awaitOnSafeContext(() -> userRepository.deleteByDateCreatedAfter(sweepThreshold));
     }
 
     protected final @Nonnull MutinyAccountServiceGrpc.MutinyAccountServiceStub accountService() {
@@ -42,7 +42,7 @@ public abstract class AccountTestsBase extends GrpcTestsBase {
     }
 
     private void restoreScenarioUsers() {
-        awaitOnSafeContext(() -> Uni.createFrom()
+        executorService.awaitOnSafeContext(() -> Uni.createFrom()
                 .item(ACTIVE_USER)
                 .call(userRepository::restoreByUsername)
                 .replaceWith(PENDING_USER)

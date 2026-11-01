@@ -19,7 +19,7 @@ public final class UsersBanTests extends DataTestsBase {
     @BeforeEach
     @AfterEach
     void setupAndTeardown() {
-        awaitOnSafeContext(() -> userRepository.resetBanByUsername(TARGET_USERNAME));
+        executorService.awaitOnSafeContext(() -> userRepository.resetBanByUsername(TARGET_USERNAME));
     }
 
     @Test

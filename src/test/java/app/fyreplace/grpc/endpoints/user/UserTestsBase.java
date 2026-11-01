@@ -45,7 +45,7 @@ public abstract class UserTestsBase extends GrpcTestsBase {
     @AfterEach
     void teardown() {
         restoreSeededUsers();
-        awaitOnSafeContext(() -> userRepository.deleteByDateCreatedAfter(sweepThreshold));
+        executorService.awaitOnSafeContext(() -> userRepository.deleteByDateCreatedAfter(sweepThreshold));
     }
 
     protected final @Nonnull MutinyUserServiceGrpc.MutinyUserServiceStub userService() {
@@ -61,7 +61,7 @@ public abstract class UserTestsBase extends GrpcTestsBase {
     }
 
     private void restoreSeededUsers() {
-        awaitOnSafeContext(() -> Uni.createFrom()
+        executorService.awaitOnSafeContext(() -> Uni.createFrom()
                 .voidItem()
                 .chain(() -> userRepository.resetBanByUsername(BAN_TARGET))
                 .chain(() -> userRepository.resetBanByUsername(OTHER_USER))

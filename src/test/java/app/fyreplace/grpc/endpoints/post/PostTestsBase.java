@@ -70,7 +70,7 @@ public abstract class PostTestsBase extends GrpcTestsBase {
         final var votesRef = new AtomicReference<List<Vote>>();
         final var reportsRef = new AtomicReference<List<Report>>();
 
-        awaitOnSafeContext(() -> postRepository
+        executorService.awaitOnSafeContext(() -> postRepository
                 .findAll()
                 .list()
                 .invoke(postsRef::set)
@@ -90,7 +90,7 @@ public abstract class PostTestsBase extends GrpcTestsBase {
 
     @AfterEach
     protected void teardown() {
-        awaitOnSafeContext(() -> Uni.createFrom()
+        executorService.awaitOnSafeContext(() -> Uni.createFrom()
                 .voidItem()
                 .chain(() -> postRepository.deleteByIdNotIn(
                         postSnapshots.stream().map(PostSnapshot::id).toList()))

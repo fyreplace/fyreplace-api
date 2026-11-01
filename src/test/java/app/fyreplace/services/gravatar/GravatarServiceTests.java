@@ -62,7 +62,7 @@ public final class GravatarServiceTests extends TestsBase {
     @AfterEach
     void teardown() {
         stubHits.clear();
-        awaitOnSafeContext(() -> Uni.createFrom()
+        executorService.awaitOnSafeContext(() -> Uni.createFrom()
                 .voidItem()
                 .chain(() -> userRepository.findByUsername("pending_user"))
                 .call(user -> userRepository.storeOrRemoveAvatarById(user.getId(), new byte[0]))
@@ -167,7 +167,7 @@ public final class GravatarServiceTests extends TestsBase {
     public static final class GravatarTestProfile implements QuarkusTestProfile {
         @Override
         public Map<String, String> getConfigOverrides() {
-            return Map.of("app.gravatar.base-url", "http://127.0.0.1:" + STUB_PORT);
+            return Map.of("app.gravatar.enabled", "true", "app.gravatar.base-url", "http://127.0.0.1:" + STUB_PORT);
         }
     }
 

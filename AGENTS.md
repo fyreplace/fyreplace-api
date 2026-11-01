@@ -76,11 +76,14 @@ sync with `application.properties`.
     flows authorize by token type/freshness instead.
   - `ImageService` (JPEG/PNG/WEBP only — `services/mimetype/KnownFileType`), `LocaleService`,
     `TemplateDataService`.
+  - `ExecutorService` — safe duplicated Vert.x context / executor (`safeContext()`,
+    `safeExecutor()`); use it to run Panache or blocking work outside the current context
+    (tests use it via `TestsBase`).
   - `services/gravatar/` — `GravatarService` fetches the default avatar from Gravatar
     (`app.gravatar.base-url`, SHA-256 of the trimmed/lowercased email per the official docs,
     `?d=404&s=256`) once per account creation, fire-and-forget off the endpoint's session
-    (mirrors Django's Celery `fetch_default_user_avatar.delay`); blank base URL disables it
-    (`%test` sets it empty).
+    (mirrors Django's Celery `fetch_default_user_avatar.delay`); `app.gravatar.enabled=false`
+    disables it (`%test` sets that).
 - `src/main/java/app/fyreplace/mails/` — `MailBase` subclasses rendering Qute templates from
   `src/main/resources/templates/<MailName>/`; subjects in `i18n/strings_emails.properties`; per-mail
   data records in `mails/data/`.
@@ -167,7 +170,7 @@ Extend `DataTestsBase` (migration tests extend `MigrationTestsBase`); assert wit
 
 - Calling Panache from a lifecycle hook needs a **safe duplicated** Vert.x context:
   `@RunOnVertxContext(runOnEventLoop = false)` does *not* work with Panache. Use the
-  `TestsBase.awaitOnSafeContext` bridge instead — every test base extends `app.fyreplace.TestsBase`.
+  `ExecutorService.awaitOnSafeContext` bridge instead — every test base extends `app.fyreplace.TestsBase`.
 - `TransactionalUniAsserter` **commits every step** (each step is its own transaction) and has no
   rollback: keep the DB net-zero — run the scenario in one `execute(...)` step, clean up inside the
   chain, and reset seeded rows at both ends (see `UsersBanTests`, `SubscriptionsTriggerTests`).
@@ -190,7 +193,7 @@ restore/sweep the seeded scenario users, so individual tests carry no inline res
   — the resulting HR000068/69 errors break every assertion (also the root cause of
   `UNKNOWN: CompositeException` and `UNAVAILABLE: Channel shutdown invoked`).
 - `@RunOnVertxContext` is **method-scoped, never class-scoped**: class scope dispatches
-  `@BeforeEach`/`@AfterEach` onto the event loop, where the blocking `awaitOnSafeContext` bridge
+  `@BeforeEach`/`@AfterEach` onto the event loop, where the blocking `ExecutorService.awaitOnSafeContext` bridge
   deadlocks.
 - In-process DB access goes through the base's `session(...)`/`transaction(...)` helpers, which hop
   onto a safe duplicated context *before* constructing `Panache.withSession/withTransaction` (they
@@ -238,7 +241,7 @@ Dev-mode live restarts can lose the Hibernate Reactive pool
   Deleted posts and users are hidden — filtered out of reads. Do not generalize one rule to the
   other.
 - A rejected write poisons the transaction (Postgres 25P02): never flush-recover an expected
-  failure inside a live asserter step. Run the write via `awaitOnSafeContext` and assert on the
+  failure inside a live asserter step. Run the write via `ExecutorService.awaitOnSafeContext` and assert on the
   rethrown failure's cause chain (see `ReportTests.testDuplicateReportIsRejected`).
 - Hibernate 6 binds strictly: an association path (`post = ?1`) requires the entity, never its id —
   compare `post.id = ?1` instead.
