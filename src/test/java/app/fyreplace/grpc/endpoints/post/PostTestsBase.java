@@ -12,6 +12,7 @@ import app.fyreplace.protos.Header;
 import app.fyreplace.protos.MutinyPostServiceGrpc;
 import app.fyreplace.protos.Page;
 import app.fyreplace.services.ToProtoService;
+import io.quarkus.mailer.MockMailbox;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.Nonnull;
@@ -53,6 +54,9 @@ public abstract class PostTestsBase extends GrpcTestsBase {
     @Inject
     protected ToProtoService toProtoService;
 
+    @Inject
+    protected MockMailbox mailbox;
+
     private List<PostSnapshot> postSnapshots;
     private List<SubscriptionSnapshot> subscriptionSnapshots;
     private List<UUID> seededVoteIds;
@@ -60,6 +64,7 @@ public abstract class PostTestsBase extends GrpcTestsBase {
 
     @BeforeEach
     protected void setup() {
+        mailbox.clear();
         final var postsRef = new AtomicReference<List<Post>>();
         final var subscriptionsRef = new AtomicReference<List<Subscription>>();
         final var votesRef = new AtomicReference<List<Vote>>();

@@ -1,17 +1,23 @@
 package app.fyreplace.grpc.endpoints.user;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import app.fyreplace.data.entities.Report;
 import app.fyreplace.data.entities.User;
 import app.fyreplace.grpc.endpoints.JwtTestsResource;
+import app.fyreplace.services.TemplateDataService;
 import com.google.protobuf.Empty;
 import io.grpc.Status;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.vertx.RunOnVertxContext;
 import io.quarkus.test.vertx.UniAsserter;
+import io.smallrye.mutiny.Uni;
 import jakarta.annotation.Nonnull;
 import jakarta.inject.Inject;
+import java.util.Objects;
 import java.util.UUID;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
@@ -24,6 +30,24 @@ public final class ReportTests extends UserTestsBase {
     @RunOnVertxContext
     public void testCitizenReportsCitizen(@Nonnull UniAsserter asserter) {
         asserter.assertEquals(() -> report(ACTIVE_USER, OTHER_USER), Empty.getDefaultInstance());
+    }
+
+    @Test
+    @RunOnVertxContext
+    public void testReportSendsEmailToStaff(@Nonnull UniAsserter asserter) {
+        asserter.assertEquals(
+                () -> deleteReport(ACTIVE_USER, OTHER_USER).chain(() -> report(ACTIVE_USER, OTHER_USER)),
+                Empty.getDefaultInstance());
+        asserter.assertThat(
+                () -> user(OTHER_USER)
+                        .map(other -> mailbox.getMailMessagesSentTo("staff@example.org").stream()
+                                .anyMatch(mail -> mail.getHtml() != null
+                                        && mail.getHtml()
+                                                .contains("/u/" + TemplateDataService.b64UrlId(other.getId())))),
+                Assertions::assertTrue);
+        asserter.assertThat(
+                () -> Uni.createFrom().item(mailbox.getMailMessagesSentTo("admin@example.org")),
+                mails -> assertEquals(1, mails.size()));
     }
 
     @Test
@@ -69,7 +93,8 @@ public final class ReportTests extends UserTestsBase {
                 asserter,
                 () -> joinAsTuple(user(ACTIVE_USER), user(ACTIVE_USER))
                         .flatMap(pair -> report(
-                                pair.getItem1().getUsername(), pair.getItem2().getUsername())),
+                                Objects.requireNonNull(pair.getItem1().getUsername()),
+                                Objects.requireNonNull(pair.getItem2().getUsername()))),
                 Status.Code.PERMISSION_DENIED,
                 "user_is_caller");
     }
@@ -104,10 +129,14 @@ public final class ReportTests extends UserTestsBase {
     @RunOnVertxContext
     public void testTwice(@Nonnull UniAsserter asserter) {
         asserter.assertEquals(
-                () -> report(ACTIVE_USER, OTHER_USER)
+                () -> deleteReport(ACTIVE_USER, OTHER_USER)
+                        .chain(() -> report(ACTIVE_USER, OTHER_USER))
                         .replaceWith(Empty.getDefaultInstance())
                         .chain(() -> report(ACTIVE_USER, OTHER_USER)),
                 Empty.getDefaultInstance());
+        asserter.assertThat(
+                () -> Uni.createFrom().item(mailbox.getMailMessagesSentTo("staff@example.org")),
+                mails -> assertEquals(1, mails.size()));
     }
 
     @Test
@@ -184,6 +213,15 @@ public final class ReportTests extends UserTestsBase {
         return joinAsTuple(user(callerUsername), user(targetUsername))
                 .flatMap(pair -> userService(token(pair.getItem1()))
                         .report(toProtoService.id(pair.getItem2().getId())));
+    }
+
+    private @Nonnull Uni<Void> deleteReport(@Nonnull String callerUsername, @Nonnull String targetUsername) {
+        return joinAsTuple(user(callerUsername), user(targetUsername))
+                .flatMap(pair -> transaction(() -> reportRepository.delete(
+                        "issuer.id = ?1 AND targetUser.id = ?2",
+                        pair.getItem1().getId(),
+                        pair.getItem2().getId())))
+                .replaceWithVoid();
     }
 
     private @Nonnull io.smallrye.mutiny.Uni<Void> withRank(@Nonnull String username, @Nonnull User.Rank rank) {

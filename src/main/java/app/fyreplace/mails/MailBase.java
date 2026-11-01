@@ -1,6 +1,7 @@
 package app.fyreplace.mails;
 
 import app.fyreplace.data.entities.User;
+import app.fyreplace.mails.data.TemplateData;
 import app.fyreplace.services.LocaleService;
 import app.fyreplace.services.TemplateDataService;
 import io.quarkus.mailer.Mail;
@@ -13,7 +14,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.ResourceBundle;
 
-public abstract class MailBase {
+public abstract class MailBase<D extends TemplateData> {
     @Inject
     ReactiveMailer mailer;
 
@@ -25,19 +26,20 @@ public abstract class MailBase {
 
     protected abstract @Nonnull String getSubjectKey();
 
-    protected abstract @Nonnull TemplateInstance getTextTemplate(@Nonnull User user);
+    protected abstract @Nonnull TemplateInstance getTextTemplate(@Nonnull D data);
 
-    protected abstract @Nonnull TemplateInstance getHtmlTemplate(@Nonnull User user);
+    protected abstract @Nonnull TemplateInstance getHtmlTemplate(@Nonnull D data);
 
     public @Nonnull ResourceBundle getResourceBundle() {
         return localeService.getResourceBundle("strings_emails");
     }
 
-    public @Nonnull Uni<Void> send(@Nonnull User recipient) {
-        return send(
-                List.of(Objects.requireNonNull(recipient.getEmail())),
-                getTextTemplate(recipient),
-                getHtmlTemplate(recipient));
+    public @Nonnull Uni<Void> send(@Nonnull User recipient, @Nonnull D data) {
+        return send(List.of(Objects.requireNonNull(recipient.getEmail())), data);
+    }
+
+    public @Nonnull Uni<Void> send(@Nonnull List<String> recipients, @Nonnull D data) {
+        return send(recipients, getTextTemplate(data), getHtmlTemplate(data));
     }
 
     protected @Nonnull Uni<Void> send(

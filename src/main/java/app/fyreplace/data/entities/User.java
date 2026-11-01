@@ -131,6 +131,14 @@ public final class User extends SoftDeletableEntityBase {
             return find("#" + User.Q_FIND_BLOCKED_BY, Map.of("issuerId", issuerId));
         }
 
+        public @Nonnull Uni<List<String>> findStaffEmails() {
+            return list(
+                            "rank IN (?1, ?2) AND active = TRUE AND NOT isDeleted AND email IS NOT NULL",
+                            Rank.STAFF,
+                            Rank.ADMIN)
+                    .map(users -> users.stream().map(User::getEmail).toList());
+        }
+
         public @Nonnull Uni<Integer> updateBioByUserId(@Nonnull UUID userId, @Nonnull String bio) {
             return update("bio = ?2 WHERE id = ?1", userId, bio);
         }

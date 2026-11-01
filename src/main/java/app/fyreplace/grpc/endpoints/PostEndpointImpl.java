@@ -180,10 +180,11 @@ public final class PostEndpointImpl extends EndpointBase implements PostService 
                 .flatMap(postId -> postRepository.findReadableById(callerId, postId))
                 .invoke(authorizationService::checkPostPublished)
                 .invoke(post -> authorizationService.checkPostReportable(callerId, post))
-                .map(post -> Tuple2.of(post.getId(), request.getId()))
-                .flatMap(pair -> persistReportIfAbsent(
-                        reportRepository.existsByIssuerIdAndTargetPostId(callerId, pair.getItem1()),
-                        fromProtoService.newPostReport(pair.getItem2())));
+                .flatMap(post -> notifyStaffIfNewReport(
+                        persistReportIfAbsent(
+                                reportRepository.existsByIssuerIdAndTargetPostId(callerId, post.getId()),
+                                fromProtoService.newPostReport(request.getId())),
+                        Uni.createFrom().item(templateDataService.postFrontLink(post.getId()))));
     }
 
     @Override

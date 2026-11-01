@@ -32,6 +32,8 @@ dependencies {
     implementation 'io.quarkiverse.amazonservices:quarkus-amazon-s3'
     implementation 'io.quarkiverse.qute.web:quarkus-qute-web'
     implementation "com.twelvemonkeys.imageio:imageio-webp:${twelveMonkeysVersion}"
+    implementation "com.google.zxing:core:${zxingVersion}"
+    implementation "com.google.zxing:javase:${zxingVersion}"
     implementation "javaxt:javaxt-core:${javaXtVersion}"
     implementation 'software.amazon.awssdk:url-connection-client'
     implementation 'software.amazon.awssdk.crt:aws-crt'

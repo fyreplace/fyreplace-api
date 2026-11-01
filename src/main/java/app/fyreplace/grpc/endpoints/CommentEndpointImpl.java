@@ -111,10 +111,11 @@ public final class CommentEndpointImpl extends EndpointBase implements CommentSe
         return uuidOf(request::getId)
                 .flatMap(this::findCommentOrNotFound)
                 .invoke(comment -> authorizationService.checkCommentReportable(callerId, comment))
-                .map(comment -> Tuple2.of(comment.getId(), request.getId()))
-                .flatMap(pair -> persistReportIfAbsent(
-                        reportRepository.existsByIssuerIdAndTargetCommentId(callerId, pair.getItem1()),
-                        fromProtoService.newCommentReport(pair.getItem2())));
+                .flatMap(comment -> notifyStaffIfNewReport(
+                        persistReportIfAbsent(
+                                reportRepository.existsByIssuerIdAndTargetCommentId(callerId, comment.getId()),
+                                fromProtoService.newCommentReport(request.getId())),
+                        templateDataService.commentFrontLink(comment)));
     }
 
     @Override

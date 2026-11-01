@@ -11,10 +11,12 @@ import app.fyreplace.data.entities.Subscription;
 import app.fyreplace.data.entities.User;
 import app.fyreplace.data.entities.Vote;
 import app.fyreplace.errors.InvalidArgumentException;
+import app.fyreplace.mails.StaffReportMail;
 import app.fyreplace.protos.Header;
 import app.fyreplace.protos.Page;
 import app.fyreplace.services.CurrentUserService;
 import app.fyreplace.services.FromProtoService;
+import app.fyreplace.services.TemplateDataService;
 import app.fyreplace.services.ToProtoService;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
@@ -25,6 +27,7 @@ import io.smallrye.mutiny.tuples.Tuple2;
 import io.vertx.core.Vertx;
 import jakarta.annotation.Nonnull;
 import jakarta.inject.Inject;
+import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executor;
@@ -32,8 +35,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import org.jboss.logging.Logger;
 
 public abstract class EndpointBase {
+    private static final Logger LOG = Logger.getLogger(EndpointBase.class);
     private static final int PAGE_SIZE_MAX = 50;
 
     @Inject
@@ -76,6 +81,12 @@ public abstract class EndpointBase {
     CurrentUserService currentUserService;
 
     @Inject
+    StaffReportMail staffReportMail;
+
+    @Inject
+    TemplateDataService templateDataService;
+
+    @Inject
     Vertx vertx;
 
     protected @Nonnull Executor eventLoop() {
@@ -113,10 +124,22 @@ public abstract class EndpointBase {
                 .transformToUniAndConcatenate(pair -> processPage.apply(pair.getItem1(), pair.getItem2()));
     }
 
-    protected @Nonnull Uni<Empty> persistReportIfAbsent(@Nonnull Uni<Boolean> alreadyReported, @Nonnull Report report) {
+    protected @Nonnull Uni<Boolean> persistReportIfAbsent(
+            @Nonnull Uni<Boolean> alreadyReported, @Nonnull Report report) {
         return alreadyReported.flatMap(exists -> exists
-                ? Uni.createFrom().item(Empty.getDefaultInstance())
-                : reportRepository.persist(report).replaceWith(Empty.getDefaultInstance()));
+                ? Uni.createFrom().item(false)
+                : reportRepository.persist(report).replaceWith(true));
+    }
+
+    protected @Nonnull Uni<Empty> notifyStaffIfNewReport(@Nonnull Uni<Boolean> created, @Nonnull Uni<URI> link) {
+        return created.flatMap(wasCreated -> wasCreated
+                ? link.call(staffReportMail::sendToStaff)
+                        .onFailure()
+                        .invoke(failure -> LOG.error("Failed to send report email to staff", failure))
+                        .onFailure()
+                        .recoverWithNull()
+                        .replaceWith(Empty.getDefaultInstance())
+                : Uni.createFrom().item(Empty.getDefaultInstance()));
     }
 
     private @Nonnull Multi<Tuple2<Header, io.quarkus.panache.common.Page>> toPageRequest(

@@ -1,0 +1,3 @@
+{r.getString("report_body_text")}
+
+{d.link()}

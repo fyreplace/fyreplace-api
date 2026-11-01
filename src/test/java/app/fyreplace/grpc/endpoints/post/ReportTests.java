@@ -1,13 +1,17 @@
 package app.fyreplace.grpc.endpoints.post;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import app.fyreplace.grpc.endpoints.JwtTestsResource;
 import app.fyreplace.protos.Publication;
+import app.fyreplace.services.TemplateDataService;
 import com.google.protobuf.Empty;
 import io.grpc.Status;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.vertx.RunOnVertxContext;
 import io.quarkus.test.vertx.UniAsserter;
+import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.tuples.Tuple2;
 import jakarta.annotation.Nonnull;
 import java.util.UUID;
@@ -32,16 +36,42 @@ public final class ReportTests extends PostTestsBase {
 
     @Test
     @RunOnVertxContext
+    public void testReportSendsEmailToStaff(@Nonnull UniAsserter asserter) {
+        asserter.assertThat(
+                () -> joinAsTuple(user(OTHER_USER), postOf(ACTIVE_USER, true, 1))
+                        .flatMap(pair -> deleteReport(
+                                        pair.getItem1().getId(), pair.getItem2().getId())
+                                .chain(() -> postService(token(pair.getItem1()))
+                                        .report(toProtoService.id(
+                                                pair.getItem2().getId())))
+                                .replaceWith(pair))
+                        .map(pair -> mailbox.getMailMessagesSentTo("staff@example.org").stream()
+                                .anyMatch(mail -> mail.getHtml() != null
+                                        && mail.getHtml()
+                                                .contains("/p/"
+                                                        + TemplateDataService.b64UrlId(
+                                                                pair.getItem2().getId())))),
+                Assertions::assertTrue);
+    }
+
+    @Test
+    @RunOnVertxContext
     public void testReportTwice(@Nonnull UniAsserter asserter) {
         asserter.assertEquals(
                 () -> joinAsTuple(user(OTHER_USER), postOf(ACTIVE_USER, true, 1))
-                        .flatMap(pair -> postService(token(pair.getItem1()))
-                                .report(toProtoService.id(pair.getItem2().getId()))
+                        .flatMap(pair -> deleteReport(
+                                        pair.getItem1().getId(), pair.getItem2().getId())
+                                .chain(() -> postService(token(pair.getItem1()))
+                                        .report(toProtoService.id(
+                                                pair.getItem2().getId())))
                                 .replaceWith(Empty.getDefaultInstance())
                                 .chain(() -> postService(token(pair.getItem1()))
                                         .report(toProtoService.id(
                                                 pair.getItem2().getId())))),
                 Empty.getDefaultInstance());
+        asserter.assertThat(
+                () -> Uni.createFrom().item(mailbox.getMailMessagesSentTo("staff@example.org")),
+                mails -> assertEquals(1, mails.size()));
     }
 
     @Test
@@ -112,5 +142,10 @@ public final class ReportTests extends PostTestsBase {
                                 .flatMap(other -> postService(token(other)).report(toProtoService.id(postId)))),
                 Status.Code.NOT_FOUND,
                 null);
+    }
+
+    private @Nonnull Uni<Void> deleteReport(@Nonnull UUID issuerId, @Nonnull UUID postId) {
+        return transaction(() -> reportRepository.delete("issuer.id = ?1 AND targetPost.id = ?2", issuerId, postId))
+                .replaceWithVoid();
     }
 }

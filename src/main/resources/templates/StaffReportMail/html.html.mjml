@@ -1,0 +1,13 @@
+<mjml>
+  <mj-include path="../_attributes.mjml" />
+  <mj-body>
+    <mj-section padding="0">
+      <mj-column padding="0">
+        <mj-include path="../_logo.mjml" />
+        <mj-text mj-class="text" padding-bottom="20px">{r.getString("report_body_html")}</mj-text>
+        <mj-button mj-class="text" href="{d.link()}" rel="noopener noreferrer" padding-bottom="20px">{r.getString("report_cta")}</mj-button>
+        <mj-include path="../_qr_code.mjml" />
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

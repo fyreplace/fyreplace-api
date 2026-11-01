@@ -58,6 +58,14 @@ public final class Comment extends AuthoredEntityBase implements Comparable<Comm
             return count("post.id", postId);
         }
 
+        public @Nonnull Uni<Long> countBeforeByPostId(@Nonnull UUID postId, @Nonnull Comment comment) {
+            return count(
+                    "post.id = ?1 AND (dateCreated < ?2 OR (dateCreated = ?2 AND id < ?3))",
+                    postId,
+                    comment.getDateCreated(),
+                    comment.getId());
+        }
+
         @Override
         public @Nonnull Uni<Integer> softDeleteById(@Nonnull UUID id) {
             return update("isDeleted = TRUE, text = '' WHERE id = ?1", id);

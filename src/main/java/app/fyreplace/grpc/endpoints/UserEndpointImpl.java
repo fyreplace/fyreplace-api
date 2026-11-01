@@ -155,9 +155,11 @@ public final class UserEndpointImpl extends EndpointBase implements UserService 
                 .flatMap(target -> currentUserService.getUser().map(caller -> Tuple2.of(caller, target)))
                 .invoke(this::checkReportable)
                 .map(pair -> Tuple3.of(pair.getItem1().getId(), pair.getItem2().getId(), request.getId()))
-                .flatMap(triple -> persistReportIfAbsent(
-                        reportRepository.existsByIssuerIdAndTargetUserId(triple.getItem1(), triple.getItem2()),
-                        fromProtoService.newUserReport(triple.getItem3())));
+                .flatMap(triple -> notifyStaffIfNewReport(
+                        persistReportIfAbsent(
+                                reportRepository.existsByIssuerIdAndTargetUserId(triple.getItem1(), triple.getItem2()),
+                                fromProtoService.newUserReport(triple.getItem3())),
+                        Uni.createFrom().item(templateDataService.userFrontLink(triple.getItem2()))));
     }
 
     @Override

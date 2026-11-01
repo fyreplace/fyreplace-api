@@ -11,28 +11,25 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 @ApplicationScoped
-public final class UserEmailUpdateMail extends MailBase {
+public final class UserEmailUpdateMail extends MailBase<LinkTemplateData> {
     @Override
     protected @Nonnull String getSubjectKey() {
         return "user_email_update_subject";
     }
 
-    @Override
-    protected @Nonnull TemplateInstance getTextTemplate(@Nonnull User user) {
-        return Templates.text(getResourceBundle(), templateCommonData.getData("UserService.ConfirmEmailUpdate", user));
-    }
-
-    @Override
-    protected @Nonnull TemplateInstance getHtmlTemplate(@Nonnull User user) {
-        return Templates.html(getResourceBundle(), templateCommonData.getData("UserService.ConfirmEmailUpdate", user));
-    }
-
     public @Nonnull Uni<Void> send(@Nonnull User recipient, @Nonnull String newEmail) {
-        final var data = templateCommonData.getData("UserService.ConfirmEmailUpdate", recipient, newEmail);
         return send(
-                List.of(newEmail),
-                Templates.text(getResourceBundle(), data),
-                Templates.html(getResourceBundle(), data));
+                List.of(newEmail), templateCommonData.getData("UserService.ConfirmEmailUpdate", recipient, newEmail));
+    }
+
+    @Override
+    protected @Nonnull TemplateInstance getTextTemplate(@Nonnull LinkTemplateData data) {
+        return Templates.text(getResourceBundle(), data);
+    }
+
+    @Override
+    protected @Nonnull TemplateInstance getHtmlTemplate(@Nonnull LinkTemplateData data) {
+        return Templates.html(getResourceBundle(), data);
     }
 
     @CheckedTemplate

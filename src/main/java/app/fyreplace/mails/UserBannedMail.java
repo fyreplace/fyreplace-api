@@ -4,6 +4,7 @@ import app.fyreplace.data.entities.User;
 import app.fyreplace.mails.data.BanTemplateData;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.TemplateInstance;
+import io.smallrye.mutiny.Uni;
 import jakarta.annotation.Nonnull;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.format.DateTimeFormatter;
@@ -11,20 +12,24 @@ import java.time.format.FormatStyle;
 import java.util.ResourceBundle;
 
 @ApplicationScoped
-public final class UserBannedMail extends MailBase {
+public final class UserBannedMail extends MailBase<BanTemplateData> {
     @Override
     protected @Nonnull String getSubjectKey() {
         return "user_banned_subject";
     }
 
-    @Override
-    protected @Nonnull TemplateInstance getTextTemplate(@Nonnull User user) {
-        return Templates.text(getResourceBundle(), templateCommonData.getData(getFormattedDate(user)));
+    public @Nonnull Uni<Void> send(@Nonnull User user) {
+        return send(user, templateCommonData.getData(getFormattedDate(user)));
     }
 
     @Override
-    protected @Nonnull TemplateInstance getHtmlTemplate(@Nonnull User user) {
-        return Templates.html(getResourceBundle(), templateCommonData.getData(getFormattedDate(user)));
+    protected @Nonnull TemplateInstance getTextTemplate(@Nonnull BanTemplateData data) {
+        return Templates.text(getResourceBundle(), data);
+    }
+
+    @Override
+    protected @Nonnull TemplateInstance getHtmlTemplate(@Nonnull BanTemplateData data) {
+        return Templates.html(getResourceBundle(), data);
     }
 
     private @Nonnull String getFormattedDate(@Nonnull User user) {
