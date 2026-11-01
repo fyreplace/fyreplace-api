@@ -14,6 +14,7 @@ import app.fyreplace.protos.UserCreation;
 import app.fyreplace.services.AuthorizationService;
 import app.fyreplace.services.JwtService;
 import app.fyreplace.services.ValidationService;
+import app.fyreplace.services.gravatar.GravatarService;
 import com.google.protobuf.Empty;
 import io.quarkus.grpc.GrpcService;
 import io.quarkus.hibernate.reactive.panache.common.WithSession;
@@ -41,6 +42,9 @@ public final class AccountEndpointImpl extends EndpointBase implements AccountSe
     @Inject
     ValidationService validationService;
 
+    @Inject
+    GravatarService gravatarService;
+
     @Override
     @WithTransaction
     public @Nonnull Uni<Empty> create(@Nonnull UserCreation request) {
@@ -55,6 +59,7 @@ public final class AccountEndpointImpl extends EndpointBase implements AccountSe
                 .replaceWith(request)
                 .map(fromProtoService::newUser)
                 .flatMap(userRepository::persist)
+                .invoke(user -> gravatarService.fetchDefaultAvatarDetached(user.getId()))
                 .call(userRepository::deleteExpiredPending)
                 .flatMap(accountActivationMail::send)
                 .replaceWith(Empty::getDefaultInstance);

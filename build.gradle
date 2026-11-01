@@ -24,6 +24,7 @@ dependencies {
     implementation 'io.quarkus:quarkus-mailer'
     implementation 'io.quarkus:quarkus-reactive-pg-client'
     implementation 'io.quarkus:quarkus-rest'
+    implementation 'io.quarkus:quarkus-rest-client'
     implementation 'io.quarkus:quarkus-rest-jackson'
     implementation 'io.quarkus:quarkus-security'
     implementation 'io.quarkus:quarkus-smallrye-health'

@@ -76,6 +76,11 @@ sync with `application.properties`.
     flows authorize by token type/freshness instead.
   - `ImageService` (JPEG/PNG/WEBP only — `services/mimetype/KnownFileType`), `LocaleService`,
     `TemplateDataService`.
+  - `services/gravatar/` — `GravatarService` fetches the default avatar from Gravatar
+    (`app.gravatar.base-url`, SHA-256 of the trimmed/lowercased email per the official docs,
+    `?d=404&s=256`) once per account creation, fire-and-forget off the endpoint's session
+    (mirrors Django's Celery `fetch_default_user_avatar.delay`); blank base URL disables it
+    (`%test` sets it empty).
 - `src/main/java/app/fyreplace/mails/` — `MailBase` subclasses rendering Qute templates from
   `src/main/resources/templates/<MailName>/`; subjects in `i18n/strings_emails.properties`; per-mail
   data records in `mails/data/`.
@@ -240,7 +245,8 @@ Dev-mode live restarts can lose the Hibernate Reactive pool
 
 ### Porting status
 
-`AccountService` is fully ported, but connection flows are a **lean port**: no connection nonce,
+`AccountService` is fully ported (including the Gravatar default-avatar fetch on `create`, with
+SHA-256 per the current Gravatar docs rather than Django's legacy MD5), but connection flows are a **lean port**: no connection nonce,
 `sendConnectionEmail`/`confirmConnection` authorize by email-token freshness only, and
 `sendActivationEmail` throws `NOT_FOUND` on unknown emails where Django silently succeeded
 (documented deviations). Still open: `Account.listConnections`/`disconnect`/`disconnectAll`

@@ -2,6 +2,7 @@ package app.fyreplace.grpc.endpoints.account;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import app.fyreplace.data.entities.User;
@@ -38,6 +39,15 @@ public final class CreateTests extends AccountTestsBase {
             assertFalse(user.isActive());
             assertFalse(user.hasUsablePassword());
         });
+    }
+
+    @Test
+    @RunOnVertxContext
+    public void testNoAvatarWhenGravatarDisabled(@Nonnull UniAsserter asserter) {
+        asserter.assertEquals(
+                () -> accountService().create(creation("gravatarless_user", "gravatarless@example.org")),
+                Empty.getDefaultInstance());
+        asserter.assertThat(() -> user("gravatarless_user"), user -> assertNull(user.getAvatar()));
     }
 
     @Test
