@@ -1,0 +1,11 @@
+<mjml>
+  <mj-include path="../_attributes.mjml" />
+  <mj-body>
+    <mj-section padding="0">
+      <mj-column padding="0">
+        <mj-include path="../_logo.mjml" />
+        <mj-text mj-class="text" padding-bottom="40px">{r.getString("user_banned_body")} {d.date()}</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

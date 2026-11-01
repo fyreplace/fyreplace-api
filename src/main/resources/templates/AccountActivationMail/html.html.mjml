@@ -1,0 +1,15 @@
+<mjml>
+  <mj-include path="../_attributes.mjml" />
+  <mj-body>
+    <mj-section padding="0">
+      <mj-column padding="0">
+        <mj-include path="../_logo.mjml" />
+        <mj-text mj-class="text" font-size="24px" padding-bottom="20px">{r.getString("account_activation_welcome")}</mj-text>
+        <mj-text mj-class="text" padding-bottom="20px">{r.getString("account_activation_body_html")}</mj-text>
+        <mj-button mj-class="text" href="{d.link()}" rel="noopener noreferrer" padding-bottom="20px">{r.getString("account_activation_activate")}</mj-button>
+        <mj-include path="../_qr_code.mjml" />
+        <mj-include path="../_link_end_notice.mjml" />
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

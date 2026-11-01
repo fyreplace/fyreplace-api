@@ -1,0 +1,5 @@
+{r.getString("user_email_update_body_text")}
+
+{d.link()}
+
+{r.getString("expiration")}

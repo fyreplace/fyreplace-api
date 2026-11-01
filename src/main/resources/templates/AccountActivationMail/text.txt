@@ -1,0 +1,7 @@
+{r.getString("account_activation_welcome")}
+
+{r.getString("account_activation_body_text")}
+
+{d.link()}
+
+{r.getString("expiration")}

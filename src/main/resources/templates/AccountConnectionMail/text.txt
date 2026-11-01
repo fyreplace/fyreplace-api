@@ -1,0 +1,5 @@
+{r.getString("account_connection_body_text")}
+
+{d.link()}
+
+{r.getString("expiration")}

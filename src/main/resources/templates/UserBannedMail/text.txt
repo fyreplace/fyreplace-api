@@ -1,0 +1,1 @@
+{r.getString("user_banned_body")} {d.date()}
