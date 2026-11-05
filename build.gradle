@@ -114,8 +114,9 @@ tasks.register('emails') {
             logger.lifecycle('Compiling {} -> {}', input, output)
 
             def command = npx + [
+                    '-y',
                     'mjml',
-                    '-c.minify=true',
+                    '-c.minify=false',
                     '-c.allowIncludes=true',
                     '-c.includePath=src/main/resources/templates/',
                     '-o',
