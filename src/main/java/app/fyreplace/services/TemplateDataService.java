@@ -12,7 +12,6 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.nio.file.Path;
 import java.util.Base64;
 import java.util.UUID;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -59,18 +58,17 @@ public final class TemplateDataService {
     }
 
     public @Nonnull URI userFrontLink(@Nonnull UUID userId) {
-        return frontLink(Path.of("u/", b64UrlId(userId)));
+        return frontLink("u/" + b64UrlId(userId));
     }
 
     public @Nonnull URI postFrontLink(@Nonnull UUID postId) {
-        return frontLink(Path.of("p/", b64UrlId(postId)));
+        return frontLink("p/" + b64UrlId(postId));
     }
 
     public @Nonnull Uni<URI> commentFrontLink(@Nonnull Comment comment) {
         return commentRepository
                 .countBeforeByPostId(comment.getPost().getId(), comment)
-                .map(position ->
-                        frontLink(Path.of("p/", b64UrlId(comment.getPost().getId()), position.toString())));
+                .map(position -> frontLink("p/" + b64UrlId(comment.getPost().getId()) + "/" + position));
     }
 
     public @Nonnull URI link(@Nonnull String path, @Nonnull User user) {
@@ -98,8 +96,8 @@ public final class TemplateDataService {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(buffer.array());
     }
 
-    private @Nonnull URI frontLink(@Nonnull Path path) {
-        return UriBuilder.fromUri(appFrontUrl).path(path.toString()).build();
+    private @Nonnull URI frontLink(@Nonnull String path) {
+        return UriBuilder.fromUri(appFrontUrl).path(path).build();
     }
 
     private @Nonnull String appLink(@Nonnull URI link) {
