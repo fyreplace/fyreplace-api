@@ -25,14 +25,14 @@ differ by language and framework.
 | Compile only / tests only | `./gradlew compileJava` / `./gradlew test` |
 | Format (required before commit) / check | `./gradlew spotlessApply` / `spotlessCheck` |
 | Dev mode (live coding, Dev UI at `/q/dev`) | `./gradlew quarkusDev` |
-| Compile MJML email templates | `make emails` |
-| Generate JWT RSA keypair | `make keygen-rsa` |
+| Compile MJML email templates | `./gradlew emails` |
+| Generate JWT RSA keypair | `./gradlew keygen-rsa` |
 | Try RPCs by hand (dev mode, reflection on) | `grpcurl -plaintext localhost:8080 list` |
 | Mint a dev JWT (dev mode) | `curl localhost:8080/dev/users/<username>/token` |
 
 Requirements: JDK 25, **PostgreSQL 18+** (`uuidv7()` is PG18+ — pin
 `quarkus.datasource.devservices.image` if Dev Services pulls an older image), Docker (Dev Services
-starts a Postgres container when no database is configured), Node/npx for `make emails`. A
+starts a Postgres container when no database is configured), Node/npx for `./gradlew emails`. A
 gitignored `.env` at the repo root can point at a real database instead; keep its variable names in
 sync with `application.properties`.
 
@@ -143,7 +143,7 @@ A gRPC method gets no automatic session (that courtesy is JAX-RS-only):
   gRPC statuses.
 - Raw SQL lives **only** in Flyway migrations and entity `Repository` classes — services,
   endpoints, and tests call dedicated repository methods.
-- Auth is declarative: `@Authenticated` + JWT (keys via `make keygen-rsa`; `%dev`/`%test`
+- Auth is declarative: `@Authenticated` + JWT (keys via `./gradlew keygen-rsa`; `%dev`/`%test`
   properties). Anonymous calls fail with `UNAUTHENTICATED` (`missing_credentials`); without the
   annotation an RPC stays reachable anonymously but still authenticates when a bearer token is
   present (Django `@no_auth`). Entity rules (`User.Rank`, forbidden usernames) live on entities.
@@ -260,6 +260,6 @@ return empty defaults. Consult the legacy repo for the behavior being replaced.
 
 ### Misc
 
-- Re-run `make emails` after touching any `.mjml` so the checked-in `html.html` bodies stay in
+- Re-run `./gradlew emails` after touching any `.mjml` so the checked-in `html.html` bodies stay in
   sync with the Qute templates.
-- `make keygen-rsa` writes private keys under `src/main/resources/keys/` — never commit those.
+- `./gradlew keygen-rsa` writes private keys under `src/main/resources/keys/` — never commit those.

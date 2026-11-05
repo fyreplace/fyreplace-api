@@ -1,3 +1,5 @@
+import java.security.KeyPairGenerator
+
 plugins {
     id 'java'
     id 'io.quarkus'
@@ -76,5 +78,79 @@ spotless {
         removeUnusedImports()
         palantirJavaFormat()
         target "**/src/*/java/**/*.java"
+    }
+}
+
+def isWindows = System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')
+
+def writePem = { File target, String type, byte[] der ->
+    def encoded = Base64.getMimeEncoder(64, '\n'.getBytes('UTF-8')).encodeToString(der)
+    target.setText("-----BEGIN ${type}-----\n${encoded}\n-----END ${type}-----\n", 'UTF-8')
+}
+
+tasks.register('emails') {
+    description = 'Compiles the MJML email templates into html.html files (requires Node/npx)'
+
+    def rootDir = layout.projectDirectory.asFile
+    def templatesDir = new File(rootDir, 'src/main/resources/templates')
+
+    inputs.files(fileTree(dir: templatesDir, include: '*/html.html.mjml'))
+    outputs.files(fileTree(dir: templatesDir, include: '*/html.html'))
+
+    doLast {
+        if (!templatesDir.isDirectory()) return
+
+        def npx = isWindows ? ['cmd', '/c', 'npx'] : ['npx']
+
+        templatesDir.listFiles().sort { it.name }.each { dir ->
+            if (!dir.isDirectory()) return
+
+            def mjml = new File(dir, 'html.html.mjml')
+            if (!mjml.isFile()) return
+
+            def input = rootDir.toPath().relativize(mjml.toPath()).toString().replace(File.separatorChar, '/' as char)
+            def output = input.substring(0, input.length() - '.mjml'.length())
+
+            logger.lifecycle('Compiling {} -> {}', input, output)
+
+            def command = npx + [
+                    'mjml',
+                    '-c.minify=true',
+                    '-c.allowIncludes=true',
+                    '-c.includePath=src/main/resources/templates/',
+                    '-o',
+                    output,
+                    input
+            ]
+            def process = new ProcessBuilder(command).directory(rootDir).redirectErrorStream(true).start()
+            def result = process.inputStream.getText('UTF-8')
+
+            if (process.waitFor() != 0) {
+                throw new GradleException("mjml failed on ${input}:\n${result}")
+            }
+
+            logger.lifecycle(result.trim())
+        }
+    }
+}
+
+tasks.register('keygen-rsa') {
+    description = 'Generates the JWT RSA keypair into src/main/resources/keys/'
+
+    def keysDir = layout.projectDirectory.dir('src/main/resources/keys').asFile
+    outputs.dir(keysDir)
+
+    doLast {
+        keysDir.mkdirs()
+
+        def generator = KeyPairGenerator.getInstance('RSA')
+        generator.initialize(2048)
+        def keyPair = generator.generateKeyPair()
+
+        writePem(new File(keysDir, 'jwt.rsa'), 'PRIVATE KEY', keyPair.private.encoded)
+        writePem(new File(keysDir, 'jwt.rsa.pem'), 'PRIVATE KEY', keyPair.private.encoded)
+        writePem(new File(keysDir, 'jwt.rsa.pub'), 'PUBLIC KEY', keyPair.public.encoded)
+
+        logger.lifecycle('Generated a 2048-bit RSA keypair in {}', keysDir)
     }
 }

@@ -13,7 +13,7 @@ behavior being ported. API contracts live in
 
 - JDK 25
 - PostgreSQL 18
-- Node/NPM
+- Node/NPM (to compile the email templates with `./gradlew emails`)
 - Docker (for development with Dev Services)
 
 ## Running the application in dev mode
