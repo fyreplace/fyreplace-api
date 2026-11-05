@@ -197,6 +197,10 @@ public final class User extends SoftDeletableEntityBase {
             return update("banCount = ?1, dateBanEnd = NULL WHERE username = ?2", BanCount.NEVER, username);
         }
 
+        public @Nonnull Uni<Integer> unbanExpired() {
+            return update("dateBanEnd = NULL WHERE dateBanEnd <= ?1", OffsetDateTime.now());
+        }
+
         public @Nonnull Uni<Integer> updateRankByUserId(@Nonnull UUID userId, @Nonnull Rank rank) {
             return update("rank = ?2 WHERE id = ?1", userId, rank);
         }

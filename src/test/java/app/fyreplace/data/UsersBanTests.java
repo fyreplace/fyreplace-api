@@ -1,11 +1,13 @@
 package app.fyreplace.data;
 
 import app.fyreplace.data.entities.User;
+import app.fyreplace.services.BanService;
 import io.quarkus.test.hibernate.reactive.panache.TransactionalUniAsserter;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.vertx.RunOnVertxContext;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.Nonnull;
+import jakarta.inject.Inject;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -15,6 +17,9 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 public final class UsersBanTests extends DataTestsBase {
     private static final String TARGET_USERNAME = "ban_target";
+
+    @Inject
+    BanService banService;
 
     @BeforeEach
     @AfterEach
@@ -60,6 +65,49 @@ public final class UsersBanTests extends DataTestsBase {
                         User.BanCount.ONE_TOO_MANY,
                         user.getBanCount(),
                         "ban_count must never leave the range of the mapped BanCount enum")));
+    }
+
+    @Test
+    void testExpiredBanIsLifted() {
+        executorService.awaitOnSafeContext(
+                () -> userRepository.findByUsername(TARGET_USERNAME).flatMap(user -> ban(user, 0)));
+        banService.liftExpiredBans();
+        executorService.awaitOnSafeContext(() -> userRepository
+                .findByUsername(TARGET_USERNAME)
+                .invoke(user -> {
+                    Assertions.assertNull(user.getDateBanEnd(), "an expired ban must be lifted");
+                    Assertions.assertEquals(
+                            User.BanCount.ONCE, user.getBanCount(), "lifting must not reset the ban count");
+                    Assertions.assertFalse(user.isBanned());
+                }));
+    }
+
+    @Test
+    void testUnexpiredBanIsKept() {
+        executorService.awaitOnSafeContext(
+                () -> userRepository.findByUsername(TARGET_USERNAME).flatMap(user -> ban(user, 5)));
+        banService.liftExpiredBans();
+        executorService.awaitOnSafeContext(() -> userRepository
+                .findByUsername(TARGET_USERNAME)
+                .invoke(user -> {
+                    Assertions.assertNotNull(user.getDateBanEnd(), "an unexpired ban must be kept");
+                    Assertions.assertTrue(user.isBanned());
+                }));
+    }
+
+    @Test
+    void testPermanentBanIsKept() {
+        executorService.awaitOnSafeContext(() -> userRepository
+                .findByUsername(TARGET_USERNAME)
+                .flatMap(user -> ban(user, 1))
+                .flatMap(user -> ban(user, 1)));
+        banService.liftExpiredBans();
+        executorService.awaitOnSafeContext(() -> userRepository
+                .findByUsername(TARGET_USERNAME)
+                .invoke(user -> {
+                    Assertions.assertEquals(User.BanCount.ONE_TOO_MANY, user.getBanCount());
+                    Assertions.assertTrue(user.isBanned(), "a permanent ban must survive the expiry job");
+                }));
     }
 
     private @Nonnull Uni<User> ban(@Nonnull User user, int days) {

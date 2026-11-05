@@ -79,6 +79,9 @@ sync with `application.properties`.
   - `ExecutorService` — safe duplicated Vert.x context / executor (`safeContext()`,
     `safeExecutor()`); use it to run Panache or blocking work outside the current context
     (tests use it via `TestsBase`).
+  - `BanService` — hourly `@Scheduled` job (`quarkus-scheduler`) lifting expired temporary bans
+    via `User.Repository.unbanExpired`; scheduled methods run off the event loop, so the job
+    bridges to a safe context with `ExecutorService.awaitOnSafeContext`.
   - `services/gravatar/` — `GravatarService` fetches the default avatar from Gravatar
     (`app.gravatar.base-url`, SHA-256 of the trimmed/lowercased email per the official docs,
     `?d=404&s=256`) once per account creation, fire-and-forget off the endpoint's session
